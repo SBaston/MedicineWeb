@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="MedicineFrontend/medicinefrontend.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+</Solution>
