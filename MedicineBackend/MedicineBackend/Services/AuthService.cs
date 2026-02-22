@@ -73,7 +73,6 @@ public class AuthService : IAuthService
                         FirstName = request.FirstName,
                         LastName = request.LastName,
                         ProfessionalLicense = request.ProfessionalLicense!,
-                        IsVerified = false,
                         IsAcceptingPatients = true,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -99,7 +98,7 @@ public class AuthService : IAuthService
                     {
                         UserId = user.Id,
                         FullName = $"{request.FirstName} {request.LastName}",
-                        PermissionLevel = "Admin",
+                        IsSuperAdmin = false,
                         Department = request.Department,
                         CreatedAt = DateTime.UtcNow
                     };

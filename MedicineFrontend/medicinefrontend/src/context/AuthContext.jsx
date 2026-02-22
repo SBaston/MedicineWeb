@@ -39,12 +39,14 @@ export const AuthProvider = ({ children }) => {
 
             // Si es admin
             if (basicUser.role === 'Admin') {
+                const response = await api.get('/admin/me');
+                const admin = response.data;
                 // TODO: Implementar endpoint para admins
                 return {
                     ...basicUser,
-                    firstName: 'Admin',
-                    lastName: 'User',
-                    fullName: 'Admin User',
+                    fullName: admin.fullName,
+                    department: admin.department,
+                    IsSuperAdmin: admin.IsSuperAdmin,
                 };
             }
 
@@ -107,6 +109,7 @@ export const AuthProvider = ({ children }) => {
         isDoctor: user?.role === 'Doctor',
         isPatient: user?.role === 'Patient',
         isAdmin: user?.role === 'Admin',
+        IsSuperAdmin: user?.role === 'Admin' && user?.IsSuperAdmin === true,
         loading,
     };
 

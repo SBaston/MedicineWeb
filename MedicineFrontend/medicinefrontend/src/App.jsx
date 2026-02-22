@@ -9,6 +9,7 @@ import RegisterPage from './pages/RegisterPage';
 import PatientDashboard from './pages/PatientDashboard';
 import EditProfilePage from './pages/EditProfilePage';
 import ProfessionalsPage from './pages/ProfessionalPage';
+import AdminDashboard from './pages/AdminDashboard';
 
 // Crear cliente de React Query
 const queryClient = new QueryClient({
@@ -22,18 +23,24 @@ const queryClient = new QueryClient({
 });
 
 // Componente para rutas protegidas
-const ProtectedRoute = ({ children }) => {
-    const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles }) => {
+    const { isAuthenticated, user, loading } = useAuth();
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
             </div>
         );
     }
 
-    return isAuthenticated ? children : <Navigate to="/login" />;
+    if (!isAuthenticated) return <Navigate to="/login" />;
+
+    // Verificar roles si se especifican
+    if (allowedRoles && !allowedRoles.includes(user?.role))
+        return <Navigate to="/" />;
+
+    return children;
 };
 
 // Layout principal
@@ -60,6 +67,16 @@ function App() {
                                 <Layout>
                                     <HomePage />
                                 </Layout>
+                            }
+                        />
+                        <Route
+                            path="/admin"
+                            element={
+                                <ProtectedRoute allowedRoles={['Admin']}>
+                                    <Layout>
+                                        <AdminDashboard />
+                                    </Layout>
+                                </ProtectedRoute>
                             }
                         />
                         <Route path="/login" element={<LoginPage />} />

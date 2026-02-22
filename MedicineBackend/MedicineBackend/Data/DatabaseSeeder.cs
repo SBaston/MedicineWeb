@@ -45,7 +45,7 @@ public class DatabaseSeeder
         {
             UserId = user.Id,
             FullName = _settings.FullName,
-            PermissionLevel = _settings.PermissionLevel, // SuperAdmin
+            IsSuperAdmin = _settings.IsSuperAdmin, // SuperAdmin
             Department = _settings.Department,
             CreatedAt = DateTime.UtcNow
         };

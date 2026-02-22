@@ -24,10 +24,11 @@ public class Admin
     public string FullName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Nivel de permisos del admin (ej: SuperAdmin, Admin, Moderator)
+    /// Determina si este admin es el SuperAdmin.
+    /// Solo debe existir UN superadmin, creado automáticamente al iniciar la aplicación.
+    /// El SuperAdmin puede crear y eliminar otros admins.
     /// </summary>
-    [MaxLength(50)]
-    public string? PermissionLevel { get; set; } = "Admin";
+    public bool IsSuperAdmin { get; set; } = false;
 
     /// <summary>
     /// Departamento o área del admin
