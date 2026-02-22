@@ -190,8 +190,7 @@
               "RelativeToolTip": "MedicineBackend\\Program.cs",
               "ViewState": "AgIAAM4AAAAAAAAAAAAowNcAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-30T19:23:30.681Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T19:23:30.681Z"
             },
             {
               "$type": "Document",
@@ -203,8 +202,7 @@
               "RelativeToolTip": "MedicineBackend\\Models\\Doctor.cs",
               "ViewState": "AgIAACUAAAAAAAAAAAAkwKIAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-30T19:37:37.485Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T19:37:37.485Z"
             },
             {
               "$type": "Document",
@@ -214,7 +212,7 @@
               "RelativeDocumentMoniker": "MedicineBackend\\appsettings.json",
               "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\appsettings.json",
               "RelativeToolTip": "MedicineBackend\\appsettings.json",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAAABsAAAAXAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAA0AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2026-02-01T12:48:26.873Z",
               "EditorCaption": ""
@@ -229,8 +227,7 @@
               "RelativeToolTip": "MedicineBackend\\appsettingsDevelopment.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-01-30T14:00:56.339Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T14:00:56.339Z"
             },
             {
               "$type": "Document",
@@ -242,8 +239,7 @@
               "RelativeToolTip": "MedicineBackend\\Services\\Interfaces\\ICacheService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-01T12:11:17.35Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-01T12:11:17.35Z"
             },
             {
               "$type": "Document",
@@ -255,8 +251,7 @@
               "RelativeToolTip": "MedicineBackend\\Models\\Review.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-30T19:42:00.751Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T19:42:00.751Z"
             },
             {
               "$type": "Document",
@@ -268,8 +263,7 @@
               "RelativeToolTip": "MedicineBackend\\DTOs\\AdminDTO.cs",
               "ViewState": "AgIAABkAAAAAAAAAAAAkwGcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T15:58:29.89Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-22T15:58:29.89Z"
             },
             {
               "$type": "Document",
@@ -281,8 +275,7 @@
               "RelativeToolTip": "MedicineBackend\\Models\\Admin.cs",
               "ViewState": "AgIAABMAAAAAAAAAAAAzwB4AAAAzAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-30T19:38:30.895Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T19:38:30.895Z"
             },
             {
               "$type": "Document",
@@ -294,8 +287,7 @@
               "RelativeToolTip": "MedicineBackend\\Data\\DatabaseSeeder.cs",
               "ViewState": "AgIAACEAAAAAAAAAAAAYwC8AAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-02T14:56:08.331Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-02T14:56:08.331Z"
             },
             {
               "$type": "Document",
@@ -307,8 +299,7 @@
               "RelativeToolTip": "MedicineBackend\\Data\\AppDbContext.cs",
               "ViewState": "AgIAAM4BAAAAAAAAAAAAANwBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-30T13:58:23.711Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T13:58:23.711Z"
             },
             {
               "$type": "Document",
@@ -320,8 +311,7 @@
               "RelativeToolTip": "MedicineBackend\\Configuration\\InitialAdminSettings.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-02T14:55:37.382Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-02T14:55:37.382Z"
             },
             {
               "$type": "Document",
@@ -333,8 +323,7 @@
               "RelativeToolTip": "MedicineBackend\\Properties\\launchSettings.json",
               "ViewState": "AgIAABIAAAAAAAAAAAAAABEAAAAzAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-02-01T12:23:47.539Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-01T12:23:47.539Z"
             },
             {
               "$type": "Document",
@@ -346,8 +335,7 @@
               "RelativeToolTip": "MedicineBackend\\Controllers\\AdminController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAK4AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T16:04:09.865Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-22T16:04:09.865Z"
             },
             {
               "$type": "Document",
@@ -359,8 +347,7 @@
               "RelativeToolTip": "MedicineBackend\\Services\\DoctorManagementService.cs",
               "ViewState": "AgIAAMoAAAAAAAAAAAAuwOIAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T16:03:06.942Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-22T16:03:06.942Z"
             },
             {
               "$type": "Document",
@@ -372,8 +359,7 @@
               "RelativeToolTip": "MedicineBackend\\Services\\AdminService.cs",
               "ViewState": "AgIAAJAAAAAAAAAAAAAuwKgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T16:02:43.43Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-22T16:02:43.43Z"
             },
             {
               "$type": "Document",
@@ -385,8 +371,7 @@
               "RelativeToolTip": "MedicineBackend\\Services\\Interfaces\\IDoctorManagementService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAEMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T16:02:06.312Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-22T16:02:06.312Z"
             },
             {
               "$type": "Document",
@@ -398,8 +383,7 @@
               "RelativeToolTip": "MedicineBackend\\Services\\Interfaces\\IDoctorService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-01T12:13:33.738Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-01T12:13:33.738Z"
             },
             {
               "$type": "Document",
@@ -411,8 +395,7 @@
               "RelativeToolTip": "MedicineBackend\\Services\\Interfaces\\IAdminService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAD4AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T16:00:16.867Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-22T16:00:16.867Z"
             },
             {
               "$type": "Document",
@@ -424,8 +407,7 @@
               "RelativeToolTip": "MedicineBackend\\Services\\DoctorService.cs",
               "ViewState": "AgIAAAYAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-01T12:13:55.71Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-01T12:13:55.71Z"
             },
             {
               "$type": "Document",

@@ -18,8 +18,22 @@ const LoginPage = () => {
         setLoading(true);
 
         try {
-            await login(email, password);
-            navigate('/dashboard');
+            const response = await login(email, password);
+            const userRole = response.user?.role;
+
+            if (userRole === 'Admin') {
+                // Admins (incluido SuperAdmin) → Dashboard de admin
+                navigate('/admin');
+            } else if (userRole === 'Doctor') {
+                // Doctores → Dashboard de doctor (cuando lo tengas)
+                navigate('/doctor/dashboard');
+            } else if (userRole === 'Patient') {
+                // Pacientes → Dashboard de paciente
+                navigate('/dashboard');
+            } else {
+                // Fallback por si hay otro rol
+                navigate('/');
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Email o contraseña incorrectos');
         } finally {
