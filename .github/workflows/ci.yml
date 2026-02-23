@@ -95,7 +95,7 @@ jobs:
     - name: Apply database migrations
       run: |
         export PATH="$PATH:$HOME/.dotnet/tools"
-        cd MedicineBackend
+        cd MedicineBackend/MedicineBackend
         dotnet ef database update --verbose
       env:
         ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=MedicalPlatformDB;Username=postgres;Password=postgres"
