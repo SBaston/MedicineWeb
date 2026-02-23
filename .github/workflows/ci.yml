@@ -134,7 +134,7 @@ jobs:
 
     - name: Build frontend
       run: |
-        cd MedicineFrontend
+        cd MedicineFrontend/MedicineFrontend
         npm run build
       env:
         CI: false  # Ignora warnings como errores
