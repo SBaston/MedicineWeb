@@ -38,16 +38,18 @@ const Navbar = () => {
 
                     {/* Links de navegación */}
                     <div className="hidden md:flex items-center space-x-8">
+                        {/* Solo mostrar "Profesionales" si NO es admin */}
+                        {user?.role !== 'Admin' && (
+                            <Link
+                                to="/professionals"
+                                className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+                            >
+                                Profesionales
+                            </Link>
+                        )}
 
-                        {/* Reemplaza "Doctores" + "Especialidades" con una sola pestaña */}
-                        <Link
-                            to="/professionals"
-                            className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
-                        >
-                            Profesionales
-                        </Link>
-
-                        {isAuthenticated && (
+                        {/* Solo mostrar estas opciones para pacientes autenticados */}
+                        {isAuthenticated && user?.role === 'Patient' && (
                             <>
                                 <Link
                                     to="/appointments"
@@ -78,12 +80,13 @@ const Navbar = () => {
                                     <UserAvatar user={user} size="md" />
                                     <div className="hidden md:block text-left">
                                         <p className="font-medium text-gray-900 text-sm">
-                                            {user?.firstName} {user?.lastName}
+                                            {user?.firstName || user?.fullName || 'Usuario'}
+                                            {user?.lastName && ` ${user.lastName}`}
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             {user?.role === 'Patient' ? 'Paciente'
                                                 : user?.role === 'Doctor' ? 'Profesional'
-                                                    : 'Admin'}
+                                                    : user?.isSuperAdmin ? 'SuperAdmin' : 'Admin'}
                                         </p>
                                     </div>
                                     <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
@@ -95,7 +98,7 @@ const Navbar = () => {
                                             to={
                                                 user?.role === 'Admin' ? '/admin' :
                                                     user?.role === 'Doctor' ? '/doctor/dashboard' :
-                                                        '/dashboard'  // Patient por defecto
+                                                        '/dashboard'
                                             }
                                             onClick={() => setShowDropdown(false)}
                                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
@@ -106,22 +109,27 @@ const Navbar = () => {
                                                 <p className="text-xs text-gray-500">Ver dashboard</p>
                                             </div>
                                         </Link>
-                                        <Link
-                                            to="/profile/edit"
-                                            onClick={() => setShowDropdown(false)}
-                                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                        >
-                                            Editar perfil
-                                        </Link>
+
+                                        {/* Solo mostrar "Editar perfil" y "Mis citas" para PACIENTES */}
                                         {user?.role === 'Patient' && (
-                                            <Link
-                                                to="/appointments"
-                                                onClick={() => setShowDropdown(false)}
-                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                            >
-                                                Mis citas
-                                            </Link>
+                                            <>
+                                                <Link
+                                                    to="/profile/edit"
+                                                    onClick={() => setShowDropdown(false)}
+                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    Editar perfil
+                                                </Link>
+                                                <Link
+                                                    to="/appointments"
+                                                    onClick={() => setShowDropdown(false)}
+                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    Mis citas
+                                                </Link>
+                                            </>
                                         )}
+
                                         <hr className="my-2" />
                                         <button
                                             onClick={() => { setShowDropdown(false); handleLogout(); }}

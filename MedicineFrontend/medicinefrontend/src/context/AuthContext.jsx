@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
                     ...basicUser,
                     fullName: admin.fullName,
                     department: admin.department,
-                    IsSuperAdmin: admin.IsSuperAdmin,
+                    isSuperAdmin: admin.isSuperAdmin,
                 };
             }
 
@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }) => {
         isDoctor: user?.role === 'Doctor',
         isPatient: user?.role === 'Patient',
         isAdmin: user?.role === 'Admin',
-        IsSuperAdmin: user?.role === 'Admin' && user?.IsSuperAdmin === true,
+        isSuperAdmin: user?.role === 'Admin' && user?.isSuperAdmin === true,
         loading,
     };
 

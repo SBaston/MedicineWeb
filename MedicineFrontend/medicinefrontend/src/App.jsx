@@ -10,6 +10,28 @@ import PatientDashboard from './pages/PatientDashboard';
 import EditProfilePage from './pages/EditProfilePage';
 import ProfessionalsPage from './pages/ProfessionalPage';
 import AdminDashboard from './pages/AdminDashboard';
+import CreateAdminPage from './pages/CreateAdminPage';
+
+const SuperAdminRoute = ({ children }) => {
+    const { isAuthenticated, user, loading } = useAuth();
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) return <Navigate to="/login" />;
+
+    // Verificar que sea Admin Y SuperAdmin
+    if (user?.role !== 'Admin' || !user?.isSuperAdmin) {
+        return <Navigate to="/admin" />;
+    }
+
+    return children;
+};
 
 // Crear cliente de React Query
 const queryClient = new QueryClient({
@@ -77,6 +99,18 @@ function App() {
                                         <AdminDashboard />
                                     </Layout>
                                 </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Crear Admin - SOLO SuperAdmin puede acceder */}
+                        <Route
+                            path="/admin/create"
+                            element={
+                                <SuperAdminRoute>
+                                    <Layout>
+                                        <CreateAdminPage />
+                                    </Layout>
+                                </SuperAdminRoute>
                             }
                         />
                         <Route path="/login" element={<LoginPage />} />

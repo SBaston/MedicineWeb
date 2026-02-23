@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import adminService from '../services/adminService';
 import {
     ShieldCheck, Clock, CheckCircle, XCircle, Trash2, Users,
@@ -24,7 +25,6 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
     </div>
 );
 
-// Modal reutilizable de confirmación (con o sin campo de motivo)
 const ConfirmModal = ({ title, description, requireReason, reasonLabel, danger, onConfirm, onCancel }) => {
     const [reason, setReason] = useState('');
     const valid = !requireReason || reason.trim().length >= 10;
@@ -64,7 +64,7 @@ const ConfirmModal = ({ title, description, requireReason, reasonLabel, danger, 
 };
 
 // ════════════════════════════════════════════════════════════════
-// SECCIÓN: PROFESIONALES PENDIENTES
+// PROFESIONALES PENDIENTES
 // ════════════════════════════════════════════════════════════════
 
 const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
@@ -127,9 +127,6 @@ const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
                             <p className="text-gray-700">{doctor.description}</p>
                         </div>
                     )}
-                    <div className="col-span-full text-xs text-gray-400">
-                        Registrado: {new Date(doctor.registeredAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
-                    </div>
                 </div>
             )}
         </div>
@@ -137,19 +134,18 @@ const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
 };
 
 // ════════════════════════════════════════════════════════════════
-// SECCIÓN: TODOS LOS PROFESIONALES (tabla)
+// TABLA DE PROFESIONALES
 // ════════════════════════════════════════════════════════════════
 
 const STATUS_BADGE = {
     Active: 'bg-green-100 text-green-700',
     PendingReview: 'bg-yellow-100 text-yellow-700',
     Rejected: 'bg-red-100 text-red-700',
-    Suspended: 'bg-orange-100 text-orange-700',
     Deleted: 'bg-gray-100 text-gray-400',
 };
 const STATUS_LABEL = {
     Active: 'Activo', PendingReview: 'Pendiente',
-    Rejected: 'Rechazado', Suspended: 'Suspendido', Deleted: 'Eliminado'
+    Rejected: 'Rechazado', Deleted: 'Eliminado'
 };
 
 const DoctorRow = ({ doctor, onDelete }) => {
@@ -177,7 +173,6 @@ const DoctorRow = ({ doctor, onDelete }) => {
                 <span className="flex items-center gap-1">
                     <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
                     {doctor.averageRating?.toFixed(1) ?? '—'}
-                    <span className="text-xs text-gray-400">({doctor.totalReviews})</span>
                 </span>
             </td>
             <td className="px-4 py-3">
@@ -193,15 +188,25 @@ const DoctorRow = ({ doctor, onDelete }) => {
 };
 
 // ════════════════════════════════════════════════════════════════
-// SECCIÓN: GESTIÓN DE ADMINS (solo SuperAdmin)
+// SECCIÓN DE ADMINS (solo para SuperAdmin)
 // ════════════════════════════════════════════════════════════════
 
-const AdminsSection = ({ isSuperAdmin }) => {
+const AdminsSection = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const qc = useQueryClient();
-    const [showForm, setShowForm] = useState(false);
-    const [confirmDeactivate, setConfirmDeactivate] = useState(null);
-    const [form, setForm] = useState({ fullName: '', email: '', password: '', department: '' });
-    const [formError, setFormError] = useState('');
+    const [confirmDelete, setConfirmDelete] = useState(null);
+
+    // DEBUG: Log para verificar el valor de isSuperAdmin
+    useEffect(() => {
+        console.log('🔍 AdminsSection - user:', user);
+        console.log('🔍 AdminsSection - user.isSuperAdmin:', user?.isSuperAdmin);
+        console.log('🔍 AdminsSection - typeof isSuperAdmin:', typeof user?.isSuperAdmin);
+    }, [user]);
+
+    const isSuperAdmin = user?.role === 'Admin' && user?.isSuperAdmin === true;
+
+    console.log('🔍 AdminsSection - isSuperAdmin calculado:', isSuperAdmin);
 
     const { data: admins = [], isLoading } = useQuery({
         queryKey: ['admins-list'],
@@ -209,112 +214,106 @@ const AdminsSection = ({ isSuperAdmin }) => {
         enabled: isSuperAdmin,
     });
 
-    const createMut = useMutation({
-        mutationFn: () => adminService.createAdmin(form),
-        onSuccess: () => { qc.invalidateQueries(['admins-list']); setShowForm(false); setForm({ fullName: '', email: '', password: '', department: '' }); },
-        onError: (err) => setFormError(err.response?.data?.message || 'Error al crear el admin'),
-    });
-
     const deactivateMut = useMutation({
         mutationFn: (id) => adminService.deactivateAdmin(id),
-        onSuccess: () => { qc.invalidateQueries(['admins-list']); setConfirmDeactivate(null); },
+        onSuccess: () => {
+            qc.invalidateQueries(['admins-list']);
+            qc.invalidateQueries(['admin-stats']);
+            setConfirmDelete(null);
+        },
     });
 
-    if (!isSuperAdmin) return null;
+    // Si no es SuperAdmin, no renderizar nada
+    if (!isSuperAdmin) {
+        console.log('❌ AdminsSection - NO se renderiza (no es SuperAdmin)');
+        return null;
+    }
+
+    console.log('✅ AdminsSection - SÍ se renderiza (es SuperAdmin)');
 
     return (
-        <div className="mt-10 pt-8 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2">
-                    <Crown className="w-5 h-5 text-yellow-500" />
-                    <h2 className="text-lg font-bold text-gray-900">Gestión de administradores</h2>
-                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">Solo SuperAdmin</span>
+        <div className="mt-10 pt-8 border-t-2 border-gray-200">
+            {/* Cabecera */}
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center">
+                        <Crown className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Gestión de Administradores</h2>
+                        <p className="text-sm text-gray-500">
+                            {admins.length} administrador{admins.length !== 1 ? 'es' : ''} en el sistema
+                        </p>
+                    </div>
                 </div>
-                <button onClick={() => setShowForm(!showForm)}
-                    className="flex items-center gap-2 btn-primary text-sm px-4 py-2">
-                    <UserPlus className="w-4 h-4" /> Nuevo admin
+                <button
+                    onClick={() => navigate('/admin/create')}
+                    className="flex items-center gap-2 btn-primary px-5 py-2.5"
+                >
+                    <UserPlus className="w-4 h-4" />
+                    Nuevo administrador
                 </button>
             </div>
 
-            {/* Formulario de creación */}
-            {showForm && (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-5">
-                    <h4 className="font-semibold text-gray-900 mb-4">Nuevo administrador</h4>
-                    {formError && <p className="text-sm text-red-600 mb-3 bg-red-50 px-3 py-2 rounded-lg">{formError}</p>}
-                    <div className="grid grid-cols-2 gap-3">
-                        {[
-                            { name: 'fullName', label: 'Nombre completo *', placeholder: 'María García López', type: 'text' },
-                            { name: 'email', label: 'Email *', placeholder: 'admin@medicare.com', type: 'email' },
-                            { name: 'password', label: 'Contraseña temporal *', placeholder: 'Mínimo 8 caracteres', type: 'password' },
-                            { name: 'department', label: 'Departamento', placeholder: 'Ej: Atención usuario', type: 'text' },
-                        ].map(f => (
-                            <div key={f.name}>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">{f.label}</label>
-                                <input type={f.type} placeholder={f.placeholder} value={form[f.name]}
-                                    onChange={e => setForm({ ...form, [f.name]: e.target.value })}
-                                    className="input-field text-sm w-full" />
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex gap-3 justify-end mt-4">
-                        <button onClick={() => setShowForm(false)} className="btn-secondary text-sm px-4 py-2">Cancelar</button>
-                        <button onClick={() => createMut.mutate()}
-                            disabled={createMut.isPending || !form.fullName || !form.email || form.password.length < 8}
-                            className="btn-primary text-sm px-4 py-2 disabled:opacity-50">
-                            {createMut.isPending ? 'Creando…' : 'Crear administrador'}
-                        </button>
-                    </div>
-                </div>
-            )}
-
             {/* Tabla de admins */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
                 <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-100">
                         <tr>
-                            {['Nombre', 'Email', 'Departamento', 'Tipo', 'Estado', 'Alta', 'Acciones'].map(h => (
-                                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                            {['Nombre', 'Email', 'Departamento', 'Tipo', 'Estado', 'Fecha de alta', 'Acciones'].map(h => (
+                                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                    {h}
+                                </th>
                             ))}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                        {isLoading
-                            ? <tr><td colSpan={7} className="text-center py-10 text-gray-400">Cargando…</td></tr>
-                            : admins.map(admin => (
-                                <tr key={admin.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-3 font-medium text-gray-900">{admin.fullName}</td>
-                                    <td className="px-4 py-3 text-gray-500">{admin.email}</td>
-                                    <td className="px-4 py-3 text-gray-400 text-xs">{admin.department || '—'}</td>
-                                    <td className="px-4 py-3">
-                                        {admin.isSuperAdmin
-                                            ? <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold"><Crown className="w-3 h-3" /> SuperAdmin</span>
-                                            : <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold"><ShieldCheck className="w-3 h-3" /> Admin</span>
-                                        }
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${admin.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                                            {admin.isActive ? 'Activo' : 'Inactivo'}
+                        {isLoading ? (
+                            <tr><td colSpan={7} className="text-center py-10 text-gray-400">Cargando…</td></tr>
+                        ) : admins.length === 0 ? (
+                            <tr><td colSpan={7} className="text-center py-10 text-gray-400">No hay administradores registrados</td></tr>
+                        ) : admins.map(admin => (
+                            <tr key={admin.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-4 py-3 font-medium text-gray-900">{admin.fullName}</td>
+                                <td className="px-4 py-3 text-gray-600">{admin.email}</td>
+                                <td className="px-4 py-3 text-gray-500 text-xs">{admin.department || '—'}</td>
+                                <td className="px-4 py-3">
+                                    {admin.isSuperAdmin ? (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">
+                                            <Crown className="w-3 h-3" /> SuperAdmin
                                         </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-gray-400 text-xs">
-                                        {new Date(admin.createdAt).toLocaleDateString('es-ES')}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {!admin.isSuperAdmin && admin.isActive && (
-                                            <button onClick={() => setConfirmDeactivate(admin)}
-                                                className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition-colors">
-                                                <Trash2 className="w-3.5 h-3.5" /> Desactivar
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))
-                        }
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                                            <ShieldCheck className="w-3 h-3" /> Admin
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-4 py-3">
+                                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${admin.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                                        {admin.isActive ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3 text-gray-400 text-xs">
+                                    {new Date(admin.createdAt).toLocaleDateString('es-ES')}
+                                </td>
+                                <td className="px-4 py-3">
+                                    {!admin.isSuperAdmin && admin.isActive && (
+                                        <button
+                                            onClick={() => setConfirmDelete(admin)}
+                                            className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition-colors"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" /> Desactivar
+                                        </button>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
 
-            {confirmDeactivate && (
+            {/* Modal de confirmación */}
+            {confirmDelete && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
                         <div className="flex items-center gap-3 mb-3">
@@ -324,13 +323,18 @@ const AdminsSection = ({ isSuperAdmin }) => {
                             <h3 className="font-bold text-gray-900">Desactivar administrador</h3>
                         </div>
                         <p className="text-sm text-gray-500 mb-6">
-                            ¿Desactivar a <strong>{confirmDeactivate.fullName}</strong>? Perderá el acceso al panel. Sus acciones anteriores quedan registradas.
+                            ¿Desactivar a <strong>{confirmDelete.fullName}</strong>?<br />
+                            Perderá el acceso al panel de administración.
                         </p>
                         <div className="flex gap-3 justify-end">
-                            <button onClick={() => setConfirmDeactivate(null)} className="btn-secondary text-sm px-4 py-2">Cancelar</button>
-                            <button onClick={() => deactivateMut.mutate(confirmDeactivate.id)}
+                            <button onClick={() => setConfirmDelete(null)} className="btn-secondary text-sm px-4 py-2">
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => deactivateMut.mutate(confirmDelete.id)}
                                 disabled={deactivateMut.isPending}
-                                className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50">
+                                className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                            >
                                 {deactivateMut.isPending ? 'Desactivando…' : 'Confirmar'}
                             </button>
                         </div>
@@ -350,9 +354,14 @@ const AdminDashboard = () => {
     const qc = useQueryClient();
     const [tab, setTab] = useState('pending');
     const [filter, setFilter] = useState('active');
-    const [modal, setModal] = useState(null); // { type: 'approve'|'reject'|'delete', doctor }
+    const [modal, setModal] = useState(null);
 
-    const isSuperAdmin = user?.isSuperAdmin ?? false;
+    // DEBUG: Log del usuario al cargar el dashboard
+    useEffect(() => {
+        console.log('🔍 AdminDashboard - user completo:', user);
+        console.log('🔍 AdminDashboard - user.role:', user?.role);
+        console.log('🔍 AdminDashboard - user.isSuperAdmin:', user?.isSuperAdmin);
+    }, [user]);
 
     const invalidate = () => {
         qc.invalidateQueries(['admin-pending']);
@@ -360,12 +369,18 @@ const AdminDashboard = () => {
         qc.invalidateQueries(['admin-stats']);
     };
 
-    // ── Queries ──────────────────────────────────────────────────────────────
     const { data: stats } = useQuery({ queryKey: ['admin-stats'], queryFn: adminService.getStats });
-    const { data: pending = [], isLoading: lPend } = useQuery({ queryKey: ['admin-pending'], queryFn: adminService.getPending, enabled: tab === 'pending' });
-    const { data: doctors = [], isLoading: lAll } = useQuery({ queryKey: ['admin-doctors', filter], queryFn: () => adminService.getAllDoctors(filter), enabled: tab === 'all' });
+    const { data: pending = [], isLoading: lPend } = useQuery({
+        queryKey: ['admin-pending'],
+        queryFn: adminService.getPending,
+        enabled: tab === 'pending'
+    });
+    const { data: doctors = [], isLoading: lAll } = useQuery({
+        queryKey: ['admin-doctors', filter],
+        queryFn: () => adminService.getAllDoctors(filter),
+        enabled: tab === 'all'
+    });
 
-    // ── Mutaciones ────────────────────────────────────────────────────────────
     const approveMut = useMutation({
         mutationFn: ({ id }) => adminService.approve(id),
         onSuccess: () => { invalidate(); setModal(null); },
@@ -382,7 +397,7 @@ const AdminDashboard = () => {
     return (
         <div className="container-custom py-8">
 
-            {/* ── Cabecera ── */}
+            {/* Cabecera */}
             <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
                     <ShieldCheck className="w-6 h-6 text-white" />
@@ -390,12 +405,12 @@ const AdminDashboard = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
                     <p className="text-sm text-gray-500">
-                        {isSuperAdmin ? 'SuperAdmin · Acceso completo' : 'Gestiona profesionales y la plataforma'}
+                        {user?.isSuperAdmin ? 'SuperAdmin · Acceso completo' : 'Administrador'}
                     </p>
                 </div>
             </div>
 
-            {/* ── Estadísticas ── */}
+            {/* Estadísticas */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <StatCard icon={Clock} label="Pendientes de revisión" value={stats?.pendingReview} color="bg-yellow-500" />
                 <StatCard icon={CheckCircle} label="Profesionales activos" value={stats?.activeProfessionals} color="bg-green-500" />
@@ -403,15 +418,14 @@ const AdminDashboard = () => {
                 <StatCard icon={Stethoscope} label="Citas totales" value={stats?.totalAppointments} color="bg-purple-500" />
             </div>
 
-            {/* ── Tabs ── */}
+            {/* Tabs */}
             <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
                 {[
                     { key: 'pending', label: 'Pendientes', icon: Clock },
                     { key: 'all', label: 'Todos los profesionales', icon: Users },
                 ].map(({ key, label, icon: Icon }) => (
                     <button key={key} onClick={() => setTab(key)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                            }`}>
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
                         <Icon className="w-4 h-4" />
                         {label}
                         {key === 'pending' && stats?.pendingReview > 0 && (
@@ -423,7 +437,7 @@ const AdminDashboard = () => {
                 ))}
             </div>
 
-            {/* ── Tab: Pendientes ── */}
+            {/* Tab: Pendientes */}
             {tab === 'pending' && (
                 <div className="space-y-3">
                     {lPend ? (
@@ -443,14 +457,13 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* ── Tab: Todos ── */}
+            {/* Tab: Todos */}
             {tab === 'all' && (
                 <div>
                     <div className="flex gap-2 mb-4 flex-wrap">
                         {['active', 'pending', 'rejected', 'deleted'].map(s => (
                             <button key={s} onClick={() => setFilter(s)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === s ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                                    }`}>
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === s ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                                 {{ active: 'Activos', pending: 'Pendientes', rejected: 'Rechazados', deleted: 'Eliminados' }[s]}
                             </button>
                         ))}
@@ -465,26 +478,25 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {lAll
-                                    ? <tr><td colSpan={6} className="text-center py-10 text-gray-400 text-sm">Cargando…</td></tr>
-                                    : doctors.length === 0
-                                        ? <tr><td colSpan={6} className="text-center py-10 text-gray-400 text-sm">No hay profesionales en este estado.</td></tr>
-                                        : doctors.map(d => (
-                                            <DoctorRow key={d.id} doctor={d}
-                                                onDelete={doc => setModal({ type: 'delete', doctor: doc })}
-                                            />
-                                        ))
-                                }
+                                {lAll ? (
+                                    <tr><td colSpan={6} className="text-center py-10 text-gray-400 text-sm">Cargando…</td></tr>
+                                ) : doctors.length === 0 ? (
+                                    <tr><td colSpan={6} className="text-center py-10 text-gray-400 text-sm">No hay profesionales en este estado.</td></tr>
+                                ) : doctors.map(d => (
+                                    <DoctorRow key={d.id} doctor={d}
+                                        onDelete={doc => setModal({ type: 'delete', doctor: doc })}
+                                    />
+                                ))}
                             </tbody>
                         </table>
                     </div>
                 </div>
             )}
 
-            {/* ── Sección de admins (solo SuperAdmin) ── */}
-            <AdminsSection isSuperAdmin={isSuperAdmin} />
+            {/* Sección de Admins - Solo SuperAdmin */}
+            <AdminsSection />
 
-            {/* ── Modales ── */}
+            {/* Modales */}
             {modal?.type === 'approve' && (
                 <ConfirmModal
                     title={`Aprobar a ${modal.doctor.fullName}`}
@@ -506,7 +518,7 @@ const AdminDashboard = () => {
             {modal?.type === 'delete' && (
                 <ConfirmModal
                     title={`Eliminar a ${modal.doctor.fullName}`}
-                    description="El profesional perderá el acceso. Sus datos históricos (citas, pagos) se conservarán conforme al RGPD."
+                    description="El profesional perderá el acceso. Sus datos históricos se conservarán conforme al RGPD."
                     requireReason reasonLabel="Motivo de la eliminación" danger
                     onConfirm={reason => deleteMut.mutate({ id: modal.doctor.id, reason })}
                     onCancel={() => setModal(null)}
