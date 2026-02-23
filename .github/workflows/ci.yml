@@ -1,0 +1,97 @@
+name: Full Stack CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: MedicalPlatformDB
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # --------------------
+    # BACKEND
+    # --------------------
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore backend
+      run: dotnet restore MedicineBackend
+
+    - name: Build backend
+      run: dotnet build MedicineBackend --configuration Release --no-restore
+
+    - name: Install EF Tools
+      run: dotnet tool install --global dotnet-ef
+
+    - name: Add EF to PATH
+      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    - name: Apply migrations
+      run: |
+        cd MedicineBackend
+        dotnet ef database update
+      env:
+        ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=MedicalPlatformDB;Username=postgres;Password=postgres
+        ConnectionStrings__Redis: localhost:6379
+
+    - name: Publish backend
+      run: dotnet publish MedicineBackend -c Release -o backend_publish
+
+    - name: Upload backend artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend
+        path: backend_publish
+
+    # --------------------
+    # FRONTEND
+    # --------------------
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Install frontend
+      run: |
+        cd MedicineFrontend
+        npm install
+
+    - name: Build frontend
+      run: |
+        cd MedicineFrontend
+        npm run build
+
+    - name: Upload frontend artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend
+        path: MedicineFrontend/build
