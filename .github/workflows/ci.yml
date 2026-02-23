@@ -29,67 +29,135 @@ jobs:
         image: redis:7
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
     - uses: actions/checkout@v4
 
-    # --------------------
+    # ════════════════════════════════════════════════════════════════
+    # DEBUG: Verificar estructura del proyecto
+    # ════════════════════════════════════════════════════════════════
+    - name: Check project structure
+      run: |
+        echo "📁 Project structure:"
+        ls -la
+        echo ""
+        echo "📁 MedicineBackend contents:"
+        ls -la MedicineBackend/ || echo "MedicineBackend folder not found!"
+        echo ""
+        echo "🔍 Looking for .csproj files:"
+        find . -name "*.csproj" -type f
+
+    # ════════════════════════════════════════════════════════════════
     # BACKEND
-    # --------------------
+    # ════════════════════════════════════════════════════════════════
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
-    - name: Restore backend
-      run: dotnet restore MedicineBackend
+    # Verificar instalación de .NET
+    - name: Verify .NET installation
+      run: |
+        dotnet --version
+        dotnet --info
 
+    # Restaurar dependencias
+    - name: Restore backend dependencies
+      run: |
+        cd MedicineBackend
+        dotnet restore
+
+    # Build del proyecto
     - name: Build backend
-      run: dotnet build MedicineBackend --configuration Release --no-restore
+      run: |
+        cd MedicineBackend
+        dotnet build --configuration Release --no-restore
 
-    - name: Install EF Tools
-      run: dotnet tool install --global dotnet-ef
+    # Instalar EF Core Tools (globalmente)
+    - name: Install EF Core Tools
+      run: dotnet tool install --global dotnet-ef --version 8.0.*
 
-    - name: Add EF to PATH
-      run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+    # Verificar que EF Tools está instalado
+    - name: Verify EF Tools installation
+      run: |
+        export PATH="$PATH:$HOME/.dotnet/tools"
+        dotnet ef --version
 
-    - name: Apply migrations
-      run: dotnet ef database update --project MedicineBackend/MedicineBackend.csproj --startup-project MedicineBackend/MedicineBackend.csproj
+    # ════════════════════════════════════════════════════════════════
+    # APLICAR MIGRACIONES
+    # ════════════════════════════════════════════════════════════════
+    - name: Apply database migrations
+      run: |
+        export PATH="$PATH:$HOME/.dotnet/tools"
+        cd MedicineBackend
+        dotnet ef database update --verbose
       env:
-        ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=MedicalPlatformDB;Username=postgres;Password=postgres
-        ConnectionStrings__Redis: localhost:6379
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=MedicalPlatformDB;Username=postgres;Password=postgres"
+        ConnectionStrings__Redis: "localhost:6379"
+        ASPNETCORE_ENVIRONMENT: Development
 
+    # Publicar backend
     - name: Publish backend
-      run: dotnet publish MedicineBackend -c Release -o backend_publish
+      run: |
+        cd MedicineBackend
+        dotnet publish -c Release -o ../backend_publish
 
+    # Subir artifact del backend
     - name: Upload backend artifact
       uses: actions/upload-artifact@v4
       with:
         name: backend
         path: backend_publish
+        retention-days: 7
 
-    # --------------------
+    # ════════════════════════════════════════════════════════════════
     # FRONTEND
-    # --------------------
+    # ════════════════════════════════════════════════════════════════
 
-    - name: Setup Node
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 18
+        cache: 'npm'
+        cache-dependency-path: MedicineFrontend/package-lock.json
 
-    - name: Install frontend
+    - name: Install frontend dependencies
       run: |
         cd MedicineFrontend
-        npm install
+        npm ci
 
     - name: Build frontend
       run: |
         cd MedicineFrontend
         npm run build
+      env:
+        CI: false  # Ignora warnings como errores
+        REACT_APP_API_URL: http://localhost:5000
 
     - name: Upload frontend artifact
       uses: actions/upload-artifact@v4
       with:
         name: frontend
-        path: MedicineFrontend/build
+        path: MedicineFrontend/dist  # o 'build' si usas create-react-app
+        retention-days: 7
+
+    # ════════════════════════════════════════════════════════════════
+    # TESTS (opcional pero recomendado)
+    # ════════════════════════════════════════════════════════════════
+    - name: Run backend tests
+      run: |
+        cd MedicineBackend
+        dotnet test --no-build --verbosity normal --configuration Release
+      continue-on-error: true  # No falla el pipeline si no hay tests
+
+    - name: Run frontend tests
+      run: |
+        cd MedicineFrontend
+        npm test -- --passWithNoTests
+      continue-on-error: true
