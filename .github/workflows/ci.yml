@@ -55,10 +55,7 @@ jobs:
       run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
     - name: Apply migrations
-      run: |
-      dotnet ef database update \
-        --project MedicineBackend/MedicineBackend.csproj \
-        --startup-project MedicineBackend/MedicineBackend.csproj
+      run: dotnet ef database update --project MedicineBackend/MedicineBackend.csproj --startup-project MedicineBackend/MedicineBackend.csproj
       env:
         ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=MedicalPlatformDB;Username=postgres;Password=postgres
         ConnectionStrings__Redis: localhost:6379
