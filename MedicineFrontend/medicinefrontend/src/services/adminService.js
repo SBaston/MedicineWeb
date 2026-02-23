@@ -26,6 +26,7 @@ const adminService = {
     getAdmins: () => api.get('/admin/admins').then(r => r.data),
     createAdmin: (data) => api.post('/admin/admins', data).then(r => r.data),
     deactivateAdmin: (id) => api.delete(`/admin/admins/${id}`).then(r => r.data),
+    reactivateAdmin: (id) => api.put(`/admin/admins/${id}/reactivate`).then(r => r.data),
 };
 
 export default adminService;

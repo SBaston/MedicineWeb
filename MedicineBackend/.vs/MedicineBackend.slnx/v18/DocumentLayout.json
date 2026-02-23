@@ -3,20 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\dtos\\admindto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|solutionrelative:medicinebackend\\dtos\\admindto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|solutionrelative:medicinebackend\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\configuration\\initialadminsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|solutionrelative:medicinebackend\\configuration\\initialadminsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\services\\adminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|solutionrelative:medicinebackend\\services\\adminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\services\\interfaces\\iadminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|solutionrelative:medicinebackend\\services\\interfaces\\iadminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\dtos\\admindto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|solutionrelative:medicinebackend\\dtos\\admindto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\configuration\\initialadminsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|solutionrelative:medicinebackend\\configuration\\initialadminsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
@@ -29,10 +33,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\models\\admin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|solutionrelative:medicinebackend\\models\\admin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\services\\adminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|solutionrelative:medicinebackend\\services\\adminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{412E79FF-9F6A-0D79-3239-1FC35D4573AC}|MedicineBackend\\MedicineBackend.csproj|c:\\users\\swser\\source\\repos\\medicinebackend\\medicinebackend\\data\\databaseseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -178,24 +178,63 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\appsettings.json",
-              "RelativeDocumentMoniker": "MedicineBackend\\appsettings.json",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\appsettings.json",
-              "RelativeToolTip": "MedicineBackend\\appsettings.json",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAAAAUAAAA0AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-02-01T12:48:26.873Z",
+              "DocumentIndex": 1,
+              "Title": "AdminService.cs",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Services\\AdminService.cs",
+              "RelativeDocumentMoniker": "MedicineBackend\\Services\\AdminService.cs",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Services\\AdminService.cs",
+              "RelativeToolTip": "MedicineBackend\\Services\\AdminService.cs",
+              "ViewState": "AgIAAF8AAAAAAAAAAAAAwHEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-22T16:02:43.43Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 2,
+              "Title": "IAdminService.cs",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Services\\Interfaces\\IAdminService.cs",
+              "RelativeDocumentMoniker": "MedicineBackend\\Services\\Interfaces\\IAdminService.cs",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Services\\Interfaces\\IAdminService.cs",
+              "RelativeToolTip": "MedicineBackend\\Services\\Interfaces\\IAdminService.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAADgvyEAAABHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-22T16:00:16.867Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AdminController.cs",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Controllers\\AdminController.cs",
+              "RelativeDocumentMoniker": "MedicineBackend\\Controllers\\AdminController.cs",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Controllers\\AdminController.cs",
+              "RelativeToolTip": "MedicineBackend\\Controllers\\AdminController.cs",
+              "ViewState": "AgIAAJUAAAAAAAAAAAAiwKcAAABBAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-22T16:04:09.865Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AdminDTO.cs",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\DTOs\\AdminDTO.cs",
+              "RelativeDocumentMoniker": "MedicineBackend\\DTOs\\AdminDTO.cs",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\DTOs\\AdminDTO.cs",
+              "RelativeToolTip": "MedicineBackend\\DTOs\\AdminDTO.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC4AAABDAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-22T15:58:29.89Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
               "Title": "Admin.cs",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Models\\Admin.cs",
               "RelativeDocumentMoniker": "MedicineBackend\\Models\\Admin.cs",
@@ -203,38 +242,23 @@
               "RelativeToolTip": "MedicineBackend\\Models\\Admin.cs",
               "ViewState": "AgIAABQAAAAAAAAAAAAAwB4AAAAzAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-30T19:38:30.895Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "AdminService.cs",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Services\\AdminService.cs",
-              "RelativeDocumentMoniker": "MedicineBackend\\Services\\AdminService.cs",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Services\\AdminService.cs",
-              "RelativeToolTip": "MedicineBackend\\Services\\AdminService.cs",
-              "ViewState": "AgIAAJkAAAAAAAAAAAASwKQAAAAiAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T16:02:43.43Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "IAdminService.cs",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Services\\Interfaces\\IAdminService.cs",
-              "RelativeDocumentMoniker": "MedicineBackend\\Services\\Interfaces\\IAdminService.cs",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Services\\Interfaces\\IAdminService.cs",
-              "RelativeToolTip": "MedicineBackend\\Services\\Interfaces\\IAdminService.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAEwC4AAAAPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T16:00:16.867Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T19:38:30.895Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\appsettings.json",
+              "RelativeDocumentMoniker": "MedicineBackend\\appsettings.json",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\appsettings.json",
+              "RelativeToolTip": "MedicineBackend\\appsettings.json",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAAAUAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-02-01T12:48:26.873Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Program.cs",
               "RelativeDocumentMoniker": "MedicineBackend\\Program.cs",
@@ -242,25 +266,11 @@
               "RelativeToolTip": "MedicineBackend\\Program.cs",
               "ViewState": "AgIAAEAAAAAAAAAAAAAawEwAAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-30T19:23:30.681Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T19:23:30.681Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AdminController.cs",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Controllers\\AdminController.cs",
-              "RelativeDocumentMoniker": "MedicineBackend\\Controllers\\AdminController.cs",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Controllers\\AdminController.cs",
-              "RelativeToolTip": "MedicineBackend\\Controllers\\AdminController.cs",
-              "ViewState": "AgIAAHcAAAAAAAAAAAASwIIAAAAyAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T16:04:09.865Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "InitialAdminSettings.cs",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Configuration\\InitialAdminSettings.cs",
               "RelativeDocumentMoniker": "MedicineBackend\\Configuration\\InitialAdminSettings.cs",
@@ -268,21 +278,7 @@
               "RelativeToolTip": "MedicineBackend\\Configuration\\InitialAdminSettings.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-02T14:55:37.382Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "AdminDTO.cs",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\DTOs\\AdminDTO.cs",
-              "RelativeDocumentMoniker": "MedicineBackend\\DTOs\\AdminDTO.cs",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\DTOs\\AdminDTO.cs",
-              "RelativeToolTip": "MedicineBackend\\DTOs\\AdminDTO.cs",
-              "ViewState": "AgIAACIAAAAAAAAAAAArwC4AAABDAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T15:58:29.89Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-02T14:55:37.382Z"
             },
             {
               "$type": "Document",
@@ -294,8 +290,7 @@
               "RelativeToolTip": "MedicineBackend\\Data\\DatabaseSeeder.cs",
               "ViewState": "AgIAACEAAAAAAAAAAAAYwC8AAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-02T14:56:08.331Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-02T14:56:08.331Z"
             },
             {
               "$type": "Document",

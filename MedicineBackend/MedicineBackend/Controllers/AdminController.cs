@@ -163,6 +163,20 @@ public class AdminController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
     }
 
+    /// <summary>Reactiva un admin desactivado. Solo SuperAdmin.</summary>
+    [HttpPut("admins/{adminId:int}/reactivate")]
+    public async Task<IActionResult> ReactivateAdmin(int adminId)
+    {
+        try
+        {
+            await _adminService.ReactivateAdminAsync(GetUserId(), adminId);
+            return Ok(new { message = "Admin reactivado correctamente." });
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+    }
+
     // ════════════════════════════════════════════════════════════════
     // HELPER
     // ════════════════════════════════════════════════════════════════

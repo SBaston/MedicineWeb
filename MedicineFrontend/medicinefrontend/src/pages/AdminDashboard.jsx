@@ -196,7 +196,7 @@ const AdminsSection = () => {
     const navigate = useNavigate();
     const qc = useQueryClient();
     const [confirmDelete, setConfirmDelete] = useState(null);
-
+    const [confirmReactivate, setConfirmReactivate] = useState(null);
     // DEBUG: Log para verificar el valor de isSuperAdmin
     useEffect(() => {
         console.log('🔍 AdminsSection - user:', user);
@@ -220,6 +220,15 @@ const AdminsSection = () => {
             qc.invalidateQueries(['admins-list']);
             qc.invalidateQueries(['admin-stats']);
             setConfirmDelete(null);
+        },
+    });
+
+    const reactivateMut = useMutation({
+        mutationFn: (id) => adminService.reactivateAdmin(id),  // ← Necesitas crear este endpoint
+        onSuccess: () => {
+            qc.invalidateQueries(['admins-list']);
+            qc.invalidateQueries(['admin-stats']);
+            setConfirmReactivate(null);
         },
     });
 
@@ -297,13 +306,26 @@ const AdminsSection = () => {
                                     {new Date(admin.createdAt).toLocaleDateString('es-ES')}
                                 </td>
                                 <td className="px-4 py-3">
-                                    {!admin.isSuperAdmin && admin.isActive && (
-                                        <button
-                                            onClick={() => setConfirmDelete(admin)}
-                                            className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition-colors"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" /> Desactivar
-                                        </button>
+                                    {!admin.isSuperAdmin && (
+                                        <>
+                                            {admin.isActive ? (
+                                                // Botón DESACTIVAR (admin activo)
+                                                <button
+                                                    onClick={() => setConfirmDelete(admin)}
+                                                    className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" /> Desactivar
+                                                </button>
+                                            ) : (
+                                                // Botón REACTIVAR (admin inactivo)
+                                                <button
+                                                    onClick={() => setConfirmReactivate(admin)}
+                                                    className="flex items-center gap-1 px-3 py-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded-lg text-xs font-medium transition-colors"
+                                                >
+                                                    <CheckCircle className="w-3.5 h-3.5" /> Reactivar
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                 </td>
                             </tr>
@@ -336,6 +358,37 @@ const AdminsSection = () => {
                                 className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
                             >
                                 {deactivateMut.isPending ? 'Desactivando…' : 'Confirmar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* ═══════════════════════════════════════════════════════ */}
+            {/* Modal de REACTIVAR (NUEVO) */}
+            {/* ═══════════════════════════════════════════════════════ */}
+            {confirmReactivate && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                            </div>
+                            <h3 className="font-bold text-gray-900">Reactivar administrador</h3>
+                        </div>
+                        <p className="text-sm text-gray-500 mb-6">
+                            ¿Reactivar a <strong>{confirmReactivate.fullName}</strong>?<br />
+                            Recuperará el acceso al panel de administración.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button onClick={() => setConfirmReactivate(null)} className="btn-secondary text-sm px-4 py-2">
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => reactivateMut.mutate(confirmReactivate.id)}
+                                disabled={reactivateMut.isPending}
+                                className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                            >
+                                {reactivateMut.isPending ? 'Reactivando…' : 'Confirmar'}
                             </button>
                         </div>
                     </div>

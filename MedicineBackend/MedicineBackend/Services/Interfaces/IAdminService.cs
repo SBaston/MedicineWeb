@@ -31,6 +31,7 @@ public interface IAdminService
     /// <exception cref="KeyNotFoundException">Si el admin no existe</exception>
     Task DeactivateAdminAsync(int requestingUserId, int targetAdminId);
 
+    Task ReactivateAdminAsync(int requestingUserId, int targetAdminId);
     /// <summary>
     /// Obtiene la lista de todos los admins del sistema.
     /// Ordenados con el SuperAdmin primero, luego por fecha de creación.

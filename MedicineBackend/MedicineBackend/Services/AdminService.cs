@@ -91,6 +91,28 @@ public class AdminService : IAdminService
             requestingUserId, targetAdminId, admin.FullName);
     }
 
+    public async Task ReactivateAdminAsync(int requestingUserId, int targetAdminId)
+    {
+        await AssertIsSuperAdminAsync(requestingUserId);
+
+        var admin = await _db.Admins
+            .Include(a => a.User)
+            .FirstOrDefaultAsync(a => a.Id == targetAdminId)
+            ?? throw new KeyNotFoundException("Admin no encontrado.");
+
+        if (admin.IsSuperAdmin)
+            throw new InvalidOperationException("No se puede modificar al SuperAdmin.");
+
+        admin.User.IsActive = true;
+        admin.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "SuperAdmin (userId={SuperId}) reactivó al admin {AdminId} ({Name})",
+            requestingUserId, targetAdminId, admin.FullName);
+    }
+
+
     // ══════════════════════════════════════════════════════════════
     // LISTAR TODOS LOS ADMINS
     // ══════════════════════════════════════════════════════════════
