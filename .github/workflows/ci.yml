@@ -125,11 +125,11 @@ jobs:
       with:
         node-version: 18
         cache: 'npm'
-        cache-dependency-path: MedicineFrontend/package-lock.json
+        cache-dependency-path: MedicineFrontend/medicinefrontend/package-lock.json
 
     - name: Install frontend dependencies
       run: |
-        cd MedicineFrontend
+        cd MedicineFrontend/medicinefrontend
         npm ci
 
     - name: Build frontend
@@ -144,7 +144,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: frontend
-        path: MedicineFrontend/dist  # o 'build' si usas create-react-app
+        path: MedicineFrontend/medicinefrontend/dist  # o 'build' si usas create-react-app
         retention-days: 7
 
     # ════════════════════════════════════════════════════════════════
