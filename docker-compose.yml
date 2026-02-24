@@ -1,50 +1,113 @@
 version: '3.9'
 
 services:
+  # ═══════════════════════════════════════════════════════════════
+  # BASE DE DATOS POSTGRESQL
+  # ═══════════════════════════════════════════════════════════════
   postgres:
     image: postgres:15
+    container_name: medicare-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: MedicalPlatformDB
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - medicare-network
 
+  # ═══════════════════════════════════════════════════════════════
+  # REDIS CACHE
+  # ═══════════════════════════════════════════════════════════════
   redis:
     image: redis:7
+    container_name: medicare-redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - medicare-network
 
+  # ═══════════════════════════════════════════════════════════════
+  # BACKEND API (.NET)
+  # ═══════════════════════════════════════════════════════════════
   backend:
     build:
-      context: ./MedicineBackend
+      context: ./MedicineBackend/MedicineBackend
       dockerfile: Dockerfile
+    container_name: medicare-backend
     environment:
+      # Conexión a PostgreSQL (usa el nombre del servicio 'postgres')
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=MedicalPlatformDB;Username=postgres;Password=postgres"
       ConnectionStrings__Redis: "redis:6379"
-      ASPNETCORE_ENVIRONMENT: Development
+      
+      # IMPORTANTE: Configuración de CORS
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: "http://+:5000"
+      
+      # CORS: Permitir el frontend (AJUSTA LA IP DE TU SERVIDOR)
+      # Si accedes desde tu máquina local: http://localhost:5173
+      # Si accedes desde otra máquina: http://TU_IP:5173
+      AllowedOrigins: "http://localhost:5173,http://127.0.0.1:5173,http://192.168.1.100:5173"
+      
     ports:
       - "5000:5000"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - medicare-network
+    restart: unless-stopped
 
+  # ═══════════════════════════════════════════════════════════════
+  # FRONTEND (React + Vite)
+  # ═══════════════════════════════════════════════════════════════
   frontend:
     build:
       context: ./MedicineFrontend/medicinefrontend
       dockerfile: Dockerfile
-    command: npx vite preview --port 5173
+      args:
+        # IMPORTANTE: Esta es la URL que el NAVEGADOR usará para conectarse
+        # Debe ser accesible desde el navegador del cliente
+        # Si estás en la misma máquina: http://localhost:5000
+        # Si accedes desde otra máquina: http://TU_IP:5000
+        VITE_API_URL: "http://localhost:5000/api"
+    container_name: medicare-frontend
     ports:
       - "5173:5173"
     depends_on:
       - backend
+    networks:
+      - medicare-network
+    restart: unless-stopped
+
+# ═══════════════════════════════════════════════════════════════
+# VOLÚMENES PERSISTENTES
+# ═══════════════════════════════════════════════════════════════
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ═══════════════════════════════════════════════════════════════
+# RED INTERNA
+# ═══════════════════════════════════════════════════════════════
+networks:
+  medicare-network:
+    driver: bridge

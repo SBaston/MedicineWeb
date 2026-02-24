@@ -171,9 +171,42 @@ app.MapControllers();
 // INICIALIZACIÓN DE BASE DE DATOS
 // ============================================
 
-if (app.Environment.IsDevelopment())
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
+//    try
+//    {
+//        // ═══════════════════════════════════════════════════════════
+//        // PASO 1: APLICAR MIGRACIONES AUTOMÁTICAMENTE
+//        // ═══════════════════════════════════════════════════════════
+//        var context = services.GetRequiredService<AppDbContext>();
+
+//        Console.WriteLine("🔍 Verificando conexión a la base de datos...");
+//        await context.Database.CanConnectAsync();
+//        Console.WriteLine("✅ Conexión exitosa a PostgreSQL");
+
+//        Console.WriteLine("🔄 Aplicando migraciones pendientes...");
+//        await context.Database.MigrateAsync();
+//        Console.WriteLine("✅ Migraciones aplicadas correctamente");
+
+//        // ═══════════════════════════════════════════════════════════
+//        // PASO 2: SEED DE DATOS
+//        // ═══════════════════════════════════════════════════════════
+//        var seeder = services.GetRequiredService<DatabaseSeeder>();
+//        Console.WriteLine("🌱 Iniciando seed de datos...");
+//        await seeder.SeedAsync();
+//        Console.WriteLine("✅ Seed completado");
+//    }
+//    catch (Exception ex)
+//    {
+//        var logger = services.GetRequiredService<ILogger<Program>>();
+//        logger.LogError(ex, "❌ Error durante la inicialización de la base de datos");
+//        throw; // Re-lanzar para que Docker muestre el error
+//    }
+//}
+
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
