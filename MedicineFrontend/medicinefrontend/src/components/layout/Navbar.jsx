@@ -33,7 +33,7 @@ const Navbar = () => {
                     {/* Logo */}
                     <Link to="/" className="flex items-center space-x-2">
                         <Heart className="w-8 h-8 text-primary-600" />
-                        <span className="text-2xl font-bold text-primary-600">MediCare</span>
+                        <span className="text-2xl font-bold text-primary-600">NexusSalud</span>
                     </Link>
 
                     {/* Links de navegación */}

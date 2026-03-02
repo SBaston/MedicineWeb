@@ -6,11 +6,11 @@ services:
   # ═══════════════════════════════════════════════════════════════
   postgres:
     image: postgres:15
-    container_name: medicare-postgres
+    container_name: NexusSalud-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: MedicalPlatformDB
+      POSTGRES_DB: NexusSaludDB
     ports:
       - "5432:5432"
     volumes:
@@ -21,14 +21,14 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - medicare-network
+      - NexusSalud-network
 
   # ═══════════════════════════════════════════════════════════════
   # REDIS CACHE
   # ═══════════════════════════════════════════════════════════════
   redis:
     image: redis:7
-    container_name: medicare-redis
+    container_name: NexusSalud-redis
     ports:
       - "6379:6379"
     volumes:
@@ -39,7 +39,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - medicare-network
+      - NexusSalud-network
 
   # ═══════════════════════════════════════════════════════════════
   # BACKEND API (.NET)
@@ -48,10 +48,10 @@ services:
     build:
       context: ./MedicineBackend/MedicineBackend
       dockerfile: Dockerfile
-    container_name: medicare-backend
+    container_name: NexusSalud-backend
     environment:
       # Conexión a PostgreSQL (usa el nombre del servicio 'postgres')
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=MedicalPlatformDB;Username=postgres;Password=postgres"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=NexusSaludDB;Username=postgres;Password=postgres"
       ConnectionStrings__Redis: "redis:6379"
       
       # IMPORTANTE: Configuración de CORS
@@ -71,7 +71,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - medicare-network
+      - NexusSalud-network
     restart: unless-stopped
 
   # ═══════════════════════════════════════════════════════════════
@@ -87,13 +87,13 @@ services:
         # Si estás en la misma máquina: http://localhost:5000
         # Si accedes desde otra máquina: http://TU_IP:5000
         VITE_API_URL: "http://localhost:5000/api"
-    container_name: medicare-frontend
+    container_name: NexusSalud-frontend
     ports:
       - "5173:5173"
     depends_on:
       - backend
     networks:
-      - medicare-network
+      - NexusSalud-network
     restart: unless-stopped
 
 # ═══════════════════════════════════════════════════════════════
