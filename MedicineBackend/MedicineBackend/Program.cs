@@ -42,7 +42,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "https://localhost:5173",  // Frontend HTTPS (principal)
+            //"https://localhost:5173",  // Frontend HTTPS (principal)
             "http://localhost:5173",   // Frontend HTTP (fallback desarrollo)
             "http://localhost:50239"   // Puerto alternativo
         )
@@ -174,7 +174,7 @@ if (app.Environment.IsDevelopment())
 // ═══════════════════════════════════════════════════════════
 // MIDDLEWARE - ORDEN IMPORTANTE
 // ═══════════════════════════════════════════════════════════
-app.UseHttpsRedirection();  // ← PRIMERO: Redirigir HTTP → HTTPS
+/*app.UseHttpsRedirection();*/  // ← PRIMERO: Redirigir HTTP → HTTPS
 app.UseCors("AllowFrontend");  // ← SEGUNDO: CORS
 app.UseAuthentication();  // ← TERCERO: Autenticación
 app.UseAuthorization();   // ← CUARTO: Autorización
@@ -261,9 +261,9 @@ Console.WriteLine("════════════════════�
 Console.WriteLine("🏥 NexusSalud Backend - Servidor iniciado correctamente");
 Console.WriteLine("═══════════════════════════════════════════════════════");
 Console.WriteLine($"📌 Entorno: {app.Environment.EnvironmentName}");
-Console.WriteLine($"🌐 HTTP:  http://localhost:5000");
-Console.WriteLine($"🔒 HTTPS: https://localhost:5001");
-Console.WriteLine($"📖 Swagger: https://localhost:5001");
+//Console.WriteLine($"🌐 HTTP:  http://localhost:5000");
+//Console.WriteLine($"🔒 HTTPS: https://localhost:5001");
+//Console.WriteLine($"📖 Swagger: https://localhost:5001");
 Console.WriteLine($"📅 Fecha: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 Console.WriteLine("═══════════════════════════════════════════════════════");
 
