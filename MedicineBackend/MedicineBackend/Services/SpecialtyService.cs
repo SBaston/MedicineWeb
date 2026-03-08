@@ -35,16 +35,18 @@ namespace MedicineBackend.Services
                 Description = specialty.Description,
                 IsActive = specialty.IsActive,
                 DoctorCount = specialty.Doctors?.Count ?? 0,
-                CreatedAt = specialty.CreatedAt
+                CreatedAt = specialty.CreatedAt,
+                DeletedAt = specialty.DeletedAt
             };
         }
 
         // ═══════════════════════════════════════════════════════════
-        // GET ALL
+        // GET ALL (solo activas, no eliminadas)
         // ═══════════════════════════════════════════════════════════
         public async Task<List<SpecialtyDto>> GetAllAsync()
         {
             var specialties = await _context.Specialties
+                .Where(s => s.DeletedAt == null) // ← Excluir eliminadas
                 .Include(s => s.Doctors)
                 .OrderBy(s => s.Name)
                 .ToListAsync();
@@ -53,12 +55,26 @@ namespace MedicineBackend.Services
         }
 
         // ═══════════════════════════════════════════════════════════
-        // GET ACTIVE
+        // GET ALL INCLUDING DELETED (admin only)
+        // ═══════════════════════════════════════════════════════════
+        public async Task<List<SpecialtyDto>> GetAllIncludingDeletedAsync()
+        {
+            var specialties = await _context.Specialties
+                .Include(s => s.Doctors)
+                .OrderByDescending(s => s.DeletedAt == null) // Activas primero
+                .ThenBy(s => s.Name)
+                .ToListAsync();
+
+            return specialties.Select(MapToDto).ToList();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // GET ACTIVE (solo activas y no eliminadas - para dropdown)
         // ═══════════════════════════════════════════════════════════
         public async Task<List<SpecialtyDto>> GetActiveAsync()
         {
             var specialties = await _context.Specialties
-                .Where(s => s.IsActive)
+                .Where(s => s.IsActive && s.DeletedAt == null) // ← Activas y no eliminadas
                 .OrderBy(s => s.Name)
                 .ToListAsync();
 
@@ -89,7 +105,7 @@ namespace MedicineBackend.Services
         // ═══════════════════════════════════════════════════════════
         public async Task<SpecialtyDto> CreateAsync(CreateSpecialtyDto dto)
         {
-            // Verificar si ya existe
+            // Verificar si ya existe (incluyendo eliminadas)
             var exists = await _context.Specialties
                 .AnyAsync(s => s.Name.ToLower() == dto.Name.ToLower());
 
@@ -103,6 +119,7 @@ namespace MedicineBackend.Services
                 Name = dto.Name,
                 Description = dto.Description,
                 IsActive = true,
+                DeletedAt = null,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -110,11 +127,13 @@ namespace MedicineBackend.Services
             _context.Specialties.Add(specialty);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation($"✅ Especialidad creada: {specialty.Name} (ID: {specialty.Id})");
+
             return MapToDto(specialty);
         }
 
         // ═══════════════════════════════════════════════════════════
-        // UPDATE - SOLO DESCRIPCIÓN (NO NOMBRE)
+        // UPDATE - SOLO DESCRIPCIÓN
         // ═══════════════════════════════════════════════════════════
         public async Task<SpecialtyDto> UpdateAsync(int id, UpdateSpecialtyDto dto)
         {
@@ -127,19 +146,21 @@ namespace MedicineBackend.Services
                 throw new KeyNotFoundException($"Especialidad con ID {id} no encontrada");
             }
 
-            // Solo actualizar la descripción
+            // Solo actualizar descripción
             specialty.Description = dto.Description;
             specialty.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation($"✏️ Especialidad actualizada: {specialty.Name} (ID: {id})");
+
             return MapToDto(specialty);
         }
 
         // ═══════════════════════════════════════════════════════════
-        // DELETE
+        // SOFT DELETE - NO elimina físicamente
         // ═══════════════════════════════════════════════════════════
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<SpecialtyDto> SoftDeleteAsync(int id)
         {
             var specialty = await _context.Specialties
                 .Include(s => s.Doctors)
@@ -147,25 +168,59 @@ namespace MedicineBackend.Services
 
             if (specialty == null)
             {
-                return false;
+                throw new KeyNotFoundException($"Especialidad con ID {id} no encontrada");
             }
 
-            // No permitir eliminar si tiene doctores asignados
-            if (specialty.Doctors != null && specialty.Doctors.Any())
+            if (specialty.DeletedAt != null)
             {
-                throw new InvalidOperationException(
-                    $"No se puede eliminar la especialidad '{specialty.Name}' porque tiene {specialty.Doctors.Count} doctor(es) asignado(s)"
-                );
+                throw new InvalidOperationException($"La especialidad '{specialty.Name}' ya está eliminada");
             }
 
-            _context.Specialties.Remove(specialty);
+            // Soft delete: marcar como eliminada
+            specialty.IsActive = false;
+            specialty.DeletedAt = DateTime.UtcNow;
+            specialty.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
 
-            return true;
+            _logger.LogWarning($"🗑️ Especialidad archivada: {specialty.Name} (ID: {id}) - {specialty.Doctors.Count} doctores conservan su historial");
+
+            return MapToDto(specialty);
         }
 
         // ═══════════════════════════════════════════════════════════
-        // TOGGLE ACTIVE
+        // RESTORE - Restaurar especialidad eliminada
+        // ═══════════════════════════════════════════════════════════
+        public async Task<SpecialtyDto> RestoreAsync(int id)
+        {
+            var specialty = await _context.Specialties
+                .Include(s => s.Doctors)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (specialty == null)
+            {
+                throw new KeyNotFoundException($"Especialidad con ID {id} no encontrada");
+            }
+
+            if (specialty.DeletedAt == null)
+            {
+                throw new InvalidOperationException($"La especialidad '{specialty.Name}' no está eliminada");
+            }
+
+            // Restaurar
+            specialty.IsActive = true;
+            specialty.DeletedAt = null;
+            specialty.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"♻️ Especialidad restaurada: {specialty.Name} (ID: {id})");
+
+            return MapToDto(specialty);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // TOGGLE ACTIVE/INACTIVE
         // ═══════════════════════════════════════════════════════════
         public async Task<SpecialtyDto> ToggleActiveAsync(int id)
         {
@@ -178,10 +233,17 @@ namespace MedicineBackend.Services
                 throw new KeyNotFoundException($"Especialidad con ID {id} no encontrada");
             }
 
+            if (specialty.DeletedAt != null)
+            {
+                throw new InvalidOperationException($"No se puede cambiar el estado de una especialidad eliminada. Restaurala primero.");
+            }
+
             specialty.IsActive = !specialty.IsActive;
             specialty.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"🔄 Especialidad {(specialty.IsActive ? "activada" : "desactivada")}: {specialty.Name} (ID: {id})");
 
             return MapToDto(specialty);
         }

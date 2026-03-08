@@ -40,5 +40,6 @@ namespace MedicineBackend.DTOs
         public bool IsActive { get; set; }
         public int DoctorCount { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? DeletedAt { get; set; }  //soft delete
     }
 }

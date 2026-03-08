@@ -29,17 +29,18 @@ RUN mkdir -p /app/tessdata
 # Descargar datos de entrenamiento de alta calidad (tessdata_best)
 RUN wget -q https://github.com/tesseract-ocr/tessdata_best/raw/main/spa.traineddata -O /app/tessdata/spa.traineddata && wget -q https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata -O /app/tessdata/eng.traineddata
 
-# Crear directorio para uploads (imágenes de documentos)
-RUN mkdir -p /app/uploads
+# Crear directorios necesarios
+RUN mkdir -p /app/uploads && mkdir -p /https
 
 # Copiar los archivos compilados
 COPY --from=build /app/publish .
 
-# Exponer el puerto
-EXPOSE 5000
+# Exponer puertos HTTP y HTTPS
+EXPOSE 80
+EXPOSE 443
 
 # Variables de entorno por defecto
-ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_URLS=https://+:443;http://+:80
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV TESSDATA_PREFIX=/app/tessdata
 

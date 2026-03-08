@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MedicineBackend.Migrations
 {
     /// <inheritdoc />
-    public partial class MedDB10 : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -20,9 +20,10 @@ namespace MedicineBackend.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    IconUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -60,7 +61,7 @@ namespace MedicineBackend.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     FullName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    PermissionLevel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    IsSuperAdmin = table.Column<bool>(type: "boolean", nullable: false),
                     Department = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -94,10 +95,21 @@ namespace MedicineBackend.Migrations
                     TotalEarnings = table.Column<decimal>(type: "numeric(12,2)", nullable: false, defaultValue: 0m),
                     AverageRating = table.Column<decimal>(type: "numeric(3,2)", nullable: false),
                     TotalReviews = table.Column<int>(type: "integer", nullable: false),
-                    IsVerified = table.Column<bool>(type: "boolean", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    StatusReason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    ReviewedByAdminId = table.Column<int>(type: "integer", nullable: true),
+                    ReviewedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedReason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    DeletedByAdminId = table.Column<int>(type: "integer", nullable: true),
                     IsAcceptingPatients = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ProfessionalLicenseImageUrl = table.Column<string>(type: "text", nullable: true),
+                    IdDocumentImageUrl = table.Column<string>(type: "text", nullable: true),
+                    DegreeImageUrl = table.Column<string>(type: "text", nullable: true),
+                    OcrData = table.Column<string>(type: "text", nullable: true),
+                    IsDocumentVerified = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {

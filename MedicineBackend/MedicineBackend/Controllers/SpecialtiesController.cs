@@ -1,5 +1,5 @@
 ﻿// ═══════════════════════════════════════════════════════════════
-// Backend/Controllers/SpecialtiesController.cs - CORREGIDO
+// Backend/Controllers/SpecialtiesController.cs - CON SOFT DELETE
 // ═══════════════════════════════════════════════════════════════
 
 using MedicineBackend.DTOs;
@@ -58,7 +58,7 @@ namespace MedicineBackend.Controllers
 
         // ═══════════════════════════════════════════════════════════
         // GET /api/specialties/all
-        // Obtener TODAS las especialidades (admin only)
+        // Obtener especialidades NO ELIMINADAS (admin only)
         // ═══════════════════════════════════════════════════════════
         [HttpGet("all")]
         [Authorize]
@@ -72,6 +72,21 @@ namespace MedicineBackend.Controllers
         }
 
         // ═══════════════════════════════════════════════════════════
+        // GET /api/specialties/all-including-deleted
+        // Obtener TODAS incluyendo eliminadas (admin only)
+        // ═══════════════════════════════════════════════════════════
+        [HttpGet("all-including-deleted")]
+        [Authorize]
+        public async Task<IActionResult> GetAllIncludingDeleted()
+        {
+            var userId = GetCurrentUserId();
+            await _adminService.AssertIsAdminAsync(userId);
+
+            var specialties = await _specialtyService.GetAllIncludingDeletedAsync();
+            return Ok(specialties);
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // POST /api/specialties
         // Crear especialidad (admin only)
         // ═══════════════════════════════════════════════════════════
@@ -79,14 +94,19 @@ namespace MedicineBackend.Controllers
         [Authorize]
         public async Task<IActionResult> Create([FromBody] CreateSpecialtyDto dto)
         {
-            var userId = GetCurrentUserId();
-            await _adminService.AssertIsAdminAsync(userId);
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _adminService.AssertIsAdminAsync(userId);
 
-            var specialty = await _specialtyService.CreateAsync(dto);
+                var specialty = await _specialtyService.CreateAsync(dto);
 
-            _logger.LogInformation($"✅ Especialidad creada: {specialty.Name} (ID: {specialty.Id})");
-
-            return CreatedAtAction(nameof(GetActive), new { id = specialty.Id }, specialty);
+                return CreatedAtAction(nameof(GetActive), new { id = specialty.Id }, specialty);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -97,37 +117,81 @@ namespace MedicineBackend.Controllers
         [Authorize]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateSpecialtyDto dto)
         {
-            var userId = GetCurrentUserId();
-            await _adminService.AssertIsAdminAsync(userId);
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _adminService.AssertIsAdminAsync(userId);
 
-            var specialty = await _specialtyService.UpdateAsync(id, dto);
+                var specialty = await _specialtyService.UpdateAsync(id, dto);
 
-            _logger.LogInformation($"✏️ Especialidad actualizada: {specialty.Name} (ID: {specialty.Id})");
-
-            return Ok(specialty);
+                return Ok(specialty);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
 
         // ═══════════════════════════════════════════════════════════
         // DELETE /api/specialties/{id}
-        // Eliminar especialidad (admin only)
+        // SOFT DELETE - Archivar especialidad (admin only)
         // ═══════════════════════════════════════════════════════════
         [HttpDelete("{id}")]
         [Authorize]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> SoftDelete(int id)
         {
-            var userId = GetCurrentUserId();
-            await _adminService.AssertIsAdminAsync(userId);
-
-            var success = await _specialtyService.DeleteAsync(id);
-
-            if (!success)
+            try
             {
-                return BadRequest(new { message = "No se puede eliminar. La especialidad tiene doctores asignados." });
+                var userId = GetCurrentUserId();
+                await _adminService.AssertIsAdminAsync(userId);
+
+                var specialty = await _specialtyService.SoftDeleteAsync(id);
+
+                return Ok(new
+                {
+                    message = $"Especialidad '{specialty.Name}' archivada correctamente",
+                    specialty
+                });
             }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
-            _logger.LogInformation($"🗑️ Especialidad eliminada (ID: {id})");
+        // ═══════════════════════════════════════════════════════════
+        // POST /api/specialties/{id}/restore
+        // RESTAURAR especialidad eliminada (admin only)
+        // ═══════════════════════════════════════════════════════════
+        [HttpPost("{id}/restore")]
+        [Authorize]
+        public async Task<IActionResult> Restore(int id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _adminService.AssertIsAdminAsync(userId);
 
-            return Ok(new { message = "Especialidad eliminada correctamente" });
+                var specialty = await _specialtyService.RestoreAsync(id);
+
+                return Ok(new
+                {
+                    message = $"Especialidad '{specialty.Name}' restaurada correctamente",
+                    specialty
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -138,14 +202,23 @@ namespace MedicineBackend.Controllers
         [Authorize]
         public async Task<IActionResult> ToggleActive(int id)
         {
-            var userId = GetCurrentUserId();
-            await _adminService.AssertIsAdminAsync(userId);
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _adminService.AssertIsAdminAsync(userId);
 
-            var specialty = await _specialtyService.ToggleActiveAsync(id);
+                var specialty = await _specialtyService.ToggleActiveAsync(id);
 
-            _logger.LogInformation($"🔄 Especialidad {(specialty.IsActive ? "activada" : "desactivada")}: {specialty.Name} (ID: {specialty.Id})");
-
-            return Ok(specialty);
+                return Ok(specialty);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

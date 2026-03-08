@@ -42,7 +42,7 @@ services:
       - NexusSalud-network
 
   # ═══════════════════════════════════════════════════════════════
-  # BACKEND API (.NET) con Tesseract OCR
+  # BACKEND API (.NET) con Tesseract OCR y HTTPS
   # ═══════════════════════════════════════════════════════════════
   backend:
     build:
@@ -50,20 +50,26 @@ services:
       dockerfile: Dockerfile
     container_name: NexusSalud-backend
     environment:
-      # Conexión a PostgreSQL (usa el nombre del servicio 'postgres')
+      # Conexión a PostgreSQL
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=NexusSaludDB;Username=postgres;Password=postgres"
       ConnectionStrings__Redis: "redis:6379"
       
-      # Configuración ASPNETCORE
+      # Configuración ASPNETCORE - HTTPS
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_URLS: "https://+:443;http://+:80"
       
-      # CORS: Permitir el frontend
-      # IMPORTANTE: Ajusta estas URLs según tu configuración
-      # Localhost: http://localhost:5173
-      # Red local: http://192.168.1.X:5173
-      # Producción: https://tu-dominio.com
-      AllowedOrigins: "http://localhost:5173,http://127.0.0.1:5173,http://192.168.1.100:5173"
+      # Certificado HTTPS (desarrollo con certificado auto-firmado)
+      ASPNETCORE_Kestrel__Certificates__Default__Password: "NeRf3r0Pr1M3"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: "/https/aspnetapp.pfx"
+      
+      # JWT - HTTPS
+      JwtSettings__Issuer: "https://localhost:5001"
+      JwtSettings__Audience: "https://localhost:5173"
+      JwtSettings__SecretKey: "TuClaveSecretaMuySeguraDeAlMenos32CaracteresParaJWT2024!"
+      JwtSettings__ExpirationMinutes: "60"
+      
+      # CORS: Permitir frontend HTTPS
+      AllowedOrigins: "https://localhost:5173,http://localhost:5173"
       
       # Tesseract OCR
       TESSDATA_PREFIX: "/app/tessdata"
@@ -73,10 +79,13 @@ services:
       FileStorage__MaxFileSizeMB: "10"
       
     ports:
-      - "5000:5000"
+      - "5000:80"    # HTTP
+      - "5001:443"   # HTTPS
     volumes:
-      # Volumen para persistir imágenes de documentos
+      # Volumen para uploads
       - uploads_data:/app/uploads
+      # Montar certificados (crear directorio ./certs primero)
+      - ./certs:/https:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,19 +96,15 @@ services:
     restart: unless-stopped
 
   # ═══════════════════════════════════════════════════════════════
-  # FRONTEND (React + Vite)
+  # FRONTEND (React + Vite) con HTTPS
   # ═══════════════════════════════════════════════════════════════
   frontend:
     build:
       context: ./MedicineFrontend/medicinefrontend
       dockerfile: Dockerfile
       args:
-        # URL del backend que el NAVEGADOR usará
-        # IMPORTANTE: Debe ser accesible desde el navegador del cliente
-        # Mismo PC: http://localhost:5000/api
-        # Otra PC en red local: http://192.168.1.X:5000/api
-        # Producción: https://api.tu-dominio.com
-        VITE_API_URL: "http://localhost:5000/api"
+        # URL del backend HTTPS
+        VITE_API_URL: "https://localhost:5001/api"
     container_name: NexusSalud-frontend
     ports:
       - "5173:5173"
@@ -121,7 +126,7 @@ volumes:
     driver: local
 
 # ═══════════════════════════════════════════════════════════════
-# RED INTERNA (CORREGIDO: NexusSalud-network)
+# RED INTERNA
 # ═══════════════════════════════════════════════════════════════
 networks:
   NexusSalud-network:

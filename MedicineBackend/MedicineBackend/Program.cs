@@ -6,6 +6,7 @@ using MedicineBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,15 +25,30 @@ var builder = WebApplication.CreateBuilder(args);
 // Controllers
 builder.Services.AddControllers();
 
-// CORS
+// ═══════════════════════════════════════════════════════════
+// HTTPS REDIRECTION
+// ═══════════════════════════════════════════════════════════
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
+    options.HttpsPort = 5001;
+});
+
+// ═══════════════════════════════════════════════════════════
+// CORS - ACTUALIZADO PARA HTTPS
+// ═══════════════════════════════════════════════════════════
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:50239", "http://localhost:5173")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        policy.WithOrigins(
+            "https://localhost:5173",  // Frontend HTTPS (principal)
+            "http://localhost:5173",   // Frontend HTTP (fallback desarrollo)
+            "http://localhost:50239"   // Puerto alternativo
+        )
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
     });
 });
 
@@ -53,7 +69,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 
 // Inyección de dependencias - Servicios
-builder.Services.AddScoped<ICacheService, CacheService>();  // --> Servicios para Redis
+builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
@@ -62,7 +78,6 @@ builder.Services.AddScoped<ISpecialtyService, SpecialtyService>();
 builder.Services.AddScoped<IOcrService, OcrService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtHelper>();
-//Añadimos memoria caché para el OCR
 builder.Services.AddMemoryCache();
 
 // Autenticación JWT
@@ -98,21 +113,19 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("DoctorOrAdmin", policy => policy.RequireRole("Doctor", "Admin"));
 });
 
-
-
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Medicine Backend API",
+        Title = "NexusSalud API",
         Version = "v1",
         Description = "API para plataforma de consultas médicas online con especialistas",
         Contact = new OpenApiContact
         {
-            Name = "Tu Nombre",
-            Email = "tu-email@ejemplo.com"
+            Name = "NexusSalud Team",
+            Email = "contact@nexussalud.com"
         }
     });
 
@@ -133,12 +146,10 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
 builder.Services.Configure<InitialAdminSettings>(
     builder.Configuration.GetSection("InitialAdminSettings"));
 
 builder.Services.AddScoped<DatabaseSeeder>();
-
 
 // ============================================
 // CONSTRUCCIÓN DE LA APLICACIÓN
@@ -147,7 +158,7 @@ builder.Services.AddScoped<DatabaseSeeder>();
 var app = builder.Build();
 
 // ============================================
-// MIDDLEWARE PIPELINE
+// MIDDLEWARE PIPELINE - ORDEN CRÍTICO
 // ============================================
 
 if (app.Environment.IsDevelopment())
@@ -155,59 +166,23 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Medicine Backend API v1");
-        options.RoutePrefix = string.Empty;  // ← Ahora Swagger estará en la raíz "/"
-
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "NexusSalud API v1");
+        options.RoutePrefix = string.Empty;  // Swagger en la raíz "/"
     });
 }
 
-
-
-
-app.UseHttpsRedirection();
-app.UseCors("AllowFrontend");
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-
+// ═══════════════════════════════════════════════════════════
+// MIDDLEWARE - ORDEN IMPORTANTE
+// ═══════════════════════════════════════════════════════════
+app.UseHttpsRedirection();  // ← PRIMERO: Redirigir HTTP → HTTPS
+app.UseCors("AllowFrontend");  // ← SEGUNDO: CORS
+app.UseAuthentication();  // ← TERCERO: Autenticación
+app.UseAuthorization();   // ← CUARTO: Autorización
+app.MapControllers();     // ← ÚLTIMO: Controladores
 
 // ============================================
 // INICIALIZACIÓN DE BASE DE DATOS
 // ============================================
-
-//using (var scope = app.Services.CreateScope())
-//{
-//    var services = scope.ServiceProvider;
-//    try
-//    {
-//        // ═══════════════════════════════════════════════════════════
-//        // PASO 1: APLICAR MIGRACIONES AUTOMÁTICAMENTE
-//        // ═══════════════════════════════════════════════════════════
-//        var context = services.GetRequiredService<AppDbContext>();
-
-//        Console.WriteLine("🔍 Verificando conexión a la base de datos...");
-//        await context.Database.CanConnectAsync();
-//        Console.WriteLine("✅ Conexión exitosa a PostgreSQL");
-
-//        Console.WriteLine("🔄 Aplicando migraciones pendientes...");
-//        await context.Database.MigrateAsync();
-//        Console.WriteLine("✅ Migraciones aplicadas correctamente");
-
-//        // ═══════════════════════════════════════════════════════════
-//        // PASO 2: SEED DE DATOS
-//        // ═══════════════════════════════════════════════════════════
-//        var seeder = services.GetRequiredService<DatabaseSeeder>();
-//        Console.WriteLine("🌱 Iniciando seed de datos...");
-//        await seeder.SeedAsync();
-//        Console.WriteLine("✅ Seed completado");
-//    }
-//    catch (Exception ex)
-//    {
-//        var logger = services.GetRequiredService<ILogger<Program>>();
-//        logger.LogError(ex, "❌ Error durante la inicialización de la base de datos");
-//        throw; // Re-lanzar para que Docker muestre el error
-//    }
-//}
 
 using (var scope = app.Services.CreateScope())
 {
@@ -216,18 +191,20 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        // 1. Crear la base de datos si no existe
+        logger.LogInformation("🔍 Verificando conexión a la base de datos...");
+
+        // 1. Verificar conexión
         var canConnect = await dbContext.Database.CanConnectAsync();
 
         if (!canConnect)
         {
-            logger.LogInformation("La base de datos no existe. Creándola...");
+            logger.LogInformation("📦 La base de datos no existe. Creándola...");
             await dbContext.Database.EnsureCreatedAsync();
-            logger.LogInformation("Base de datos creada correctamente");
+            logger.LogInformation("✅ Base de datos creada correctamente");
         }
         else
         {
-            logger.LogInformation("Base de datos ya existe");
+            logger.LogInformation("✅ Conexión exitosa a PostgreSQL");
         }
 
         // 2. Aplicar migraciones pendientes
@@ -235,36 +212,59 @@ using (var scope = app.Services.CreateScope())
 
         if (pendingMigrations.Any())
         {
-            logger.LogInformation("Aplicando {Count} migraciones pendientes...", pendingMigrations.Count());
+            logger.LogInformation("🔄 Aplicando {Count} migraciones pendientes...", pendingMigrations.Count());
             await dbContext.Database.MigrateAsync();
-            logger.LogInformation("Migraciones aplicadas correctamente");
+            logger.LogInformation("✅ Migraciones aplicadas correctamente");
         }
         else
         {
-            logger.LogInformation("No hay migraciones pendientes");
+            logger.LogInformation("ℹ️ No hay migraciones pendientes");
         }
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error al inicializar la base de datos: {Message}", ex.Message);
+        logger.LogError(ex, "❌ Error al inicializar la base de datos: {Message}", ex.Message);
 
         // Mostrar ayuda si es error de autenticación
         if (ex.Message.Contains("password") || ex.Message.Contains("autenticación"))
         {
-            logger.LogError("Verifica tu contraseña en appsettings.json");
+            logger.LogError("💡 Verifica tu contraseña en appsettings.json");
         }
+
+        throw; // Re-lanzar para que la aplicación no inicie con BD incorrecta
     }
 }
 
+// Seed de datos iniciales
 using (var scope = app.Services.CreateScope())
 {
     var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-    await seeder.SeedAsync();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("🌱 Iniciando seed de datos...");
+        await seeder.SeedAsync();
+        logger.LogInformation("✅ Seed completado");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "❌ Error durante el seed: {Message}", ex.Message);
+    }
 }
 
+// ============================================
+// MENSAJES DE INICIO
+// ============================================
 
-Console.WriteLine("Servidor iniciado correctamente");
-Console.WriteLine($"Entorno: {app.Environment.EnvironmentName}");
-Console.WriteLine($"Swagger disponible en: https://localhost:7001/swagger");
+Console.WriteLine("═══════════════════════════════════════════════════════");
+Console.WriteLine("🏥 NexusSalud Backend - Servidor iniciado correctamente");
+Console.WriteLine("═══════════════════════════════════════════════════════");
+Console.WriteLine($"📌 Entorno: {app.Environment.EnvironmentName}");
+Console.WriteLine($"🌐 HTTP:  http://localhost:5000");
+Console.WriteLine($"🔒 HTTPS: https://localhost:5001");
+Console.WriteLine($"📖 Swagger: https://localhost:5001");
+Console.WriteLine($"📅 Fecha: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine("═══════════════════════════════════════════════════════");
 
 app.Run();

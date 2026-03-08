@@ -7,8 +7,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
-    Plus, Edit2, Trash2, Power, PowerOff, Stethoscope,
-    AlertCircle, CheckCircle, Loader, X, ArrowLeft
+    Plus, Edit2, Archive, RotateCcw, Power, PowerOff, Stethoscope,
+    AlertCircle, CheckCircle, Loader, X, ArrowLeft, Trash2
 } from 'lucide-react';
 import specialtyService from '../services/specialtyService';
 
@@ -19,11 +19,16 @@ const AdminSpecialtiesPage = () => {
     const [editing, setEditing] = useState(null);
     const [formData, setFormData] = useState({ name: '', description: '' });
     const [errors, setErrors] = useState({});
+    const [showDeleted, setShowDeleted] = useState(false); // Toggle ver eliminadas
 
-    // Queries y Mutations (igual que antes)
+    // ═══════════════════════════════════════════════════════════
+    // Query: Especialidades (con o sin eliminadas)
+    // ═══════════════════════════════════════════════════════════
     const { data: specialties = [], isLoading } = useQuery({
-        queryKey: ['admin-specialties'],
-        queryFn: specialtyService.getAll
+        queryKey: ['admin-specialties', showDeleted],
+        queryFn: () => showDeleted
+            ? specialtyService.getAllIncludingDeleted()
+            : specialtyService.getAll()
     });
 
     const createMut = useMutation({
@@ -55,16 +60,44 @@ const AdminSpecialtiesPage = () => {
         }
     });
 
-    const deleteMut = useMutation({
-        mutationFn: (id) => specialtyService.delete(id),
+    // ═══════════════════════════════════════════════════════════
+    // Mutation: Soft Delete (Archivar)
+    // ═══════════════════════════════════════════════════════════
+    const softDeleteMut = useMutation({
+        mutationFn: (id) => specialtyService.softDelete(id),
         onSuccess: () => {
             queryClient.invalidateQueries(['admin-specialties']);
             queryClient.invalidateQueries(['specialties']);
         },
         onError: (error) => {
-            alert(error.response?.data?.message || 'Error al eliminar');
+            alert(error.response?.data?.message || 'Error al archivar');
         }
     });
+
+    // ═══════════════════════════════════════════════════════════
+    // Mutation: Restaurar
+    // ═══════════════════════════════════════════════════════════
+    const restoreMut = useMutation({
+        mutationFn: (id) => specialtyService.restore(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['admin-specialties']);
+            queryClient.invalidateQueries(['specialties']);
+        },
+        onError: (error) => {
+            alert(error.response?.data?.message || 'Error al restaurar');
+        }
+    });
+
+    //const deleteMut = useMutation({
+    //    mutationFn: (id) => specialtyService.delete(id),
+    //    onSuccess: () => {
+    //        queryClient.invalidateQueries(['admin-specialties']);
+    //        queryClient.invalidateQueries(['specialties']);
+    //    },
+    //    onError: (error) => {
+    //        alert(error.response?.data?.message || 'Error al eliminar');
+    //    }
+    //});
 
     const toggleMut = useMutation({
         mutationFn: (id) => specialtyService.toggleActive(id),
@@ -110,11 +143,23 @@ const AdminSpecialtiesPage = () => {
         setShowModal(true);
     };
 
-    const handleDelete = (id, name) => {
-        if (confirm(`¿Eliminar "${name}"?\n\nEsta acción no se puede deshacer.`)) {
-            deleteMut.mutate(id);
+    const handleSoftDelete = (id, name) => {
+        if (confirm(`¿Archivar "${name}"?\n\nLa especialidad se ocultará pero se mantendrá en el historial.`)) {
+            softDeleteMut.mutate(id);
         }
     };
+
+    const handleRestore = (id, name) => {
+        if (confirm(`¿Restaurar "${name}"?\n\nVolverá a estar disponible.`)) {
+            restoreMut.mutate(id);
+        }
+    };
+
+    //const handleDelete = (id, name) => {
+    //    if (confirm(`¿Eliminar "${name}"?\n\nEsta acción no se puede deshacer.`)) {
+    //        deleteMut.mutate(id);
+    //    }
+    //};
 
     const handleCloseModal = () => {
         setShowModal(false);
@@ -152,6 +197,24 @@ const AdminSpecialtiesPage = () => {
                     <Plus className="w-5 h-5" />
                     Nueva Especialidad
                 </button>
+            </div>
+
+            {/* Toggle: Ver eliminadas */}
+            <div className="flex items-center gap-2 mb-4">
+                <button
+                    onClick={() => setShowDeleted(!showDeleted)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${showDeleted
+                            ? 'bg-gray-200 text-gray-700'
+                            : 'bg-primary-100 text-primary-700'
+                        }`}
+                >
+                    {showDeleted ? 'Ocultar archivadas' : 'Ver archivadas'}
+                </button>
+                {showDeleted && (
+                    <span className="text-sm text-gray-500">
+                        Mostrando todas ({specialties.length})
+                    </span>
+                )}
             </div>
 
             {/* Estadísticas */}
@@ -210,7 +273,12 @@ const AdminSpecialtiesPage = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        {spec.isActive ? (
+                                        {spec.deletedAt ? (
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                                                <Archive className="w-3 h-3" />
+                                                Archivada
+                                            </span>
+                                        ) : spec.isActive ? (
                                             <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                                                 <CheckCircle className="w-3 h-3" />
                                                 Activa
@@ -224,34 +292,44 @@ const AdminSpecialtiesPage = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-end gap-2">
-                                            <button
-                                                onClick={() => toggleMut.mutate(spec.id)}
-                                                className={`p-2 rounded-lg ${spec.isActive
-                                                        ? 'hover:bg-red-50 text-red-600'
-                                                        : 'hover:bg-green-50 text-green-600'
-                                                    }`}
-                                                title={spec.isActive ? 'Desactivar' : 'Activar'}
-                                            >
-                                                {spec.isActive ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                                            </button>
-                                            <button
-                                                onClick={() => handleEdit(spec)}
-                                                className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg"
-                                                title="Editar descripción"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(spec.id, spec.name)}
-                                                disabled={spec.doctorCount > 0}
-                                                className={`p-2 rounded-lg ${spec.doctorCount > 0
-                                                        ? 'text-gray-300 cursor-not-allowed'
-                                                        : 'hover:bg-red-50 text-red-600'
-                                                    }`}
-                                                title={spec.doctorCount > 0 ? 'No se puede eliminar (tiene doctores asignados)' : 'Eliminar'}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            {spec.deletedAt ? (
+                                                // Especialidad ELIMINADA: Solo restaurar
+                                                <button
+                                                    onClick={() => handleRestore(spec.id, spec.name)}
+                                                    className="p-2 hover:bg-green-50 text-green-600 rounded-lg"
+                                                    title="Restaurar"
+                                                >
+                                                    <RotateCcw className="w-4 h-4" />
+                                                </button>
+                                            ) : (
+                                                // Especialidad ACTIVA: Acciones completas
+                                                <>
+                                                    <button
+                                                        onClick={() => toggleMut.mutate(spec.id)}
+                                                        className={`p-2 rounded-lg ${spec.isActive
+                                                                ? 'hover:bg-red-50 text-red-600'
+                                                                : 'hover:bg-green-50 text-green-600'
+                                                            }`}
+                                                        title={spec.isActive ? 'Desactivar' : 'Activar'}
+                                                    >
+                                                        {spec.isActive ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleEdit(spec)}
+                                                        className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg"
+                                                        title="Editar descripción"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleSoftDelete(spec.id, spec.name)}
+                                                        className="p-2 hover:bg-orange-50 text-orange-600 rounded-lg"
+                                                        title="Archivar (soft delete)"
+                                                    >
+                                                        <Archive className="w-4 h-4" />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

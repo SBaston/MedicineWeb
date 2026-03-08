@@ -31,7 +31,12 @@ public class Specialty
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // ═══════════════════════════════════════════════════════════
+    // SOFT DELETE: Marca de eliminación lógica
+    // ═══════════════════════════════════════════════════════════
+    public DateTime? DeletedAt { get; set; }
     // ============================================
     // RELACIONES
     // ============================================
