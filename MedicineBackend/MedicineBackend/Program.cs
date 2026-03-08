@@ -58,8 +58,12 @@ builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IDoctorManagementService, DoctorManagementService>();
+builder.Services.AddScoped<ISpecialtyService, SpecialtyService>();
+builder.Services.AddScoped<IOcrService, OcrService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtHelper>();
+//Añadimos memoria caché para el OCR
+builder.Services.AddMemoryCache();
 
 // Autenticación JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

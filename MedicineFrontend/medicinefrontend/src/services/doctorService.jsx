@@ -1,68 +1,58 @@
+// ═══════════════════════════════════════════════════════════════
+// Frontend/src/services/doctorService.js
+// Servicio para registro y gestión de doctores
+// ═══════════════════════════════════════════════════════════════
+
 import api from './api';
 
-/**
- * Servicio para gestionar doctores
- */
 const doctorService = {
     /**
-     * Obtiene todos los doctores (con filtros opcionales)
+     * Validar documento con OCR antes del registro completo
      */
-    getAllDoctors: async (filters = {}) => {
-        const params = new URLSearchParams();
-
-        if (filters.specialtyId) {
-            params.append('specialtyId', filters.specialtyId);
-        }
-        if (filters.search) {
-            params.append('search', filters.search);
-        }
-        if (filters.minRating) {
-            params.append('minRating', filters.minRating);
-        }
-
-        const response = await api.get(`/doctors?${params.toString()}`);
+    validateDocument: async (imageBase64) => {
+        const response = await api.post('/doctors/validate-document', {
+            imageBase64
+        });
         return response.data;
     },
 
     /**
-     * Obtiene un doctor por ID
+     * Registro completo de doctor
      */
-    getDoctorById: async (id) => {
+    register: async (data) => {
+        const response = await api.post('/doctors/register', {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            password: data.password,
+            professionalLicense: data.professionalLicense,
+            specialtyIds: data.specialtyIds, // Array de IDs
+            yearsOfExperience: data.yearsOfExperience,
+            pricePerSession: data.pricePerSession,
+            description: data.description,
+            phoneNumber: data.phoneNumber,
+            professionalLicenseImage: data.professionalLicenseImage,
+            idDocumentImage: data.idDocumentImage,
+            degreeImage: data.degreeImage
+        });
+        return response.data;
+    },
+
+    /**
+     * Obtener información de un doctor
+     */
+    getById: async (id) => {
         const response = await api.get(`/doctors/${id}`);
         return response.data;
     },
 
     /**
-     * Obtiene las especialidades médicas
+     * Verificar si un email ya está registrado
      */
-    getSpecialties: async () => {
-        const response = await api.get('/specialties');
+    checkEmailAvailability: async (email) => {
+        const response = await api.get(`/doctors/check-email?email=${encodeURIComponent(email)}`);
         return response.data;
-    },
-
-    /**
-     * Obtiene los videos de redes sociales de un doctor
-     */
-    getDoctorVideos: async (doctorId) => {
-        const response = await api.get(`/doctors/${doctorId}/videos`);
-        return response.data;
-    },
-
-    /**
-     * Obtiene las valoraciones de un doctor
-     */
-    getDoctorReviews: async (doctorId) => {
-        const response = await api.get(`/doctors/${doctorId}/reviews`);
-        return response.data;
-    },
-
-    /**
-     * Obtiene la disponibilidad de un doctor
-     */
-    getDoctorAvailability: async (doctorId) => {
-        const response = await api.get(`/doctors/${doctorId}/availability`);
-        return response.data;
-    },
+    }
 };
 
 export default doctorService;

@@ -10,7 +10,7 @@ const Footer = () => {
                     <div>
                         <div className="flex items-center space-x-2 mb-4">
                             <Heart className="w-8 h-8 text-primary-400" />
-                            <span className="text-2xl font-bold">MediCare</span>
+                            <span className="text-2xl font-bold">NexusSalud</span>
                         </div>
                         <p className="text-gray-400 text-sm">
                             Plataforma líder en consultas médicas online con especialistas certificados.
@@ -72,7 +72,7 @@ const Footer = () => {
                         <ul className="space-y-3 text-sm">
                             <li className="flex items-center space-x-2 text-gray-400">
                                 <Mail className="w-4 h-4" />
-                                <span>contacto@medicare.com</span>
+                                <span>contacto@nexussalud.com</span>
                             </li>
                             <li className="flex items-center space-x-2 text-gray-400">
                                 <Phone className="w-4 h-4" />
@@ -80,7 +80,7 @@ const Footer = () => {
                             </li>
                             <li className="flex items-center space-x-2 text-gray-400">
                                 <MapPin className="w-4 h-4" />
-                                <span>Zaragoza, España</span>
+                                <span>Un lugar cualquiera, España</span>
                             </li>
                         </ul>
                     </div>
@@ -88,7 +88,7 @@ const Footer = () => {
 
                 {/* Copyright */}
                 <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-                    <p>© 2025 MediCare. Todos los derechos reservados. | Trabajo Fin de Grado</p>
+                    <p>© 2026 NexusSalud. Todos los derechos reservados. | Trabajo Fin de Grado</p>
                 </div>
             </div>
         </footer>

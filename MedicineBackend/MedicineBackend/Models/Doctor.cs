@@ -160,4 +160,20 @@ public class Doctor
     /// </summary>
     [NotMapped]
     public bool IsVerified => Status == DoctorStatus.Active;
+
+    /// <summary>URL de la imagen del carnet de colegiado</summary>
+    public string? ProfessionalLicenseImageUrl { get; set; }
+
+    /// <summary>URL del documento de identidad (DNI/Pasaporte)</summary>
+    public string? IdDocumentImageUrl { get; set; }
+
+    /// <summary>URL del título universitario o certificado</summary>
+    public string? DegreeImageUrl { get; set; }
+
+    /// <summary>Datos extraídos del OCR del carnet</summary>
+    public string? OcrData { get; set; }
+
+    /// <summary>Si el documento ha sido verificado automáticamente</summary>
+    public bool IsDocumentVerified { get; set; }
+    
 }

@@ -13,8 +13,12 @@ import {
 // COMPONENTES DE APOYO
 // ════════════════════════════════════════════════════════════════
 
-const StatCard = ({ icon: Icon, label, value, color }) => (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+const StatCard = ({ icon: Icon, label, value, color, onClick }) => (
+    <div
+        onClick={onClick}
+        className={`bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4 ${onClick ? 'cursor-pointer hover:shadow-md hover:border-primary-200 transition-all' : ''
+            }`}
+    >
         <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color}`}>
             <Icon className="w-5 h-5 text-white" />
         </div>
@@ -197,16 +201,8 @@ const AdminsSection = () => {
     const qc = useQueryClient();
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [confirmReactivate, setConfirmReactivate] = useState(null);
-    // DEBUG: Log para verificar el valor de isSuperAdmin
-    useEffect(() => {
-        console.log('🔍 AdminsSection - user:', user);
-        console.log('🔍 AdminsSection - user.isSuperAdmin:', user?.isSuperAdmin);
-        console.log('🔍 AdminsSection - typeof isSuperAdmin:', typeof user?.isSuperAdmin);
-    }, [user]);
 
     const isSuperAdmin = user?.role === 'Admin' && user?.isSuperAdmin === true;
-
-    console.log('🔍 AdminsSection - isSuperAdmin calculado:', isSuperAdmin);
 
     const { data: admins = [], isLoading } = useQuery({
         queryKey: ['admins-list'],
@@ -224,7 +220,7 @@ const AdminsSection = () => {
     });
 
     const reactivateMut = useMutation({
-        mutationFn: (id) => adminService.reactivateAdmin(id),  // ← Necesitas crear este endpoint
+        mutationFn: (id) => adminService.reactivateAdmin(id),
         onSuccess: () => {
             qc.invalidateQueries(['admins-list']);
             qc.invalidateQueries(['admin-stats']);
@@ -232,17 +228,12 @@ const AdminsSection = () => {
         },
     });
 
-    // Si no es SuperAdmin, no renderizar nada
     if (!isSuperAdmin) {
-        console.log('❌ AdminsSection - NO se renderiza (no es SuperAdmin)');
         return null;
     }
 
-    console.log('✅ AdminsSection - SÍ se renderiza (es SuperAdmin)');
-
     return (
         <div className="mt-10 pt-8 border-t-2 border-gray-200">
-            {/* Cabecera */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center">
@@ -264,7 +255,6 @@ const AdminsSection = () => {
                 </button>
             </div>
 
-            {/* Tabla de admins */}
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
                 <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-100">
@@ -309,7 +299,6 @@ const AdminsSection = () => {
                                     {!admin.isSuperAdmin && (
                                         <>
                                             {admin.isActive ? (
-                                                // Botón DESACTIVAR (admin activo)
                                                 <button
                                                     onClick={() => setConfirmDelete(admin)}
                                                     className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition-colors"
@@ -317,7 +306,6 @@ const AdminsSection = () => {
                                                     <Trash2 className="w-3.5 h-3.5" /> Desactivar
                                                 </button>
                                             ) : (
-                                                // Botón REACTIVAR (admin inactivo)
                                                 <button
                                                     onClick={() => setConfirmReactivate(admin)}
                                                     className="flex items-center gap-1 px-3 py-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded-lg text-xs font-medium transition-colors"
@@ -334,7 +322,6 @@ const AdminsSection = () => {
                 </table>
             </div>
 
-            {/* Modal de confirmación */}
             {confirmDelete && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
@@ -363,9 +350,7 @@ const AdminsSection = () => {
                     </div>
                 </div>
             )}
-            {/* ═══════════════════════════════════════════════════════ */}
-            {/* Modal de REACTIVAR (NUEVO) */}
-            {/* ═══════════════════════════════════════════════════════ */}
+
             {confirmReactivate && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
@@ -404,17 +389,11 @@ const AdminsSection = () => {
 
 const AdminDashboard = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const qc = useQueryClient();
     const [tab, setTab] = useState('pending');
     const [filter, setFilter] = useState('active');
     const [modal, setModal] = useState(null);
-
-    // DEBUG: Log del usuario al cargar el dashboard
-    useEffect(() => {
-        console.log('🔍 AdminDashboard - user completo:', user);
-        console.log('🔍 AdminDashboard - user.role:', user?.role);
-        console.log('🔍 AdminDashboard - user.isSuperAdmin:', user?.isSuperAdmin);
-    }, [user]);
 
     const invalidate = () => {
         qc.invalidateQueries(['admin-pending']);
@@ -451,24 +430,56 @@ const AdminDashboard = () => {
         <div className="container-custom py-8">
 
             {/* Cabecera */}
-            <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
-                    <ShieldCheck className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
+                        <ShieldCheck className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
+                        <p className="text-sm text-gray-500">
+                            {user?.isSuperAdmin ? 'SuperAdmin · Acceso completo' : 'Administrador'}
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
-                    <p className="text-sm text-gray-500">
-                        {user?.isSuperAdmin ? 'SuperAdmin · Acceso completo' : 'Administrador'}
-                    </p>
-                </div>
+
+                {/* BOTÓN DE ESPECIALIDADES */}
+                <button
+                    onClick={() => navigate('/admin/specialties')}
+                    className="flex items-center gap-2 btn-primary px-5 py-2.5"
+                >
+                    <Stethoscope className="w-4 h-4" />
+                    Gestionar Especialidades
+                </button>
             </div>
 
-            {/* Estadísticas */}
+            {/* Estadísticas - con click en specialties */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <StatCard icon={Clock} label="Pendientes de revisión" value={stats?.pendingReview} color="bg-yellow-500" />
-                <StatCard icon={CheckCircle} label="Profesionales activos" value={stats?.activeProfessionals} color="bg-green-500" />
-                <StatCard icon={Users} label="Pacientes registrados" value={stats?.totalPatients} color="bg-blue-500" />
-                <StatCard icon={Stethoscope} label="Citas totales" value={stats?.totalAppointments} color="bg-purple-500" />
+                <StatCard
+                    icon={Clock}
+                    label="Pendientes de revisión"
+                    value={stats?.pendingReview}
+                    color="bg-yellow-500"
+                />
+                <StatCard
+                    icon={CheckCircle}
+                    label="Profesionales activos"
+                    value={stats?.activeProfessionals}
+                    color="bg-green-500"
+                />
+                <StatCard
+                    icon={Users}
+                    label="Pacientes registrados"
+                    value={stats?.totalPatients}
+                    color="bg-blue-500"
+                />
+                <StatCard
+                    icon={Stethoscope}
+                    label="Especialidades"
+                    value={stats?.totalSpecialties ?? 0}
+                    color="bg-purple-500"
+                    onClick={() => navigate('/admin/specialties')}
+                />
             </div>
 
             {/* Tabs */}

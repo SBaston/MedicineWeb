@@ -126,6 +126,23 @@ public class AdminService : IAdminService
             .ToListAsync();
 
     // ══════════════════════════════════════════════════════════════
+    // VERIFICAR SI UN USERID ES ADMIN (cualquier tipo)
+    // ══════════════════════════════════════════════════════════════
+
+    public async Task<bool> IsAdminAsync(int userId) =>
+        await _db.Admins.AnyAsync(a => a.UserId == userId && a.User.IsActive);
+
+    /// <summary>
+    /// Verifica que el userId pertenece a un admin (SuperAdmin o admin normal).
+    /// Lanza UnauthorizedAccessException si no es admin.
+    /// </summary>
+    public async Task AssertIsAdminAsync(int userId)
+    {
+        if (!await IsAdminAsync(userId))
+            throw new UnauthorizedAccessException("Se requieren permisos de administrador.");
+    }
+
+    // ══════════════════════════════════════════════════════════════
     // VERIFICAR SI UN USERID ES SUPERADMIN
     // ══════════════════════════════════════════════════════════════
 

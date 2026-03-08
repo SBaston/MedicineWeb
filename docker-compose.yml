@@ -42,7 +42,7 @@ services:
       - NexusSalud-network
 
   # ═══════════════════════════════════════════════════════════════
-  # BACKEND API (.NET)
+  # BACKEND API (.NET) con Tesseract OCR
   # ═══════════════════════════════════════════════════════════════
   backend:
     build:
@@ -54,17 +54,29 @@ services:
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=NexusSaludDB;Username=postgres;Password=postgres"
       ConnectionStrings__Redis: "redis:6379"
       
-      # IMPORTANTE: Configuración de CORS
+      # Configuración ASPNETCORE
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: "http://+:5000"
       
-      # CORS: Permitir el frontend (AJUSTA LA IP DE TU SERVIDOR)
-      # Si accedes desde tu máquina local: http://localhost:5173
-      # Si accedes desde otra máquina: http://TU_IP:5173
+      # CORS: Permitir el frontend
+      # IMPORTANTE: Ajusta estas URLs según tu configuración
+      # Localhost: http://localhost:5173
+      # Red local: http://192.168.1.X:5173
+      # Producción: https://tu-dominio.com
       AllowedOrigins: "http://localhost:5173,http://127.0.0.1:5173,http://192.168.1.100:5173"
+      
+      # Tesseract OCR
+      TESSDATA_PREFIX: "/app/tessdata"
+      
+      # File Storage
+      FileStorage__BasePath: "/app/uploads"
+      FileStorage__MaxFileSizeMB: "10"
       
     ports:
       - "5000:5000"
+    volumes:
+      # Volumen para persistir imágenes de documentos
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,10 +94,11 @@ services:
       context: ./MedicineFrontend/medicinefrontend
       dockerfile: Dockerfile
       args:
-        # IMPORTANTE: Esta es la URL que el NAVEGADOR usará para conectarse
-        # Debe ser accesible desde el navegador del cliente
-        # Si estás en la misma máquina: http://localhost:5000
-        # Si accedes desde otra máquina: http://TU_IP:5000
+        # URL del backend que el NAVEGADOR usará
+        # IMPORTANTE: Debe ser accesible desde el navegador del cliente
+        # Mismo PC: http://localhost:5000/api
+        # Otra PC en red local: http://192.168.1.X:5000/api
+        # Producción: https://api.tu-dominio.com
         VITE_API_URL: "http://localhost:5000/api"
     container_name: NexusSalud-frontend
     ports:
@@ -104,10 +117,12 @@ volumes:
     driver: local
   redis_data:
     driver: local
+  uploads_data:
+    driver: local
 
 # ═══════════════════════════════════════════════════════════════
-# RED INTERNA
+# RED INTERNA (CORREGIDO: NexusSalud-network)
 # ═══════════════════════════════════════════════════════════════
 networks:
-  medicare-network:
+  NexusSalud-network:
     driver: bridge

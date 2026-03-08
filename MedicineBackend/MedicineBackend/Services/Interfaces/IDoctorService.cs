@@ -1,4 +1,5 @@
-﻿using MedicineBackend.Models;
+﻿using MedicineBackend.DTOs;
+using MedicineBackend.Models;
 
 namespace MedicineBackend.Services.Interfaces;
 
@@ -11,7 +12,15 @@ public interface IDoctorService
     /// Obtiene todos los doctores verificados y activos
     /// </summary>
     Task<List<Doctor>> GetAllDoctorsAsync();
+    /// <summary>
+    /// Verifica si un email ya está registrado
+    /// </summary>
+    Task<bool> EmailExistsAsync(string email);
 
+    /// <summary>
+    /// Registra un nuevo doctor
+    /// </summary>
+    Task<Doctor> RegisterAsync(CreateDoctorRequest request);
     /// <summary>
     /// Obtiene un doctor por su ID
     /// </summary>
@@ -27,13 +36,13 @@ public interface IDoctorService
     /// </summary>
     Task<Doctor> UpdateDoctorAsync(int id, Doctor updatedDoctor);
 
-    /// <summary>
-    /// Obtiene doctores con calificación mínima
-    /// </summary>
-    Task<List<Doctor>> GetDoctorsByRatingAsync(decimal minRating);
+    ///// <summary>
+    ///// Obtiene doctores con calificación mínima
+    ///// </summary>
+    //Task<List<Doctor>> GetDoctorsByRatingAsync(decimal minRating);
 
-    /// <summary>
-    /// Busca doctores por nombre
-    /// </summary>
-    Task<List<Doctor>> SearchDoctorsAsync(string searchTerm);
+    ///// <summary>
+    ///// Busca doctores por nombre
+    ///// </summary>
+    //Task<List<Doctor>> SearchDoctorsAsync(string searchTerm);
 }

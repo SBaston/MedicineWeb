@@ -48,7 +48,9 @@ const LoginPage = () => {
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center space-x-2 mb-2">
                         <Heart className="w-12 h-12 text-primary-600" />
-                        <span className="text-4xl font-bold text-primary-600">MediCare</span>
+                        <Link to="/">
+                            <span className="text-4xl font-bold text-primary-600">NexusSalud</span>
+                        </Link>
                     </div>
                     <p className="text-gray-600">Inicia sesión en tu cuenta</p>
                 </div>

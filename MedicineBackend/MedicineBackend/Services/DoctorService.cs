@@ -1,4 +1,5 @@
 ﻿using MedicineBackend.Data;
+using MedicineBackend.DTOs;
 using MedicineBackend.Models;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,79 @@ public class DoctorService : IDoctorService
         _context = context;
         _cache = cache;
         _logger = logger;
+    }
+
+    public async Task<Doctor> RegisterAsync(CreateDoctorRequest request)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            // 1. Crear usuario
+            var user = new User
+            {
+                Email = request.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Role = "Doctor",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            // 2. Obtener especialidades
+            var specialties = await _context.Specialties
+                .Where(s => request.SpecialtyIds.Contains(s.Id))
+                .ToListAsync();
+
+            if (specialties.Count != request.SpecialtyIds.Count)
+            {
+                throw new InvalidOperationException("Una o más especialidades no son válidas");
+            }
+
+            // 3. Crear doctor
+            var doctor = new Doctor
+            {
+                UserId = user.Id,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                ProfessionalLicense = request.ProfessionalLicense,
+                YearsOfExperience = request.YearsOfExperience,
+                PricePerSession = request.PricePerSession,
+                Description = request.Description,
+                PhoneNumber = request.PhoneNumber,
+                Status = DoctorStatus.PendingReview,
+                ProfessionalLicenseImageUrl = request.ProfessionalLicenseImageUrl,
+                IdDocumentImageUrl = request.IdDocumentImageUrl,
+                DegreeImageUrl = request.DegreeImageUrl,
+                OcrData = request.OcrData,
+                IsDocumentVerified = request.IsDocumentVerified,
+                Specialties = specialties,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Doctors.Add(doctor);
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
+            _logger.LogInformation($"✅ Doctor registrado: {doctor.FirstName} {doctor.LastName} (ID: {doctor.Id})");
+
+            return doctor;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "❌ Error al registrar doctor");
+            throw;
+        }
+    }
+
+    public async Task<bool> EmailExistsAsync(string email)
+    {
+        return await _context.Users
+            .AnyAsync(u => u.Email.ToLower() == email.ToLower());
     }
 
     /// <summary>
@@ -172,15 +246,4 @@ public class DoctorService : IDoctorService
 
         _logger.LogDebug("Caché invalidado para doctor {DoctorId}", doctorId);
     }
-}
-
-/// <summary>
-/// Interfaz del servicio de doctores
-/// </summary>
-public interface IDoctorService
-{
-    Task<List<Doctor>> GetAllDoctorsAsync();
-    Task<Doctor?> GetDoctorByIdAsync(int id);
-    Task<List<Doctor>> GetDoctorsBySpecialtyAsync(int specialtyId);
-    Task<Doctor> UpdateDoctorAsync(int id, Doctor updatedDoctor);
 }

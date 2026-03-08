@@ -2,19 +2,20 @@ import { Link } from 'react-router-dom';
 import { Search, Star, Award, Clock, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import doctorService from '../services/doctorService';
+import specialtyService from '../services/specialtyService';
 
 const HomePage = () => {
     // Obtener especialidades
     const { data: specialties } = useQuery({
         queryKey: ['specialties'],
-        queryFn: doctorService.getSpecialties,
+        queryFn: specialtyService.getAll,
     });
 
-    // Obtener doctores destacados
-    const { data: doctors } = useQuery({
-        queryKey: ['featured-doctors'],
-        queryFn: () => doctorService.getAllDoctors({ minRating: 4.5 }),
-    });
+    //// Obtener doctores destacados
+    //const { data: doctors } = useQuery({
+    //    queryKey: ['featured-doctors'],
+    //    queryFn: () => doctorService.getAllDoctors({ minRating: 4.5 }),
+    //});
 
     return (
         <div className="min-h-screen">
@@ -107,35 +108,35 @@ const HomePage = () => {
             </section>
 
             {/* Doctores destacados */}
-            <section className="py-16 bg-gray-50">
-                <div className="container-custom">
-                    <h2 className="text-4xl font-bold text-center mb-12">Doctores Destacados</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {doctors?.slice(0, 3).map((doctor) => (
-                            <div key={doctor.id} className="card">
-                                <img
-                                    src={doctor.profilePictureUrl || 'https://via.placeholder.com/300'}
-                                    alt={doctor.fullName}
-                                    className="w-full h-48 object-cover rounded-lg mb-4"
-                                />
-                                <h3 className="text-xl font-bold mb-2">{doctor.fullName}</h3>
-                                <p className="text-gray-600 mb-3">{doctor.specialties?.[0]?.name}</p>
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                                    <span className="font-semibold">{doctor.averageRating?.toFixed(1)}</span>
-                                    <span className="text-gray-500 text-sm">({doctor.totalReviews} reseñas)</span>
-                                </div>
-                                <Link
-                                    to={`/doctors/${doctor.id}`}
-                                    className="btn-primary w-full text-center block"
-                                >
-                                    Ver Perfil
-                                </Link>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            {/*<section className="py-16 bg-gray-50">*/}
+            {/*    <div className="container-custom">*/}
+            {/*        <h2 className="text-4xl font-bold text-center mb-12">Doctores Destacados</h2>*/}
+            {/*        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">*/}
+            {/*            {doctors?.slice(0, 3).map((doctor) => (*/}
+            {/*                <div key={doctor.id} className="card">*/}
+            {/*                    <img*/}
+            {/*                        src={doctor.profilePictureUrl || 'https://via.placeholder.com/300'}*/}
+            {/*                        alt={doctor.fullName}*/}
+            {/*                        className="w-full h-48 object-cover rounded-lg mb-4"*/}
+            {/*                    />*/}
+            {/*                    <h3 className="text-xl font-bold mb-2">{doctor.fullName}</h3>*/}
+            {/*                    <p className="text-gray-600 mb-3">{doctor.specialties?.[0]?.name}</p>*/}
+            {/*                    <div className="flex items-center gap-2 mb-4">*/}
+            {/*                        <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />*/}
+            {/*                        <span className="font-semibold">{doctor.averageRating?.toFixed(1)}</span>*/}
+            {/*                        <span className="text-gray-500 text-sm">({doctor.totalReviews} reseñas)</span>*/}
+            {/*                    </div>*/}
+            {/*                    <Link*/}
+            {/*                        to={`/doctors/${doctor.id}`}*/}
+            {/*                        className="btn-primary w-full text-center block"*/}
+            {/*                    >*/}
+            {/*                        Ver Perfil*/}
+            {/*                    </Link>*/}
+            {/*                </div>*/}
+            {/*            ))}*/}
+            {/*        </div>*/}
+            {/*    </div>*/}
+            {/*</section>*/}
 
             {/* CTA Section */}
             <section className="py-16 bg-primary-600 text-white">

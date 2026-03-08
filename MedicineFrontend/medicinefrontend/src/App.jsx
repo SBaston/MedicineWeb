@@ -11,6 +11,8 @@ import EditProfilePage from './pages/EditProfilePage';
 import ProfessionalsPage from './pages/ProfessionalPage';
 import AdminDashboard from './pages/AdminDashboard';
 import CreateAdminPage from './pages/CreateAdminPage';
+import AdminSpecialtiesPage from './pages/AdminSpecialtiesPage';
+import DoctorRegisterPage from './pages/DoctorRegisterPage';
 
 const SuperAdminRoute = ({ children }) => {
     const { isAuthenticated, user, loading } = useAuth();
@@ -132,6 +134,8 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route path="/admin/specialties" element={<AdminSpecialtiesPage />} />
+                        <Route path="/register/doctor" element={<DoctorRegisterPage />} />
 
                         <Route
                             path="/profile/edit"

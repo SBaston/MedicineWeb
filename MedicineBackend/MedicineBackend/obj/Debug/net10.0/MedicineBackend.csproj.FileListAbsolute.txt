@@ -123,3 +123,9 @@ C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\tr
 C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\obj\Debug\net10.0\MedicineBackend.sourcelink.json
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\x86\leptonica-1.82.0.dll
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\x86\tesseract50.dll
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\x64\leptonica-1.82.0.dll
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\x64\tesseract50.dll
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\SixLabors.ImageSharp.dll
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\Tesseract.dll

@@ -178,6 +178,8 @@ public class AppDbContext : DbContext
 
             entity.Property(s => s.Description)
                 .HasMaxLength(500);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         // ============================================

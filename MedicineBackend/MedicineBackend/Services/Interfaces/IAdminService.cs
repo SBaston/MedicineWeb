@@ -47,6 +47,8 @@ public interface IAdminService
     /// <returns>True si el usuario es SuperAdmin, False en caso contrario</returns>
     Task<bool> IsSuperAdminAsync(int userId);
 
+    Task AssertIsAdminAsync(int userId); // ← AÑADIDO
+
     /// <summary>
     /// Obtiene los datos del admin autenticado.
     /// Usado por el frontend después del login para cargar la información completa.

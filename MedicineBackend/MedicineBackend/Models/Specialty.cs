@@ -19,11 +19,11 @@ public class Specialty
     [MaxLength(500)]
     public string? Description { get; set; }
 
-    /// <summary>
-    /// URL del icono de la especialidad
-    /// </summary>
-    [MaxLength(500)]
-    public string? IconUrl { get; set; }
+    ///// <summary>
+    ///// URL del icono de la especialidad
+    ///// </summary>
+    //[MaxLength(500)]
+    //public string? IconUrl { get; set; }
 
     /// <summary>
     /// Indica si la especialidad está activa
@@ -31,7 +31,7 @@ public class Specialty
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
+    public DateTime? UpdatedAt { get; set; }
     // ============================================
     // RELACIONES
     // ============================================
