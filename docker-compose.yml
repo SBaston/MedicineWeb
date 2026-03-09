@@ -1,9 +1,6 @@
 version: '3.9'
 
 services:
-  # ═══════════════════════════════════════════════════════════════
-  # BASE DE DATOS POSTGRESQL
-  # ═══════════════════════════════════════════════════════════════
   postgres:
     image: postgres:15
     container_name: NexusSalud-postgres
@@ -23,9 +20,6 @@ services:
     networks:
       - NexusSalud-network
 
-  # ═══════════════════════════════════════════════════════════════
-  # REDIS CACHE
-  # ═══════════════════════════════════════════════════════════════
   redis:
     image: redis:7
     container_name: NexusSalud-redis
@@ -41,9 +35,6 @@ services:
     networks:
       - NexusSalud-network
 
-  # ═══════════════════════════════════════════════════════════════
-  # BACKEND API (.NET) - SOLO HTTP
-  # ═══════════════════════════════════════════════════════════════
   backend:
     build:
       context: ./MedicineBackend/MedicineBackend
@@ -54,7 +45,7 @@ services:
       ConnectionStrings__Redis: "redis:6379"
       
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: "http://+:80"
+      ASPNETCORE_URLS: "http://+:5000"
       
       JwtSettings__Issuer: "http://localhost:5000"
       JwtSettings__Audience: "http://localhost:5173"
@@ -66,7 +57,7 @@ services:
       FileStorage__MaxFileSizeMB: "10"
       
     ports:
-      - "5000:80"
+      - "5000:5000"
     volumes:
       - uploads_data:/app/uploads
     depends_on:
@@ -78,9 +69,6 @@ services:
       - NexusSalud-network
     restart: unless-stopped
 
-  # ═══════════════════════════════════════════════════════════════
-  # FRONTEND (React + Vite) - SOLO HTTP
-  # ═══════════════════════════════════════════════════════════════
   frontend:
     build:
       context: ./MedicineFrontend/medicinefrontend

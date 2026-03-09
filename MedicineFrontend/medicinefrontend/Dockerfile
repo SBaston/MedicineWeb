@@ -9,6 +9,9 @@ RUN npm ci
 
 COPY . .
 
+# ═══════════════════════════════════════════════════════════════
+# URL de la API se pasa desde docker-compose
+# ═══════════════════════════════════════════════════════════════
 ARG VITE_API_URL=http://localhost:5000/api
 ENV VITE_API_URL=$VITE_API_URL
 
