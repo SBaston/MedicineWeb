@@ -158,7 +158,7 @@ const CompleteProfilePage = () => {
             await doctorDashboardService.updateProfile(updateData);
 
             alert('✅ Perfil actualizado correctamente');
-            navigate('/doctor');
+            navigate('/doctor/dashboard');
 
         } catch (error) {
             console.error('Error al actualizar perfil:', error);
@@ -200,7 +200,7 @@ const CompleteProfilePage = () => {
                 <div className="max-w-4xl mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
                         <button
-                            onClick={() => navigate('/doctor')}
+                            onClick={() => navigate('/doctor/dashboard')}
                             className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5" />
@@ -403,7 +403,7 @@ const CompleteProfilePage = () => {
                     {/* Submit Button */}
                     <div className="flex items-center justify-end gap-4">
                         <button
-                            type="button" onClick={() => navigate('/doctor')}
+                            type="button" onClick={() => navigate('/doctor/dashboard')}
                             className="px-6 py-3 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                         >
                             Cancelar

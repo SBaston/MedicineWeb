@@ -7,10 +7,11 @@ using MedicineBackend.DTOs.DoctorDTO;
 using MedicineBackend.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using MedicineBackend.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace MedicineBackend.Services;
+
 
 public class DoctorDashboardService : IDoctorDashboardService
 {
@@ -37,7 +38,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             ?? throw new KeyNotFoundException("Doctor no encontrado");
 
         var now = DateTime.UtcNow;
-        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var startOfLastMonth = startOfMonth.AddMonths(-1);
 
         var thisMonthPayments = doctor.Payments
@@ -447,9 +448,9 @@ public class DoctorDashboardService : IDoctorDashboardService
         DateTime startDate = timeRange switch
         {
             "week" => now.AddDays(-7),
-            "month" => new DateTime(now.Year, now.Month, 1),
-            "year" => new DateTime(now.Year, 1, 1),
-            _ => new DateTime(now.Year, now.Month, 1)
+            "month" => new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc),
+            "year" => new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            _ => new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc)
         };
 
         var paymentsQuery = _context.Payments

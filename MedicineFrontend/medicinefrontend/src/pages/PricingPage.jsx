@@ -70,7 +70,7 @@ const PricingPage = () => {
             });
 
             alert('✅ Precios actualizados correctamente');
-            navigate('/doctor');
+            navigate('/doctor/dashboard');
 
         } catch (error) {
             console.error('Error al guardar:', error);
@@ -104,7 +104,7 @@ const PricingPage = () => {
                 <div className="max-w-4xl mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
                         <button
-                            onClick={() => navigate('/doctor')}
+                            onClick={() => navigate('/doctor/dashboard')}
                             className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5" />
