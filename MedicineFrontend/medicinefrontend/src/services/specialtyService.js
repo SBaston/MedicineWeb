@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Frontend/src/services/specialtyService.js - CON SOFT DELETE
+// Frontend/src/services/specialtyService.js - CORREGIDO
 // ═══════════════════════════════════════════════════════════════
 
 import api from './api';
@@ -7,10 +7,10 @@ import api from './api';
 const specialtyService = {
     /**
      * Obtener todas las especialidades ACTIVAS (público)
-     * Para el dropdown de doctores
+     * Para el dropdown de doctores y páginas públicas
      */
     getActive: async () => {
-        const response = await api.get('/specialties');
+        const response = await api.get('/specialties/active');  // ✅ CAMBIADO: de /specialties a /specialties/active
         return response.data;
     },
 

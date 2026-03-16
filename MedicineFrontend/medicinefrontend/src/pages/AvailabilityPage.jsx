@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // AvailabilityPage.jsx - Gestión de Disponibilidad Horaria
+// SIN MOCKS - Conectado con backend real
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import {
     ArrowLeft, Save, Plus, Trash2, Clock,
     Calendar, CheckCircle, XCircle, Copy
 } from 'lucide-react';
+import doctorDashboardService from '../services/doctordashboardService';
 
 const DAYS = [
     { value: 1, label: 'Lunes' },
@@ -27,25 +29,46 @@ const TIME_SLOTS = Array.from({ length: 24 }, (_, i) => {
 const AvailabilityPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [loadingData, setLoadingData] = useState(true);
     const [availabilities, setAvailabilities] = useState({});
     const [selectedDay, setSelectedDay] = useState(null);
 
     useEffect(() => {
-        // TODO: Fetch current availabilities from API
-        const mockData = {
-            1: [{ id: 1, startTime: '09:00', endTime: '13:00', isAvailable: true }],
-            2: [{ id: 2, startTime: '09:00', endTime: '13:00', isAvailable: true }],
-            3: [{ id: 3, startTime: '09:00', endTime: '13:00', isAvailable: true }],
-        };
-        setAvailabilities(mockData);
+        loadAvailabilities();
     }, []);
+
+    const loadAvailabilities = async () => {
+        try {
+            setLoadingData(true);
+            const data = await doctorDashboardService.getAvailabilities();
+
+            // Organizar por día
+            const grouped = {};
+            data.forEach(av => {
+                if (!grouped[av.dayOfWeek]) {
+                    grouped[av.dayOfWeek] = [];
+                }
+                grouped[av.dayOfWeek].push(av);
+            });
+
+            setAvailabilities(grouped);
+        } catch (error) {
+            console.error('Error al cargar disponibilidades:', error);
+            alert('Error al cargar los horarios');
+        } finally {
+            setLoadingData(false);
+        }
+    };
 
     const addTimeSlot = (dayValue) => {
         const newSlot = {
-            id: Date.now(),
+            id: `temp_${Date.now()}`,
+            dayOfWeek: dayValue,
             startTime: '09:00',
             endTime: '17:00',
             isAvailable: true,
+            notes: '',
+            isNew: true
         };
 
         setAvailabilities(prev => ({
@@ -54,11 +77,28 @@ const AvailabilityPage = () => {
         }));
     };
 
-    const removeTimeSlot = (dayValue, slotId) => {
-        setAvailabilities(prev => ({
-            ...prev,
-            [dayValue]: prev[dayValue].filter(slot => slot.id !== slotId)
-        }));
+    const removeTimeSlot = async (dayValue, slotId) => {
+        if (slotId.toString().startsWith('temp_')) {
+            // Es temporal, solo quitar del estado
+            setAvailabilities(prev => ({
+                ...prev,
+                [dayValue]: prev[dayValue].filter(slot => slot.id !== slotId)
+            }));
+        } else {
+            // Es del backend, eliminar
+            if (!confirm('¿Eliminar esta franja horaria?')) return;
+
+            try {
+                await doctorDashboardService.deleteAvailability(slotId);
+                setAvailabilities(prev => ({
+                    ...prev,
+                    [dayValue]: prev[dayValue].filter(slot => slot.id !== slotId)
+                }));
+            } catch (error) {
+                console.error('Error al eliminar:', error);
+                alert('Error al eliminar la franja horaria');
+            }
+        }
     };
 
     const updateTimeSlot = (dayValue, slotId, field, value) => {
@@ -77,26 +117,49 @@ const AvailabilityPage = () => {
         DAYS.forEach(day => {
             newAvailabilities[day.value] = sourceSchedule.map(slot => ({
                 ...slot,
-                id: Date.now() + Math.random()
+                id: `temp_${Date.now()}_${Math.random()}`,
+                dayOfWeek: day.value,
+                isNew: true
             }));
         });
 
         setAvailabilities(newAvailabilities);
     };
 
-    const handleSubmit = async () => {
+    const handleSave = async () => {
         setLoading(true);
 
         try {
-            // TODO: Submit to API
-            console.log('Saving availabilities:', availabilities);
+            const allSlots = Object.values(availabilities).flat();
 
-            setTimeout(() => {
-                setLoading(false);
-                navigate('/doctor');
-            }, 2000);
+            for (const slot of allSlots) {
+                if (slot.isNew) {
+                    // Crear nuevo
+                    await doctorDashboardService.createAvailability({
+                        dayOfWeek: slot.dayOfWeek,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        isAvailable: slot.isAvailable,
+                        notes: slot.notes || null
+                    });
+                } else if (slot.modified) {
+                    // Actualizar existente
+                    await doctorDashboardService.updateAvailability(slot.id, {
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        isAvailable: slot.isAvailable,
+                        notes: slot.notes || null
+                    });
+                }
+            }
+
+            alert('✅ Horarios guardados correctamente');
+            navigate('/doctor');
+
         } catch (error) {
-            console.error('Error al guardar disponibilidad:', error);
+            console.error('Error al guardar:', error);
+            alert('❌ Error al guardar los horarios');
+        } finally {
             setLoading(false);
         }
     };
@@ -110,6 +173,17 @@ const AvailabilityPage = () => {
 
         return `${activeSlots.length} franja${activeSlots.length > 1 ? 's' : ''}`;
     };
+
+    if (loadingData) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-slate-600 font-medium">Cargando horarios...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50">
@@ -125,7 +199,7 @@ const AvailabilityPage = () => {
                             <span className="font-medium">Volver</span>
                         </button>
                         <button
-                            onClick={handleSubmit}
+                            onClick={handleSave}
                             disabled={loading}
                             className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg disabled:opacity-50 flex items-center gap-2"
                         >
@@ -171,8 +245,8 @@ const AvailabilityPage = () => {
                                         key={day.value}
                                         onClick={() => setSelectedDay(day.value)}
                                         className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedDay === day.value
-                                                ? 'border-purple-600 bg-purple-50'
-                                                : 'border-slate-200 hover:border-slate-300'
+                                            ? 'border-purple-600 bg-purple-50'
+                                            : 'border-slate-200 hover:border-slate-300'
                                             }`}
                                     >
                                         <div className="flex items-center justify-between">
@@ -293,8 +367,8 @@ const AvailabilityPage = () => {
                                                         <button
                                                             onClick={() => updateTimeSlot(selectedDay, slot.id, 'isAvailable', !slot.isAvailable)}
                                                             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${slot.isAvailable
-                                                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                                                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                                                 }`}
                                                         >
                                                             {slot.isAvailable ? 'Activo' : 'Inactivo'}

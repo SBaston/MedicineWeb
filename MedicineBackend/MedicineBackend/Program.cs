@@ -78,6 +78,9 @@ builder.Services.AddScoped<ISpecialtyService, SpecialtyService>();
 builder.Services.AddScoped<IOcrService, OcrService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtHelper>();
+builder.Services.AddScoped<IDoctorDashboardService, DoctorDashboardService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+
 builder.Services.AddMemoryCache();
 
 // Autenticación JWT
@@ -175,6 +178,7 @@ if (app.Environment.IsDevelopment())
 // MIDDLEWARE - ORDEN IMPORTANTE
 // ═══════════════════════════════════════════════════════════
 /*app.UseHttpsRedirection();*/  // ← PRIMERO: Redirigir HTTP → HTTPS
+app.UseStaticFiles();
 app.UseCors("AllowFrontend");  // ← SEGUNDO: CORS
 app.UseAuthentication();  // ← TERCERO: Autenticación
 app.UseAuthorization();   // ← CUARTO: Autorización

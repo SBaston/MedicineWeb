@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // UploadVideosPage.jsx - Subir Vídeos de Redes Sociales
+// SIN MOCKS - Conectado con backend real
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import {
     ArrowLeft, Upload, Video, Trash2, Eye, EyeOff,
     CheckCircle, AlertCircle, ExternalLink, Save, Plus
 } from 'lucide-react';
+import doctorDashboardService from '../services/doctordashboardService';
 
 const PLATFORMS = [
     { value: 'TikTok', label: 'TikTok', color: 'from-black to-pink-600', icon: '🎵' },
@@ -18,6 +20,8 @@ const PLATFORMS = [
 const UploadVideosPage = () => {
     const navigate = useNavigate();
     const [videos, setVideos] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [loadingData, setLoadingData] = useState(true);
     const [newVideo, setNewVideo] = useState({
         platform: 'TikTok',
         videoUrl: '',
@@ -25,43 +29,24 @@ const UploadVideosPage = () => {
         description: '',
         tags: '',
     });
-    const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
-        // TODO: Fetch existing videos from API
-        const mockVideos = [
-            {
-                id: 1,
-                platform: 'TikTok',
-                videoUrl: 'https://tiktok.com/@doctor/video123',
-                title: 'Consejos para el dolor de espalda',
-                description: 'Ejercicios simples que puedes hacer en casa',
-                tags: 'salud, fisioterapia, espalda',
-                isActive: true,
-                isVerified: true,
-                viewCount: 15420,
-                likeCount: 892,
-                thumbnailUrl: null,
-                createdAt: '2026-03-01'
-            },
-            {
-                id: 2,
-                platform: 'Instagram',
-                videoUrl: 'https://instagram.com/reel/abc123',
-                title: 'Mitos sobre la nutrición',
-                description: 'Desmontando 5 mitos comunes',
-                tags: 'nutrición, salud, mitos',
-                isActive: true,
-                isVerified: false,
-                viewCount: 8234,
-                likeCount: 421,
-                thumbnailUrl: null,
-                createdAt: '2026-02-28'
-            },
-        ];
-        setVideos(mockVideos);
+        loadVideos();
     }, []);
+
+    const loadVideos = async () => {
+        try {
+            setLoadingData(true);
+            const data = await doctorDashboardService.getVideos();
+            setVideos(data);
+        } catch (error) {
+            console.error('Error al cargar vídeos:', error);
+            alert('Error al cargar los vídeos');
+        } finally {
+            setLoadingData(false);
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -94,19 +79,15 @@ const UploadVideosPage = () => {
         setLoading(true);
 
         try {
-            // TODO: Submit to API
-            const videoToAdd = {
-                id: Date.now(),
-                ...newVideo,
-                isActive: true,
-                isVerified: false,
-                viewCount: 0,
-                likeCount: 0,
-                thumbnailUrl: null,
-                createdAt: new Date().toISOString().split('T')[0]
+            const videoData = {
+                platform: newVideo.platform,
+                videoUrl: newVideo.videoUrl,
+                title: newVideo.title,
+                description: newVideo.description || null,
+                tags: newVideo.tags || null
             };
 
-            setVideos(prev => [videoToAdd, ...prev]);
+            await doctorDashboardService.createVideo(videoData);
 
             // Reset form
             setNewVideo({
@@ -117,25 +98,40 @@ const UploadVideosPage = () => {
                 tags: '',
             });
 
-            setLoading(false);
+            // Recargar lista
+            await loadVideos();
+
+            alert('✅ Vídeo añadido correctamente');
+
         } catch (error) {
             console.error('Error al añadir vídeo:', error);
+            alert('❌ Error al añadir el vídeo');
+        } finally {
             setLoading(false);
         }
     };
 
     const toggleVideoStatus = async (videoId) => {
-        setVideos(prev => prev.map(v =>
-            v.id === videoId ? { ...v, isActive: !v.isActive } : v
-        ));
-        // TODO: Update in API
+        try {
+            await doctorDashboardService.toggleVideoStatus(videoId);
+            await loadVideos();
+        } catch (error) {
+            console.error('Error al cambiar estado:', error);
+            alert('Error al cambiar el estado del vídeo');
+        }
     };
 
     const deleteVideo = async (videoId) => {
         if (!confirm('¿Estás seguro de que quieres eliminar este vídeo?')) return;
 
-        setVideos(prev => prev.filter(v => v.id !== videoId));
-        // TODO: Delete from API
+        try {
+            await doctorDashboardService.deleteVideo(videoId);
+            await loadVideos();
+            alert('✅ Vídeo eliminado');
+        } catch (error) {
+            console.error('Error al eliminar:', error);
+            alert('❌ Error al eliminar el vídeo');
+        }
     };
 
     const getPlatformColor = (platform) => {
@@ -145,6 +141,19 @@ const UploadVideosPage = () => {
     const getPlatformIcon = (platform) => {
         return PLATFORMS.find(p => p.value === platform)?.icon || '🎬';
     };
+
+    if (loadingData) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-red-50 to-orange-50">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-slate-600 font-medium">Cargando vídeos...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const verifiedCount = videos.filter(v => v.isVerified && v.isActive).length;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-orange-50">
@@ -189,9 +198,16 @@ const UploadVideosPage = () => {
                                 Debes tener al menos <strong>3 vídeos verificados</strong> para que tu perfil sea visible a los pacientes.
                                 Los vídeos ayudan a generar confianza y mostrar tu expertise.
                             </p>
-                            <div className="flex items-center gap-2 text-sm">
-                                <CheckCircle className="w-4 h-4" />
-                                <span>Los vídeos serán revisados por nuestro equipo antes de publicarse</span>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 text-sm">
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>Verificados: {verifiedCount}/3</span>
+                                </div>
+                                {verifiedCount >= 3 && (
+                                    <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">
+                                        ✅ Requisito cumplido
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>

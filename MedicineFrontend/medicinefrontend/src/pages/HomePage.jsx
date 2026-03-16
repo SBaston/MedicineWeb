@@ -5,10 +5,10 @@ import doctorService from '../services/doctorService';
 import specialtyService from '../services/specialtyService';
 
 const HomePage = () => {
-    // Obtener especialidades
+    // Obtener especialidades ACTIVAS (público)
     const { data: specialties } = useQuery({
         queryKey: ['specialties'],
-        queryFn: specialtyService.getAll,
+        queryFn: specialtyService.getActive,  // ✅ CAMBIADO: de getAll a getActive
     });
 
     //// Obtener doctores destacados

@@ -26,22 +26,39 @@ export const AuthProvider = ({ children }) => {
                 };
             }
 
-            // Si es doctor, cargar su perfil completo
+            // ✅ Si es doctor, cargar su perfil completo
             if (basicUser.role === 'Doctor') {
-                // TODO: Implementar endpoint para doctores
-                return {
-                    ...basicUser,
-                    firstName: 'Doctor',
-                    lastName: 'User',
-                    fullName: 'Doctor User',
-                };
+                try {
+                    const response = await api.get('/doctor/profile');
+                    const doctor = response.data;
+
+                    return {
+                        ...basicUser,
+                        firstName: doctor.firstName || 'Doctor',
+                        lastName: doctor.lastName || 'User',
+                        fullName: `${doctor.firstName || 'Doctor'} ${doctor.lastName || 'User'}`,
+                        professionalLicense: doctor.professionalLicense,
+                        profilePictureUrl: doctor.profilePictureUrl,
+                        yearsOfExperience: doctor.yearsOfExperience,
+                        pricePerSession: doctor.pricePerSession,
+                    };
+                } catch (error) {
+                    // Si falla la carga del perfil, devolver datos básicos
+                    console.warn('No se pudo cargar el perfil del doctor, usando datos básicos');
+                    return {
+                        ...basicUser,
+                        firstName: 'Doctor',
+                        lastName: 'User',
+                        fullName: 'Doctor User',
+                    };
+                }
             }
 
             // Si es admin
             if (basicUser.role === 'Admin') {
                 const response = await api.get('/admin/me');
                 const admin = response.data;
-                // TODO: Implementar endpoint para admins
+
                 return {
                     ...basicUser,
                     fullName: admin.fullName,

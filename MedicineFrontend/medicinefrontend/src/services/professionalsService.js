@@ -1,33 +1,42 @@
+// ═══════════════════════════════════════════════════════════════
+// Frontend/src/services/professionalsService.js - CORREGIDO
+// ═══════════════════════════════════════════════════════════════
+
 import api from './api';
 
 const professionalsService = {
     /**
-     * Busca profesionales con filtros
-     * @param {Object} filters - { search, specialty, minRating, maxPrice, sortBy }
+     * Buscar profesionales con filtros
      */
-    search: async ({ search = '', specialty = '', minRating = '', maxPrice = '', sortBy = 'rating' } = {}) => {
+    search: async (filters = {}) => {
         const params = new URLSearchParams();
-        if (search) params.append('search', search);
-        if (specialty) params.append('specialty', specialty);
-        if (minRating) params.append('minRating', minRating);
-        if (maxPrice) params.append('maxPrice', maxPrice);
-        if (sortBy) params.append('sortBy', sortBy);
 
-        const response = await api.get(`/doctors?${params.toString()}`);
+        if (filters.search) params.append('search', filters.search);
+        if (filters.specialty) params.append('specialty', filters.specialty);
+        if (filters.minRating) params.append('minRating', filters.minRating);
+        if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+        if (filters.sortBy) params.append('sortBy', filters.sortBy);
+
+        const response = await api.get(`/professionals?${params.toString()}`);
         return response.data;
     },
 
-    /** Devuelve todas las especialidades para el filtro */
+    /**
+     * Obtener especialidades ACTIVAS (público)
+     * Usado en ProfessionalsPage para el filtro de especialidades
+     */
     getSpecialties: async () => {
-        const response = await api.get('/specialties');
+        const response = await api.get('/specialties/active');  // ✅ CAMBIADO: de /specialties a /specialties/active
         return response.data;
     },
 
-    /** Detalle de un profesional */
+    /**
+     * Obtener detalle de un profesional
+     */
     getById: async (id) => {
-        const response = await api.get(`/doctors/${id}`);
+        const response = await api.get(`/professionals/${id}`);
         return response.data;
-    },
+    }
 };
 
 export default professionalsService;

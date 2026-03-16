@@ -13,6 +13,13 @@ import AdminDashboard from './pages/AdminDashboard';
 import CreateAdminPage from './pages/CreateAdminPage';
 import AdminSpecialtiesPage from './pages/AdminSpecialtiesPage';
 import DoctorRegisterPage from './pages/DoctorRegisterPage';
+import DoctorDashboard from './pages/DoctorDashboard';
+import CompleteProfilePage from './pages/CompleteProfilePage';
+import AvailabilityPage from './pages/AvailabilityPage';
+import UploadVideosPage from './pages/UploadVideosPage';
+import EarningsPage from './pages/EarningsPage';
+import CreateCoursePage from './pages/CreateCoursePage';
+import PricingPage from './pages/PricingPage';
 
 const SuperAdminRoute = ({ children }) => {
     const { isAuthenticated, user, loading } = useAuth();
@@ -118,8 +125,87 @@ function App() {
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
                         {/* Nueva ruta única que reemplaza /doctors y /specialties */}
-                        <Route path="/professionals" element={<Layout><ProfessionalsPage /></Layout>} />
+                        <Route path="/professionals"
+                            element={<Layout><ProfessionalsPage /></Layout>} />
+                        <Route
+                            path="/doctor/dashboard"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <Layout>
+                                        <DoctorDashboard />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        />
 
+                        {/* Completar perfil */}
+                        <Route
+                            path="/doctor/profile/complete"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <CompleteProfilePage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Configurar disponibilidad */}
+                        <Route
+                            path="/doctor/availability"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <AvailabilityPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Subir vídeos */}
+                        <Route
+                            path="/doctor/videos"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <UploadVideosPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/doctor/videos/upload"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <UploadVideosPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Ingresos */}
+                        <Route
+                            path="/doctor/earnings"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <EarningsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Crear curso */}
+                        <Route
+                            path="/doctor/courses/new"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <CreateCoursePage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Configurar precios */}
+                        <Route
+                            path="/doctor/pricing"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <PricingPage />
+                                </ProtectedRoute>
+                            }
+                        />
                         {/* Redirigir las rutas antiguas por si alguien tiene un enlace guardado */}
                         <Route path="/doctors" element={<Navigate to="/professionals" replace />} />
                         <Route path="/specialties" element={<Navigate to="/professionals" replace />} />
