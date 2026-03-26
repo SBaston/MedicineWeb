@@ -48,7 +48,7 @@ namespace MedicineBackend.Controllers
         // GET /api/specialties
         // Obtener especialidades ACTIVAS (público - para dropdown doctores)
         // ═══════════════════════════════════════════════════════════
-        [HttpGet]
+        [HttpGet("active")]
         [AllowAnonymous]
         public async Task<IActionResult> GetActive()
         {

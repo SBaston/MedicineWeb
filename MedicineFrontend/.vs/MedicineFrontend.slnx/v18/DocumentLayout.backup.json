@@ -219,8 +219,7 @@
               "ViewState": "AgIAAEYAAAAAAAAAAAAYwFMAAABGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
               "WhenOpened": "2026-03-12T06:30:48.909Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
@@ -232,8 +231,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\CompleteProfilePage.jsx",
               "ViewState": "AgIAADMAAAAAAAAAAAAAAKkBAAAhAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-15T12:43:06.892Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-15T12:43:06.892Z"
             },
             {
               "$type": "Document",
@@ -245,8 +243,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\AdminSpecialtiesPage.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAGMAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-08T11:26:34.043Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-08T11:26:34.043Z"
             },
             {
               "$type": "Document",
@@ -258,8 +255,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\AdminDashboard.jsx",
               "ViewState": "AgIAAIcBAAAAAAAAAAAawJMBAABgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-02-22T16:42:11.735Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-22T16:42:11.735Z"
             },
             {
               "$type": "Document",
@@ -284,8 +280,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\AvailabilityPage.jsx",
               "ViewState": "AgIAALUAAAAAAAAAAAAYwMIAAABGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-12T06:29:28.105Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T06:29:28.105Z"
             },
             {
               "$type": "Document",
@@ -297,8 +292,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\CreateAdminPage.jsx",
               "ViewState": "AgIAAPsAAAAAAAAAAAAAABQAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-02-22T22:45:35.071Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-22T22:45:35.071Z"
             },
             {
               "$type": "Document",
@@ -310,8 +304,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\CreateCoursePage.jsx",
               "ViewState": "AgIAAJAAAAAAAAAAAAAYwJ0AAABKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-12T06:31:20.736Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T06:31:20.736Z"
             },
             {
               "$type": "Document",
@@ -323,8 +316,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\DoctorRegisterPage.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAIsBAAA9AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-08T11:28:17.438Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-08T11:28:17.438Z"
             },
             {
               "$type": "Document",
@@ -336,8 +328,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\PricingPage.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAA2AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-12T06:31:42.328Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T06:31:42.328Z"
             },
             {
               "$type": "Document",
@@ -349,8 +340,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\ProfessionalPage.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAKMBAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-02-15T20:07:34.775Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T20:07:34.775Z"
             },
             {
               "$type": "Document",
@@ -362,8 +352,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\RegisterPage.jsx",
               "ViewState": "AgIAAFcAAAAAAAAAAAAqwHYAAABRAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-01-31T12:07:39.507Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-31T12:07:39.507Z"
             },
             {
               "$type": "Document",
@@ -375,8 +364,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\UploadVideosPage.jsx",
               "ViewState": "AgIAAJcAAAAAAAAAAAAYwKQAAAA8AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-12T06:30:17.395Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T06:30:17.395Z"
             },
             {
               "$type": "Document",
@@ -388,8 +376,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\PatientDashboard.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-02-08T18:59:10.474Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-08T18:59:10.474Z"
             },
             {
               "$type": "Document",
@@ -401,8 +388,7 @@
               "RelativeToolTip": "medicinefrontend\\src\\pages\\HomePage.jsx",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAJ8AAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-01-31T12:06:58.365Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-31T12:06:58.365Z"
             },
             {
               "$type": "Document",
