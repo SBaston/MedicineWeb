@@ -129,3 +129,5 @@ C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\x6
 C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\x64\tesseract50.dll
 C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\SixLabors.ImageSharp.dll
 C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\Tesseract.dll
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\tessdata\eng.traineddata
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\tessdata\spa.traineddata

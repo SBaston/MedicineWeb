@@ -38,6 +38,8 @@ namespace MedicineBackend.Services
 
         public async Task<OcrResultDto> ProcessImageAsync(string base64Image)
         {
+            //Cargar librerías manualmente ANTES de usar Tesseract
+            NativeLibraryLoader.EnsureLoaded();
             try
             {
                 var base64Data = base64Image.Contains(",")

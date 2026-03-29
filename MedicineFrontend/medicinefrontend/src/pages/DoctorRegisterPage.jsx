@@ -80,7 +80,7 @@ const DoctorRegisterPage = () => {
         mutationFn: (data) => doctorService.register(data),
         onSuccess: (response) => {
             // Redirigir a página de éxito
-            navigate('/register/doctor/success', {
+            navigate('/register/doctor/dashboard', {
                 state: { doctorData: response }
             });
         },

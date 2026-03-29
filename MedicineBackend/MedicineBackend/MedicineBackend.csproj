@@ -32,8 +32,25 @@
     </None>
   </ItemGroup>
 
+	<ItemGroup>
+		<None Update="tessdata\**\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	
+	<ItemGroup>
+		<Content Include="wwwroot\**\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
   <ItemGroup>
+    <Folder Include="tessdata\" />
     <Folder Include="Properties\" />
+    <Folder Include="wwwroot\uploads\courses\covers\" />
+    <Folder Include="wwwroot\uploads\doctors\documents\" />
+    <Folder Include="wwwroot\uploads\doctors\profiles\" />
   </ItemGroup>
 
 </Project>
