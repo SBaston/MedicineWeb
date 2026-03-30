@@ -75,11 +75,13 @@ namespace MedicineBackend.Services
                     });
                 }
 
-                // Retornar URL relativa
-                var relativeUrl = $"/uploads/{folder}/{fullFilename}";
-                _logger.LogInformation($"✅ Imagen guardada: {relativeUrl}");
+                // Retornar URL absoluta
+                var baseUrl = _configuration["AppUrl"];
+                var absoluteUrl = $"{baseUrl}/uploads/{folder}/{fullFilename}";
+                _logger.LogInformation($"✅ Imagen guardada: {absoluteUrl}");
+                return absoluteUrl;
+                
 
-                return relativeUrl;
             }
             catch (Exception ex)
             {

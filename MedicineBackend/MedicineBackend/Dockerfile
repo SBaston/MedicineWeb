@@ -92,8 +92,6 @@ RUN echo "=== Verificando archivos en /usr/local/lib/ ===" && \
     find /usr/lib -name "libdl.so*" && \
     echo "" && \
     echo "=== Copiando libdl.so ===" && \
-    mkdir -p /usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.5 && \
-    cp /lib/x86_64-linux-gnu/libdl.so.2 /usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.5/libdl.so && \
     cp /lib/x86_64-linux-gnu/libdl.so.2 /app/libdl.so && \
     cp /lib/x86_64-linux-gnu/libdl.so.2 /app/x64/libdl.so && \
     cp /lib/x86_64-linux-gnu/libdl.so.2 /app/runtimes/linux-x64/native/libdl.so && \
@@ -151,7 +149,7 @@ RUN echo "=== Verificando /app/x64/ ===" && \
 ENV ASPNETCORE_URLS=http://+:5000
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV TESSDATA_PREFIX=/app/tessdata
-ENV LD_LIBRARY_PATH=/app/x64:/app/runtimes/linux-x64/native:/usr/local/lib:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/app/x64:/app/runtimes/linux-x64/native:/usr/local/lib:/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
 
 EXPOSE 5000
 

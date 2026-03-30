@@ -179,7 +179,17 @@ if (app.Environment.IsDevelopment())
 // MIDDLEWARE - ORDEN IMPORTANTE
 // ═══════════════════════════════════════════════════════════
 /*app.UseHttpsRedirection();*/  // ← PRIMERO: Redirigir HTTP → HTTPS
+
+// Servir archivos estáticos desde wwwroot
 app.UseStaticFiles();
+
+// ✅ Servir archivos desde la carpeta uploads
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
+    RequestPath = "/uploads"
+});
 app.UseCors("AllowFrontend");  // ← SEGUNDO: CORS
 app.UseAuthentication();  // ← TERCERO: Autenticación
 app.UseAuthorization();   // ← CUARTO: Autorización

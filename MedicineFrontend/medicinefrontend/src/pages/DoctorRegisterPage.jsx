@@ -73,15 +73,20 @@ const DoctorRegisterPage = () => {
         }
     });
 
+    
     // ═══════════════════════════════════════════════════════════
     // Mutación para registro
     // ═══════════════════════════════════════════════════════════
     const registerMutation = useMutation({
         mutationFn: (data) => doctorService.register(data),
-        onSuccess: (response) => {
-            // Redirigir a página de éxito
-            navigate('/register/doctor/dashboard', {
-                state: { doctorData: response }
+        onSuccess: () => {
+            // Redirigir a login con mensaje de éxito
+            navigate('/login', {
+                state: {
+                    registrationSuccess: true,
+                    message: 'Registro exitoso. Tu cuenta está pendiente de verificación. Recibirás un email cuando sea aprobada.',
+                    email: formData.email
+                }
             });
         },
         onError: (error) => {
@@ -179,13 +184,18 @@ const DoctorRegisterPage = () => {
             // Convertir especialidades a IDs para el backend
             const dataToSend = {
                 ...formData,
-                specialtyIds: formData.specialties.map(s => s.id) // ← Enviar solo IDs
+                specialtyIds: formData.specialties.map(s => s.id), // ← Enviar solo IDs
+                phoneNumber: formData.phoneNumber?.trim() || null, // ← null si está vacío
+                idDocumentImage: formData.idDocumentImage || null,
+                degreeImage: formData.degreeImage || null
             };
             delete dataToSend.specialties; // Eliminar el array de objetos
+            delete dataToSend.confirmPassword; // No enviar confirmación de contraseña
 
             registerMutation.mutate(dataToSend);
         }
     };
+
 
     // ═══════════════════════════════════════════════════════════
     // Render

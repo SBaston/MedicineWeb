@@ -200,6 +200,11 @@ public class DoctorManagementService : IDoctorManagementService
         Status = d.Status.ToString(),
         RegisteredAt = d.CreatedAt,
         Specialties = d.Specialties.Select(s => s.Name).ToList(),
+        ProfessionalLicenseImageUrl = d.ProfessionalLicenseImageUrl,
+        IdDocumentImageUrl = d.IdDocumentImageUrl,
+        DegreeImageUrl = d.DegreeImageUrl,
+        OcrData = d.OcrData,
+        IsDocumentVerified = d.IsDocumentVerified,
     };
 
     private static DoctorAdminDto ToAdminDto(Doctor d) => new()

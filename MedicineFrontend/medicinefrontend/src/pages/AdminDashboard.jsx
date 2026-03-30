@@ -6,7 +6,7 @@ import adminService from '../services/adminService';
 import {
     ShieldCheck, Clock, CheckCircle, XCircle, Trash2, Users,
     Stethoscope, Mail, AlertTriangle, ChevronDown, ChevronUp,
-    Star, Crown, UserPlus
+    Star, Crown, UserPlus, FileText, Shield, User, Eye, Download, X
 } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════════
@@ -73,70 +73,282 @@ const ConfirmModal = ({ title, description, requireReason, reasonLabel, danger, 
 
 const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
     const [expanded, setExpanded] = useState(false);
+    const [showImageModal, setShowImageModal] = useState(null);
+
     const avatar = doctor.profilePictureUrl
         || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.fullName)}&background=3b82f6&color=fff&size=200&bold=true`;
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-4 p-4">
-                <img src={avatar} alt={doctor.fullName}
-                    className="w-12 h-12 rounded-full object-cover flex-shrink-0 border-2 border-gray-100" />
-                <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{doctor.fullName}</p>
-                    <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                        <Mail className="w-3 h-3" /> {doctor.email}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                        {doctor.specialties.map(s => (
-                            <span key={s} className="px-2 py-0.5 bg-primary-50 text-primary-700 text-xs rounded-full">{s}</span>
-                        ))}
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={() => setExpanded(!expanded)}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors">
-                        {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                    <button onClick={() => onReject(doctor)}
-                        className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors">
-                        <XCircle className="w-4 h-4" /> Rechazar
-                    </button>
-                    <button onClick={() => onApprove(doctor)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
-                        <CheckCircle className="w-4 h-4" /> Aprobar
-                    </button>
-                </div>
-            </div>
-            {expanded && (
-                <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                        <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Nº Colegiado</p>
-                        <p className="font-medium text-gray-800">{doctor.professionalLicense}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Experiencia</p>
-                        <p className="font-medium text-gray-800">{doctor.yearsOfExperience ?? '—'} años</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Precio / sesión</p>
-                        <p className="font-medium text-gray-800">{doctor.pricePerSession} €</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Teléfono</p>
-                        <p className="font-medium text-gray-800">{doctor.phoneNumber || '—'}</p>
-                    </div>
-                    {doctor.description && (
-                        <div className="col-span-full">
-                            <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Descripción</p>
-                            <p className="text-gray-700">{doctor.description}</p>
+        <>
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div className="flex items-center gap-4 p-4">
+                    <img src={avatar} alt={doctor.fullName}
+                        className="w-12 h-12 rounded-full object-cover flex-shrink-0 border-2 border-gray-100" />
+                    <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{doctor.fullName}</p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                            <Mail className="w-3 h-3" /> {doctor.email}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                            {doctor.specialties && doctor.specialties.map(s => (
+                                <span key={s} className="px-2 py-0.5 bg-primary-50 text-primary-700 text-xs rounded-full">{s}</span>
+                            ))}
                         </div>
-                    )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => setExpanded(!expanded)}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors">
+                            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+                        <button onClick={() => onReject(doctor)}
+                            className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors">
+                            <XCircle className="w-4 h-4" /> Rechazar
+                        </button>
+                        <button onClick={() => onApprove(doctor)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
+                            <CheckCircle className="w-4 h-4" /> Aprobar
+                        </button>
+                    </div>
+                </div>
+
+                {expanded && (
+                    <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
+                        {/* Información básica */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                            <div>
+                                <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Nº Colegiado</p>
+                                <p className="font-medium text-gray-800">{doctor.professionalLicense}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Experiencia</p>
+                                <p className="font-medium text-gray-800">{doctor.yearsOfExperience ?? 0} años</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Precio / sesión</p>
+                                <p className="font-medium text-gray-800">{doctor.pricePerSession} €</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Teléfono</p>
+                                <p className="font-medium text-gray-800">{doctor.phoneNumber || '—'}</p>
+                            </div>
+                        </div>
+
+                        {/* Descripción */}
+                        {doctor.description && (
+                            <div className="mb-4">
+                                <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Descripción</p>
+                                <p className="text-gray-700 text-sm">{doctor.description}</p>
+                            </div>
+                        )}
+
+                        {/* DOCUMENTOS */}
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-700 font-semibold mb-3 flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-primary-600" />
+                                Documentos de Verificación
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                                {/* Carnet de Colegiado */}
+                                {doctor.professionalLicenseImageUrl ? (
+                                    <div className="bg-white rounded-lg border-2 border-blue-200 overflow-hidden">
+                                        <div className="p-3 bg-blue-50 border-b border-blue-200">
+                                            <p className="font-semibold text-sm text-blue-900 flex items-center gap-2">
+                                                <Shield className="w-4 h-4" />
+                                                Carnet de Colegiado
+                                            </p>
+                                            <p className="text-xs text-blue-700 mt-0.5">Obligatorio</p>
+                                        </div>
+                                        <div className="p-2">
+                                            <img
+                                                src={doctor.professionalLicenseImageUrl}
+                                                alt="Carnet de colegiado"
+                                                className="w-full h-48 object-contain bg-gray-100 rounded cursor-pointer hover:opacity-80 transition"
+                                                onClick={() => setShowImageModal({
+                                                    url: doctor.professionalLicenseImageUrl,
+                                                    title: 'Carnet de Colegiado'
+                                                })}
+                                            />
+                                            <div className="flex gap-2 mt-2">
+                                                <button
+                                                    onClick={() => setShowImageModal({
+                                                        url: doctor.professionalLicenseImageUrl,
+                                                        title: 'Carnet de Colegiado'
+                                                    })}
+                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                                                >
+                                                    <Eye className="w-3 h-3" />
+                                                    Ver
+                                                </button>
+                                                <a
+                                                    href={doctor.professionalLicenseImageUrl}
+                                                    download
+                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                                                >
+                                                    <Download className="w-3 h-3" />
+                                                    Descargar
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-red-50 rounded-lg border-2 border-dashed border-red-200 p-4 flex flex-col items-center justify-center h-64">
+                                        <Shield className="w-8 h-8 text-red-300 mb-2" />
+                                        <p className="text-xs font-semibold text-red-700">Carnet de Colegiado</p>
+                                        <p className="text-xs text-red-600 mt-1">⚠️ No subido</p>
+                                    </div>
+                                )}
+
+                                {/* DNI/Pasaporte */}
+                                {doctor.idDocumentImageUrl ? (
+                                    <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
+                                        <div className="p-3 bg-gray-50 border-b border-gray-200">
+                                            <p className="font-semibold text-sm text-gray-900 flex items-center gap-2">
+                                                <User className="w-4 h-4" />
+                                                DNI / Pasaporte
+                                            </p>
+                                            <p className="text-xs text-gray-600 mt-0.5">Opcional</p>
+                                        </div>
+                                        <div className="p-2">
+                                            <img
+                                                src={doctor.idDocumentImageUrl}
+                                                alt="DNI/Pasaporte"
+                                                className="w-full h-48 object-contain bg-gray-100 rounded cursor-pointer hover:opacity-80 transition"
+                                                onClick={() => setShowImageModal({
+                                                    url: doctor.idDocumentImageUrl,
+                                                    title: 'DNI/Pasaporte'
+                                                })}
+                                            />
+                                            <div className="flex gap-2 mt-2">
+                                                <button
+                                                    onClick={() => setShowImageModal({
+                                                        url: doctor.idDocumentImageUrl,
+                                                        title: 'DNI/Pasaporte'
+                                                    })}
+                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                                                >
+                                                    <Eye className="w-3 h-3" />
+                                                    Ver
+                                                </button>
+                                                <a
+                                                    href={doctor.idDocumentImageUrl}
+                                                    download
+                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                                                >
+                                                    <Download className="w-3 h-3" />
+                                                    Descargar
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 p-4 flex flex-col items-center justify-center h-64">
+                                        <User className="w-8 h-8 text-gray-300 mb-2" />
+                                        <p className="text-xs font-semibold text-gray-600">DNI / Pasaporte</p>
+                                        <p className="text-xs text-gray-400 mt-1">No subido</p>
+                                    </div>
+                                )}
+
+                                {/* Título Universitario */}
+                                {doctor.degreeImageUrl ? (
+                                    <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
+                                        <div className="p-3 bg-gray-50 border-b border-gray-200">
+                                            <p className="font-semibold text-sm text-gray-900 flex items-center gap-2">
+                                                <FileText className="w-4 h-4" />
+                                                Título Universitario
+                                            </p>
+                                            <p className="text-xs text-gray-600 mt-0.5">Opcional</p>
+                                        </div>
+                                        <div className="p-2">
+                                            <img
+                                                src={doctor.degreeImageUrl}
+                                                alt="Título universitario"
+                                                className="w-full h-48 object-contain bg-gray-100 rounded cursor-pointer hover:opacity-80 transition"
+                                                onClick={() => setShowImageModal({
+                                                    url: doctor.degreeImageUrl,
+                                                    title: 'Título Universitario'
+                                                })}
+                                            />
+                                            <div className="flex gap-2 mt-2">
+                                                <button
+                                                    onClick={() => setShowImageModal({
+                                                        url: doctor.degreeImageUrl,
+                                                        title: 'Título Universitario'
+                                                    })}
+                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                                                >
+                                                    <Eye className="w-3 h-3" />
+                                                    Ver
+                                                </button>
+                                                <a
+                                                    href={doctor.degreeImageUrl}
+                                                    download
+                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                                                >
+                                                    <Download className="w-3 h-3" />
+                                                    Descargar
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 p-4 flex flex-col items-center justify-center h-64">
+                                        <FileText className="w-8 h-8 text-gray-300 mb-2" />
+                                        <p className="text-xs font-semibold text-gray-600">Título Universitario</p>
+                                        <p className="text-xs text-gray-400 mt-1">No subido</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Datos OCR */}
+                        {doctor.ocrData && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <p className="text-xs text-blue-900 font-semibold mb-1">Datos extraídos por OCR</p>
+                                <pre className="text-xs text-blue-800 overflow-x-auto whitespace-pre-wrap">
+                                    {typeof doctor.ocrData === 'string'
+                                        ? JSON.stringify(JSON.parse(doctor.ocrData), null, 2)
+                                        : JSON.stringify(doctor.ocrData, null, 2)
+                                    }
+                                </pre>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Modal de imagen ampliada */}
+            {showImageModal && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+                    onClick={() => setShowImageModal(null)}
+                >
+                    <div
+                        className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white">
+                            <h3 className="font-semibold text-lg">{showImageModal.title}</h3>
+                            <button
+                                onClick={() => setShowImageModal(null)}
+                                className="text-gray-400 hover:text-gray-600 transition"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <img
+                                src={showImageModal.url}
+                                alt={showImageModal.title}
+                                className="w-full h-auto"
+                            />
+                        </div>
+                    </div>
                 </div>
             )}
-        </div>
+        </>
     );
 };
-
 // ════════════════════════════════════════════════════════════════
 // TABLA DE PROFESIONALES
 // ════════════════════════════════════════════════════════════════

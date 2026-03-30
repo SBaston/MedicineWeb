@@ -62,8 +62,26 @@ public class PendingDoctorDto
     public string Status { get; set; } = string.Empty;
     public DateTime RegisteredAt { get; set; }
     public List<string> Specialties { get; set; } = new();
-}
 
+    // ═══════════════════════════════════════════════════════════
+    // DOCUMENTOS SUBIDOS (URLs de las imágenes)
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>Carnet de colegiado (obligatorio)</summary>
+    public string? ProfessionalLicenseImageUrl { get; set; }
+
+    /// <summary>DNI o Pasaporte (opcional)</summary>
+    public string? IdDocumentImageUrl { get; set; }
+
+    /// <summary>Título universitario (opcional)</summary>
+    public string? DegreeImageUrl { get; set; }
+
+    /// <summary>Datos extraídos del OCR del carnet (JSON)</summary>
+    public string? OcrData { get; set; }
+
+    /// <summary>Si el documento ha sido verificado automáticamente</summary>
+    public bool IsDocumentVerified { get; set; }
+}
 public class DoctorAdminDto : PendingDoctorDto
 {
     public string? StatusReason { get; set; }
