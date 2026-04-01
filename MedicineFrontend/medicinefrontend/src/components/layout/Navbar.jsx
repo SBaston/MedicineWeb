@@ -1,8 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Heart, LogOut, Calendar, BookOpen, ChevronDown } from 'lucide-react';
+import { LogOut, Calendar, BookOpen, ChevronDown } from 'lucide-react';
 import UserAvatar from '../UserAvatar';
 import { useState, useEffect, useRef } from 'react';
+import logo from '../../assets/nexussalud-logo1.jpg'; // ← Importar el logo
 
 const Navbar = () => {
     const { user, logout, isAuthenticated } = useAuth();
@@ -31,8 +32,12 @@ const Navbar = () => {
                 <div className="flex justify-between items-center h-16">
 
                     {/* Logo */}
-                    <Link to="/" className="flex items-center space-x-2">
-                        <Heart className="w-8 h-8 text-primary-600" />
+                    <Link to="/" className="flex items-center space-x-3">
+                        <img
+                            src={logo}
+                            alt="NexusSalud Logo"
+                            className="h-12 w-12 object-contain rounded-lg"
+                        />
                         <span className="text-2xl font-bold text-primary-600">NexusSalud</span>
                     </Link>
 

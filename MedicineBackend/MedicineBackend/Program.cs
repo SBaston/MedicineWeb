@@ -208,19 +208,17 @@ using (var scope = app.Services.CreateScope())
     {
         logger.LogInformation("🔍 Verificando conexión a la base de datos...");
 
+        
         // 1. Verificar conexión
         var canConnect = await dbContext.Database.CanConnectAsync();
 
-        if (!canConnect)
-        {
-            logger.LogInformation("📦 La base de datos no existe. Creándola...");
-            await dbContext.Database.EnsureCreatedAsync();
-            logger.LogInformation("✅ Base de datos creada correctamente");
-        }
-        else
-        {
-            logger.LogInformation("✅ Conexión exitosa a PostgreSQL");
-        }
+        //if (!canConnect)
+        //{
+        //    logger.LogError("❌ No se puede conectar a PostgreSQL");
+        //    throw new Exception("No se puede conectar a la base de datos");
+        //}
+
+        //logger.LogInformation("✅ Conexión exitosa a PostgreSQL");
 
         // 2. Aplicar migraciones pendientes
         var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();

@@ -1,4 +1,5 @@
 import { Heart, Mail, Phone, MapPin } from 'lucide-react';
+import logo from '../../assets/nexussalud-logo1.jpg';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
@@ -9,7 +10,11 @@ const Footer = () => {
                     {/* Logo y descripción */}
                     <div>
                         <div className="flex items-center space-x-2 mb-4">
-                            <Heart className="w-8 h-8 text-primary-400" />
+                            <img
+                                src={logo}
+                                alt="NexusSalud Logo"
+                                className="h-12 w-12 object-contain rounded-lg"
+                            />
                             <span className="text-2xl font-bold">NexusSalud</span>
                         </div>
                         <p className="text-gray-400 text-sm">

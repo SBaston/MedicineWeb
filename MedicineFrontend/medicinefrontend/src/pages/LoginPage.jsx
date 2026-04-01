@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logo from '../assets/nexussalud-logo1.jpg';
 import { Mail, Lock, AlertCircle, Heart } from 'lucide-react';
 
 const LoginPage = () => {
@@ -47,8 +48,13 @@ const LoginPage = () => {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center space-x-2 mb-2">
-                        <Heart className="w-12 h-12 text-primary-600" />
-                        <Link to="/">
+                        <Link to="/" className="flex items-center space-x-3">
+                        <img
+                            src={logo}
+                            alt="NexusSalud Logo"
+                            className="h-12 w-12 object-contain rounded-lg"
+                        />
+                        
                             <span className="text-4xl font-bold text-primary-600">NexusSalud</span>
                         </Link>
                     </div>
