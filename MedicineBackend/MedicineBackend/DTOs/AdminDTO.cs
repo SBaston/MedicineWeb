@@ -119,4 +119,5 @@ public class AdminDashboardStatsDto
     public int TotalPatients { get; set; }
     public int TotalAppointments { get; set; }
     public int TotalAdmins { get; set; }
+    public int TotalSpecialties { get; set; }
 }

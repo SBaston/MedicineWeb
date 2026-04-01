@@ -183,6 +183,7 @@ public class AdminService : IAdminService
         TotalPatients = await _db.Patients.CountAsync(),
         TotalAppointments = await _db.Appointments.CountAsync(),
         TotalAdmins = await _db.Admins.CountAsync(a => a.User.IsActive),
+        TotalSpecialties = await _db.Specialties.CountAsync(s => s.IsActive),  // ✅ AÑADIR ESTA LÍNEA
     };
 
     // ══════════════════════════════════════════════════════════════
