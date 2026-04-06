@@ -65,7 +65,7 @@ public class DoctorProfileDto
     public string? Description { get; set; }
     public string? ProfilePictureUrl { get; set; }
     public decimal PricePerSession { get; set; }
-    public List<int> Specialties { get; set; } = new();
+    public List<string> Specialties { get; set; } = new();
     public string Email { get; set; } = string.Empty;
 }
 

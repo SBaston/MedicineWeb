@@ -40,6 +40,12 @@ const adminService = {
     createAdmin: (data) => api.post('/admin/admins', data).then(r => r.data),
     deactivateAdmin: (id) => api.delete(`/admin/admins/${id}`).then(r => r.data),
     reactivateAdmin: (id) => api.put(`/admin/admins/${id}/reactivate`).then(r => r.data),
+
+    // ══════════════════════════════════════════════════════════════
+    // GESTIÓN DE VÍDEOS - Verificación por admin
+    // ══════════════════════════════════════════════════════════════
+    getVideos: (filter = 'pending') => api.get(`/admin/videos?filter=${filter}`).then(r => r.data),
+    verifyVideo: (id, isVerified) => api.patch(`/admin/videos/${id}/verify`, { isVerified }).then(r => r.data),
 };
 
 export default adminService;

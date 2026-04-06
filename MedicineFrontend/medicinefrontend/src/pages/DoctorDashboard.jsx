@@ -1,14 +1,16 @@
 // ═══════════════════════════════════════════════════════════════
 // DoctorDashboard.jsx - Dashboard Principal del Doctor
-// SIN MOCKS - Conectado con backend real
+// ✅ Completitud basada en 4 campos editables
+// ❌ Sin especialidades (no editables)
+// ❌ Sin vídeos como requisito (opcional)
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     DollarSign, Calendar, Users, Star, TrendingUp, TrendingDown,
-    User, Clock, Video, BookOpen, Settings, Eye, AlertCircle,
-    ArrowRight, CheckCircle, XCircle
+    User, Clock, Video, BookOpen, AlertCircle,
+    ArrowRight, CheckCircle, Eye
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
 
@@ -68,24 +70,38 @@ const DoctorDashboard = () => {
             {/* Header */}
             <div className="bg-white border-b border-slate-200 shadow-sm">
                 <div className="max-w-7xl mx-auto px-6 py-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-                            <p className="text-slate-600 mt-1">Bienvenido a tu panel de control</p>
-                        </div>
-                        <button
-                            onClick={() => navigate('/doctor/profile/complete')}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                        >
-                            <Settings className="w-4 h-4" />
-                            Configuración
-                        </button>
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+                        <p className="text-slate-600 mt-1">Bienvenido a tu panel de control</p>
                     </div>
                 </div>
             </div>
 
             <div className="max-w-7xl mx-auto px-6 py-8">
-                {/* Profile Completion Alert */}
+                {/* ✅ PERFIL COMPLETO (100%) - Mensaje verde con botón "Ver mi perfil" */}
+                {stats.profileCompletion === 100 && (
+                    <div className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-2xl p-6 mb-8 shadow-lg">
+                        <div className="flex items-start gap-4">
+                            <CheckCircle className="w-6 h-6 flex-shrink-0 mt-1" />
+                            <div className="flex-1">
+                                <h3 className="font-bold text-lg mb-2">¡Perfil completado! 🎉</h3>
+                                <p className="mb-4 text-white/90">
+                                    Tu perfil está completo al 100%. Ahora puedes empezar a recibir pacientes y gestionar tus servicios.
+                                </p>
+
+                                <button
+                                    onClick={() => navigate('/doctor/profile')}
+                                    className="px-6 py-2.5 bg-white text-emerald-600 rounded-lg font-semibold hover:bg-emerald-50 transition-colors shadow-md hover:shadow-lg flex items-center gap-2"
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    Ver mi perfil
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ⚠️ PERFIL INCOMPLETO (<100%) - Alerta naranja con progreso */}
                 {stats.profileCompletion < 100 && (
                     <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl p-6 mb-8 shadow-lg">
                         <div className="flex items-start gap-4">
@@ -93,22 +109,40 @@ const DoctorDashboard = () => {
                             <div className="flex-1">
                                 <h3 className="font-bold text-lg mb-2">Completa tu perfil profesional</h3>
                                 <p className="mb-4 text-white/90">
-                                    Tu perfil está al {stats.profileCompletion}%. Completa la información para empezar a recibir pacientes.
+                                    Tu perfil está al {stats.profileCompletion}%. Completa la información básica para empezar a recibir pacientes.
                                 </p>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex-1 bg-white/20 rounded-full h-2">
+
+                                {/* Barra de progreso */}
+                                <div className="mb-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium text-white/90">Progreso</span>
+                                        <span className="text-sm font-bold text-white">{stats.profileCompletion}%</span>
+                                    </div>
+                                    <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
                                         <div
-                                            className="bg-white h-2 rounded-full transition-all"
+                                            className="bg-white h-full rounded-full transition-all duration-500 ease-out shadow-lg"
                                             style={{ width: `${stats.profileCompletion}%` }}
                                         />
                                     </div>
-                                    <button
-                                        onClick={() => navigate('/doctor/profile/complete')}
-                                        className="px-6 py-2 bg-white text-orange-600 rounded-lg font-semibold hover:bg-orange-50 transition-colors"
-                                    >
-                                        Completar ahora
-                                    </button>
                                 </div>
+
+                                {/* Info sobre campos requeridos */}
+                                <div className="bg-white/10 rounded-lg p-3 mb-4">
+                                    <p className="text-sm text-white/90 mb-2 font-medium">Campos requeridos para completar tu perfil:</p>
+                                    <ul className="text-sm text-white/80 space-y-1">
+                                        <li>• Teléfono de contacto</li>
+                                        <li>• Años de experiencia</li>
+                                        <li>• Biografía profesional (mínimo 50 caracteres)</li>
+                                        <li>• Precio por sesión</li>
+                                    </ul>
+                                </div>
+
+                                <button
+                                    onClick={() => navigate('/doctor/profile/complete')}
+                                    className="px-6 py-2.5 bg-white text-orange-600 rounded-lg font-semibold hover:bg-orange-50 transition-colors shadow-md hover:shadow-lg"
+                                >
+                                    Completar ahora
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -140,47 +174,45 @@ const DoctorDashboard = () => {
 
                     {/* Appointments */}
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-4">
-                            <Calendar className="w-6 h-6 text-white" />
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                                <Calendar className="w-6 h-6 text-white" />
+                            </div>
                         </div>
-                        <h3 className="text-3xl font-bold text-slate-900 mb-1">{stats.upcomingAppointments}</h3>
-                        <p className="text-slate-600 text-sm">Próximas citas</p>
+                        <h3 className="text-3xl font-bold text-slate-900 mb-1">{stats.thisMonthAppointments}</h3>
+                        <p className="text-slate-600 text-sm">Citas este mes</p>
                     </div>
 
-                    {/* Patients */}
+                    {/* Total Patients */}
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-4">
-                            <Users className="w-6 h-6 text-white" />
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                                <Users className="w-6 h-6 text-white" />
+                            </div>
                         </div>
-                        <h3 className="text-3xl font-bold text-slate-900 mb-1">{stats.activePatients}</h3>
-                        <p className="text-slate-600 text-sm">Pacientes activos</p>
+                        <h3 className="text-3xl font-bold text-slate-900 mb-1">{stats.totalPatients}</h3>
+                        <p className="text-slate-600 text-sm">Pacientes totales</p>
                     </div>
 
-                    {/* Rating */}
+                    {/* Average Rating */}
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center mb-4">
-                            <Star className="w-6 h-6 text-white" />
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
+                                <Star className="w-6 h-6 text-white" />
+                            </div>
                         </div>
                         <h3 className="text-3xl font-bold text-slate-900 mb-1">{stats.averageRating.toFixed(1)}</h3>
-                        <p className="text-slate-600 text-sm">{stats.totalReviews} valoraciones</p>
+                        <p className="text-slate-600 text-sm">Valoración media</p>
                     </div>
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                    <button
-                        onClick={() => navigate('/doctor/profile/complete')}
-                        className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition-all text-center"
-                    >
-                        <User className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                        <p className="text-sm font-semibold text-slate-700">Completar perfil</p>
-                    </button>
-
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                     <button
                         onClick={() => navigate('/doctor/availability')}
-                        className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-purple-200 transition-all text-center"
+                        className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition-all text-center"
                     >
-                        <Clock className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                        <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
                         <p className="text-sm font-semibold text-slate-700">Disponibilidad</p>
                     </button>
 
@@ -207,14 +239,6 @@ const DoctorDashboard = () => {
                         <DollarSign className="w-6 h-6 text-green-600 mx-auto mb-2" />
                         <p className="text-sm font-semibold text-slate-700">Ingresos</p>
                     </button>
-
-                    <button
-                        onClick={() => navigate('/doctor/pricing')}
-                        className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-amber-200 transition-all text-center"
-                    >
-                        <Settings className="w-6 h-6 text-amber-600 mx-auto mb-2" />
-                        <p className="text-sm font-semibold text-slate-700">Precios</p>
-                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -222,7 +246,10 @@ const DoctorDashboard = () => {
                     <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-slate-900">Próximas citas</h2>
-                            <button className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-1">
+                            <button
+                                onClick={() => navigate('/doctor/availability')}
+                                className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-1"
+                            >
                                 Ver todas
                                 <ArrowRight className="w-4 h-4" />
                             </button>

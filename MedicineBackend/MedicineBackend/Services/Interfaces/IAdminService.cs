@@ -57,6 +57,9 @@ public interface IAdminService
     /// <returns>DTO con los datos del admin o null si no existe</returns>
     Task<AdminMeResponse?> GetMeAsync(int userId);
 
+    Task<List<VideoAdminDto>> GetVideosAsync(string filter);
+    Task<VideoAdminDto> VerifyVideoAsync(int videoId, bool isVerified, int adminUserId);
+
     /// <summary>
     /// Obtiene las estadísticas generales para el dashboard del admin.
     /// Incluye contadores de profesionales, pacientes, citas, etc.

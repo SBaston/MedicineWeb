@@ -91,23 +91,13 @@ public class DoctorDashboardService : IDoctorDashboardService
 
         var pendingTasks = new List<PendingTaskDto>();
 
+        // ⚠️ TAREAS OPCIONALES (no bloquean el 100%)
         if (string.IsNullOrEmpty(doctor.Description) || doctor.Description.Length < 50)
         {
             pendingTasks.Add(new PendingTaskDto
             {
                 Id = 1,
-                Task = "Completar biografía profesional",
-                Priority = "high"
-            });
-        }
-
-        var verifiedVideos = doctor.SocialMediaVideos.Count(v => v.IsVerified && v.IsActive);
-        if (verifiedVideos < 3)
-        {
-            pendingTasks.Add(new PendingTaskDto
-            {
-                Id = 2,
-                Task = $"Subir vídeo de presentación ({verifiedVideos}/3)",
+                Task = "Completar biografía profesional (mínimo 50 caracteres)",
                 Priority = "high"
             });
         }
@@ -116,23 +106,31 @@ public class DoctorDashboardService : IDoctorDashboardService
         {
             pendingTasks.Add(new PendingTaskDto
             {
-                Id = 3,
+                Id = 2,
                 Task = "Configurar horarios de disponibilidad",
                 Priority = "medium"
             });
         }
 
-        int profileCompletion = 0;
-        int totalFields = 8;
+        var verifiedVideos = doctor.SocialMediaVideos.Count(v => v.IsVerified && v.IsActive);
+        if (verifiedVideos < 3)
+        {
+            pendingTasks.Add(new PendingTaskDto
+            {
+                Id = 3,
+                Task = $"Subir vídeo de presentación ({verifiedVideos}/3 vídeos verificados)",
+                Priority = "medium"
+            });
+        }
 
-        if (!string.IsNullOrEmpty(doctor.ProfilePictureUrl)) profileCompletion++;
+        //SOLO 4 CAMPOS BÁSICOS EDITABLES
+        int profileCompletion = 0;
+        int totalFields = 4;
+
         if (!string.IsNullOrEmpty(doctor.PhoneNumber)) profileCompletion++;
         if (doctor.YearsOfExperience.HasValue) profileCompletion++;
         if (!string.IsNullOrEmpty(doctor.Description) && doctor.Description.Length >= 50) profileCompletion++;
-        if (doctor.Specialties.Any()) profileCompletion++;
         if (doctor.PricePerSession > 0) profileCompletion++;
-        if (doctor.Availabilities.Any()) profileCompletion++;
-        if (verifiedVideos >= 3) profileCompletion++;
 
         return new DoctorDashboardStatsDto
         {
@@ -175,7 +173,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             Description = doctor.Description,
             ProfilePictureUrl = doctor.ProfilePictureUrl,
             PricePerSession = doctor.PricePerSession,
-            Specialties = doctor.Specialties.Select(s => s.Id).ToList(),
+            Specialties = doctor.Specialties.Select(s => s.Name).ToList(),
             Email = doctor.User.Email
         };
     }

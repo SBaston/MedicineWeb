@@ -19,7 +19,9 @@ import AvailabilityPage from './pages/AvailabilityPage';
 import UploadVideosPage from './pages/UploadVideosPage';
 import EarningsPage from './pages/EarningsPage';
 import CreateCoursePage from './pages/CreateCoursePage';
+import DoctorProfilePage from './pages/DoctorProfilePage';
 import PricingPage from './pages/PricingPage';
+import AdminVideosManagement from './pages/AdminVideosManagement';
 
 const SuperAdminRoute = ({ children }) => {
     const { isAuthenticated, user, loading } = useAuth();
@@ -111,6 +113,17 @@ function App() {
                             }
                         />
 
+                        // Dentro de tus rutas protegidas de admin:
+                        <Route
+                            path="/admin/videos" element={
+                                <ProtectedRoute allowedRoles={['Admin']}>
+                                    <Layout>
+                                        <AdminVideosManagement />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        />
+
                         {/* Crear Admin - SOLO SuperAdmin puede acceder */}
                         <Route
                             path="/admin/create"
@@ -138,12 +151,22 @@ function App() {
                             }
                         />
 
-                        {/* Completar perfil */}
+                        {/* Doctor: Completar perfil */}
                         <Route
                             path="/doctor/profile/complete"
                             element={
                                 <ProtectedRoute allowedRoles={['Doctor']}>
                                     <CompleteProfilePage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Doctor: Ver perfil */}
+                        <Route
+                            path="/doctor/profile"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <DoctorProfilePage />
                                 </ProtectedRoute>
                             }
                         />

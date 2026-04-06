@@ -178,6 +178,58 @@ public class AdminController : ControllerBase
     }
 
     // ════════════════════════════════════════════════════════════════
+    // GESTIÓN DE VÍDEOS — Verificación por admin
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Lista vídeos según filtro: pending, verified, rejected
+    /// </summary>
+    [HttpGet("videos")]
+    public async Task<IActionResult> GetVideos([FromQuery] string filter = "pending")
+    {
+        try
+        {
+            var videos = await _adminService.GetVideosAsync(filter);
+            return Ok(videos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener vídeos");
+            return StatusCode(500, new { message = "Error al obtener los vídeos" });
+        }
+    }
+
+    /// <summary>
+    /// Verifica (aprueba o rechaza) un vídeo
+    /// </summary>
+    [HttpPatch("videos/{videoId:int}/verify")]
+    public async Task<IActionResult> VerifyVideo(int videoId, [FromBody] VerifyVideoRequest req)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        try
+        {
+            var result = await _adminService.VerifyVideoAsync(videoId, req.IsVerified, GetUserId());
+            var message = req.IsVerified
+                ? "Vídeo aprobado correctamente"
+                : "Vídeo rechazado";
+
+            return Ok(new { message, video = result });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al verificar vídeo {VideoId}", videoId);
+            return StatusCode(500, new { message = "Error al verificar el vídeo" });
+        }
+    }
+
+
+
+    // ════════════════════════════════════════════════════════════════
     // HELPER
     // ════════════════════════════════════════════════════════════════
 

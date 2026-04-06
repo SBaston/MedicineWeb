@@ -1,16 +1,16 @@
 // ═══════════════════════════════════════════════════════════════
 // CompleteProfilePage.jsx - Completar Perfil Profesional
-// SIN MOCKS - Conectado con backend real
+// ✅ SIN edición de especialidades (se asignan en registro)
+// ✅ Solo 4 campos editables para 100%
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    ArrowLeft, Save, Upload, Camera, MapPin, Phone,
-    Award, Calendar, DollarSign, FileText, CheckCircle, User
+    ArrowLeft, Save, Upload, Camera, Phone,
+    Award, Calendar, DollarSign, FileText, User, Stethoscope
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
-import api from '../services/api';
 
 const CompleteProfilePage = () => {
     const navigate = useNavigate();
@@ -25,11 +25,10 @@ const CompleteProfilePage = () => {
         phoneNumber: '',
         yearsOfExperience: '',
         description: '',
-        specialties: [],
+        specialties: [], // Solo lectura
         pricePerSession: '',
     });
 
-    const [specialtiesList, setSpecialtiesList] = useState([]);
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
@@ -39,10 +38,6 @@ const CompleteProfilePage = () => {
     const loadInitialData = async () => {
         try {
             setLoadingData(true);
-
-            // Cargar especialidades activas
-            const specialtiesResponse = await api.get('/specialties/active');
-            setSpecialtiesList(specialtiesResponse.data);
 
             // Cargar datos actuales del doctor
             const profileResponse = await doctorDashboardService.getProfile();
@@ -54,7 +49,7 @@ const CompleteProfilePage = () => {
                 phoneNumber: profileResponse.phoneNumber || '',
                 yearsOfExperience: profileResponse.yearsOfExperience || '',
                 description: profileResponse.description || '',
-                specialties: profileResponse.specialties || [],
+                specialties: profileResponse.specialties || [], // Solo lectura
                 pricePerSession: profileResponse.pricePerSession || '',
             });
 
@@ -103,25 +98,17 @@ const CompleteProfilePage = () => {
         }
     };
 
-    const toggleSpecialty = (specialtyId) => {
-        setFormData(prev => ({
-            ...prev,
-            specialties: prev.specialties.includes(specialtyId)
-                ? prev.specialties.filter(id => id !== specialtyId)
-                : [...prev.specialties, specialtyId]
-        }));
-    };
-
     const validate = () => {
         const newErrors = {};
 
-        if (!formData.phoneNumber) newErrors.phoneNumber = 'El teléfono es obligatorio';
-        if (!formData.yearsOfExperience) newErrors.yearsOfExperience = 'Los años de experiencia son obligatorios';
+        if (!formData.phoneNumber) {
+            newErrors.phoneNumber = 'El teléfono es obligatorio';
+        }
+        if (!formData.yearsOfExperience) {
+            newErrors.yearsOfExperience = 'Los años de experiencia son obligatorios';
+        }
         if (!formData.description || formData.description.length < 50) {
             newErrors.description = 'La descripción debe tener al menos 50 caracteres';
-        }
-        if (formData.specialties.length === 0) {
-            newErrors.specialties = 'Selecciona al menos una especialidad';
         }
         if (!formData.pricePerSession || formData.pricePerSession <= 0) {
             newErrors.pricePerSession = 'El precio por sesión debe ser mayor que 0';
@@ -146,13 +133,13 @@ const CompleteProfilePage = () => {
                 await doctorDashboardService.uploadProfilePicture(profileImage);
             }
 
-            // 2. Actualizar datos del perfil
+            // 2. Actualizar datos del perfil (SIN especialidades)
             const updateData = {
                 phoneNumber: formData.phoneNumber,
                 yearsOfExperience: parseInt(formData.yearsOfExperience),
                 description: formData.description,
                 pricePerSession: parseFloat(formData.pricePerSession),
-                specialtyIds: formData.specialties
+                // ❌ NO enviar specialtyIds (no son editables)
             };
 
             await doctorDashboardService.updateProfile(updateData);
@@ -168,16 +155,15 @@ const CompleteProfilePage = () => {
         }
     };
 
+    // ✅ Cálculo simplificado: 4 campos = 100%
     const completionPercentage = () => {
         let completed = 0;
-        const total = 8;
+        const total = 4;
 
-        if (profileImagePreview) completed++;
         if (formData.phoneNumber) completed++;
         if (formData.yearsOfExperience) completed++;
         if (formData.description && formData.description.length >= 50) completed++;
-        if (formData.specialties.length > 0) completed++;
-        if (formData.pricePerSession) completed++;
+        if (formData.pricePerSession && formData.pricePerSession > 0) completed++;
 
         return Math.round((completed / total) * 100);
     };
@@ -235,13 +221,14 @@ const CompleteProfilePage = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    {/* Profile Picture */}
+                    {/* Profile Picture (OPCIONAL) */}
                     <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                                 <User className="w-5 h-5 text-blue-600" />
                             </div>
                             <h2 className="text-xl font-bold text-slate-900">Foto de perfil</h2>
+                            <span className="text-sm text-slate-500">(Opcional)</span>
                         </div>
 
                         <div className="flex items-center gap-6">
@@ -270,146 +257,169 @@ const CompleteProfilePage = () => {
                         </div>
                     </div>
 
-                    {/* Personal Information */}
+                    {/* Personal Information (SOLO LECTURA) */}
                     <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                                 <FileText className="w-5 h-5 text-purple-600" />
                             </div>
                             <h2 className="text-xl font-bold text-slate-900">Información personal</h2>
+                            <span className="text-sm text-slate-500">(No editable)</span>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Nombre *</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Nombre</label>
                                 <input
-                                    type="text" value={formData.firstName} disabled
-                                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500"
+                                    type="text"
+                                    value={formData.firstName}
+                                    disabled
+                                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Apellidos *</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Apellidos</label>
                                 <input
-                                    type="text" value={formData.lastName} disabled
-                                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500"
+                                    type="text"
+                                    value={formData.lastName}
+                                    disabled
+                                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    <Phone className="w-4 h-4 inline mr-1" />Teléfono *
-                                </label>
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Nº Colegiado</label>
                                 <input
-                                    type="tel" name="phoneNumber" value={formData.phoneNumber}
-                                    onChange={handleInputChange} placeholder="+34 600 000 000"
-                                    className={`w-full px-4 py-3 rounded-lg border ${errors.phoneNumber ? 'border-red-300 bg-red-50' : 'border-slate-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                                    type="text"
+                                    value={formData.professionalLicense}
+                                    disabled
+                                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
                                 />
-                                {errors.phoneNumber && <p className="text-red-600 text-sm mt-1">{errors.phoneNumber}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Nº Colegiado *</label>
-                                <input
-                                    type="text" value={formData.professionalLicense} disabled
-                                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500"
-                                />
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Este campo se asignó durante el registro y no puede modificarse
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Professional Information */}
+                    
+
+                    {/* Professional Information (EDITABLE) */}
                     <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                                 <Award className="w-5 h-5 text-emerald-600" />
                             </div>
                             <h2 className="text-xl font-bold text-slate-900">Información profesional</h2>
+                                    <span className="text-sm text-blue-600 font-medium"> Editable</span>
+
                         </div>
 
                         <div className="space-y-6">
+                            {/* Teléfono */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    <Calendar className="w-4 h-4 inline mr-1" />Años de experiencia *
+                                    <Phone className="w-4 h-4 inline mr-1" />
+                                    Teléfono
+                                    
+
                                 </label>
                                 <input
-                                    type="number" name="yearsOfExperience" value={formData.yearsOfExperience}
-                                    onChange={handleInputChange} min="0" max="60" placeholder="Ej: 10"
+                                    type="tel"
+                                    name="phoneNumber"
+                                    value={formData.phoneNumber}
+                                    onChange={handleInputChange}
+                                    placeholder="+34 600 000 000"
+                                    className={`w-full px-4 py-3 rounded-lg border ${errors.phoneNumber ? 'border-red-300 bg-red-50' : 'border-slate-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                                />
+                                {errors.phoneNumber && <p className="text-red-600 text-sm mt-1">{errors.phoneNumber}</p>}
+                            </div>
+
+                            {/* Años de experiencia */}
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    <Calendar className="w-4 h-4 inline mr-1" />
+                                    Años de experiencia
+                                    
+                                </label>
+                                <input
+                                    type="number"
+                                    name="yearsOfExperience"
+                                    value={formData.yearsOfExperience}
+                                    onChange={handleInputChange}
+                                    min="0"
+                                    max="60"
+                                    placeholder="Ej: 10"
                                     className={`w-full px-4 py-3 rounded-lg border ${errors.yearsOfExperience ? 'border-red-300 bg-red-50' : 'border-slate-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                                 />
                                 {errors.yearsOfExperience && <p className="text-red-600 text-sm mt-1">{errors.yearsOfExperience}</p>}
                             </div>
 
+                            {/* Descripción */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Descripción profesional *</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    Descripción profesional
+                                    
+                                </label>
                                 <textarea
-                                    name="description" value={formData.description} onChange={handleInputChange} rows={6}
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    rows={6}
                                     placeholder="Cuéntales a tus futuros pacientes sobre tu experiencia, formación, especialización y enfoque médico. Sé claro, profesional y cercano. Mínimo 50 caracteres."
                                     className={`w-full px-4 py-3 rounded-lg border ${errors.description ? 'border-red-300 bg-red-50' : 'border-slate-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none`}
                                 />
                                 <div className="flex items-center justify-between mt-2">
-                                    <p className="text-sm text-slate-500">{formData.description.length} / 2000 caracteres</p>
+                                    <p className="text-sm text-slate-500">{formData.description.length} / 2000 caracteres (mínimo 50)</p>
                                     {errors.description && <p className="text-red-600 text-sm">{errors.description}</p>}
                                 </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-3">Especialidades *</label>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    {specialtiesList.map((specialty) => (
-                                        <button
-                                            key={specialty.id} type="button"
-                                            onClick={() => toggleSpecialty(specialty.id)}
-                                            className={`p-3 rounded-lg border-2 transition-all ${formData.specialties.includes(specialty.id) ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 hover:border-slate-300'}`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${formData.specialties.includes(specialty.id) ? 'border-blue-600 bg-blue-600' : 'border-slate-300'}`}>
-                                                    {formData.specialties.includes(specialty.id) && <CheckCircle className="w-4 h-4 text-white" />}
-                                                </div>
-                                                <span className="font-medium text-sm">{specialty.name}</span>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                                {errors.specialties && <p className="text-red-600 text-sm mt-2">{errors.specialties}</p>}
                             </div>
                         </div>
                     </div>
 
-                    {/* Pricing */}
+                    {/* Pricing (EDITABLE) */}
                     <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                                 <DollarSign className="w-5 h-5 text-green-600" />
                             </div>
                             <h2 className="text-xl font-bold text-slate-900">Precio por sesión</h2>
+                            <span className="text-sm text-blue-600 font-medium">Editable</span>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Precio (€) *</label>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Precio (€)</label>
                             <div className="relative">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">€</span>
                                 <input
-                                    type="number" name="pricePerSession" value={formData.pricePerSession}
-                                    onChange={handleInputChange} min="0" step="0.01" placeholder="75.00"
+                                    type="number"
+                                    name="pricePerSession"
+                                    value={formData.pricePerSession}
+                                    onChange={handleInputChange}
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="50.00"
                                     className={`w-full pl-10 pr-4 py-3 rounded-lg border ${errors.pricePerSession ? 'border-red-300 bg-red-50' : 'border-slate-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                                 />
                             </div>
                             {errors.pricePerSession && <p className="text-red-600 text-sm mt-1">{errors.pricePerSession}</p>}
-                            <p className="text-sm text-slate-500 mt-2">Podrás modificar este precio más adelante desde la configuración</p>
+                            
                         </div>
                     </div>
 
                     {/* Submit Button */}
                     <div className="flex items-center justify-end gap-4">
                         <button
-                            type="button" onClick={() => navigate('/doctor/dashboard')}
+                            type="button"
+                            onClick={() => navigate('/doctor/dashboard')}
                             className="px-6 py-3 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                         >
                             Cancelar
                         </button>
                         <button
-                            type="submit" disabled={loading}
+                            type="submit"
+                            disabled={loading}
                             className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {loading ? (

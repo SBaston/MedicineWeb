@@ -6,7 +6,7 @@ import adminService from '../services/adminService';
 import {
     ShieldCheck, Clock, CheckCircle, XCircle, Trash2, Users,
     Stethoscope, Mail, AlertTriangle, ChevronDown, ChevronUp,
-    Star, Crown, UserPlus, FileText, Shield, User, Eye, Download, X
+    Star, Crown, UserPlus, FileText, Shield, User, Eye, Download, X, Video
 } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════════
@@ -237,14 +237,14 @@ const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
                                     <ImageCard
                                         url={doctor.idDocumentFrontImageUrl}
                                         title="Cara Delantera"
-                                        required 
+                                        required
                                         icon={User}
                                         onView={setShowImageModal}
                                     />
                                     <ImageCard
                                         url={doctor.idDocumentBackImageUrl}
                                         title="Cara Trasera"
-                                        required  
+                                        required
                                         icon={User}
                                         onView={setShowImageModal}
                                     />
@@ -260,14 +260,14 @@ const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
                                     <ImageCard
                                         url={doctor.specialtyDegreeImageUrl}
                                         title="Título de Especialidad"
-                                        required  
+                                        required
                                         icon={FileText}
                                         onView={setShowImageModal}
                                     />
                                     <ImageCard
                                         url={doctor.universityDegreeImageUrl}
                                         title="Título Universitario"
-                                        required  
+                                        required
                                         icon={FileText}
                                         onView={setShowImageModal}
                                     />
@@ -617,14 +617,26 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                {/* BOTÓN DE ESPECIALIDADES */}
-                <button
-                    onClick={() => navigate('/admin/specialties')}
-                    className="flex items-center gap-2 btn-primary px-5 py-2.5"
-                >
-                    <Stethoscope className="w-4 h-4" />
-                    Gestionar Especialidades
-                </button>
+                {/* BOTONES DE GESTIÓN */}
+                <div className="flex gap-3">
+                    {/* BOTÓN DE ESPECIALIDADES */}
+                    <button
+                        onClick={() => navigate('/admin/specialties')}
+                        className="flex items-center gap-2 btn-primary px-5 py-2.5"
+                    >
+                        <Stethoscope className="w-4 h-4" />
+                        Gestionar Especialidades
+                    </button>
+
+                    {/* BOTÓN DE VÍDEOS */}
+                    <button
+                        onClick={() => navigate('/admin/videos')}
+                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg px-5 py-2.5 transition-colors"
+                    >
+                        <Video className="w-4 h-4" />
+                        Verificar Vídeos
+                    </button>
+                </div>
             </div>
 
             {/* Estadísticas - con click en specialties */}

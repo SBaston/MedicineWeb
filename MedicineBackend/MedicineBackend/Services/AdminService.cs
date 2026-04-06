@@ -171,6 +171,93 @@ public class AdminService : IAdminService
         };
     }
 
+    public async Task<List<VideoAdminDto>> GetVideosAsync(string filter)
+    {
+        var query = _db.SocialMediaVideos
+            .Include(v => v.Doctor)
+                .ThenInclude(d => d.User)
+            .AsQueryable();
+
+        // Filtrar según el estado
+        query = filter.ToLower() switch
+        {
+            "pending" => query.Where(v => !v.IsVerified && v.IsActive),
+            "verified" => query.Where(v => v.IsVerified && v.IsActive),
+            "rejected" => query.Where(v => !v.IsActive),
+            _ => query
+        };
+
+        var videos = await query
+            .OrderByDescending(v => v.CreatedAt)
+            .Select(v => new VideoAdminDto
+            {
+                Id = v.Id,
+                Title = v.Title,
+                Description = v.Description,
+                Platform = v.Platform,
+                VideoUrl = v.VideoUrl,
+                ViewCount = v.ViewCount ?? 0,
+                LikeCount = v.LikeCount ?? 0,
+                IsVerified = v.IsVerified,
+                IsActive = v.IsActive,
+                CreatedAt = v.CreatedAt,
+                DoctorName = $"{v.Doctor.FirstName} {v.Doctor.LastName}",
+                DoctorId = v.DoctorId
+            })
+            .ToListAsync();
+
+        return videos;
+    }
+
+    public async Task<VideoAdminDto> VerifyVideoAsync(int videoId, bool isVerified, int adminUserId)
+    {
+        var video = await _db.SocialMediaVideos
+            .Include(v => v.Doctor)
+                .ThenInclude(d => d.User)
+            .FirstOrDefaultAsync(v => v.Id == videoId);
+
+        if (video == null)
+        {
+            throw new KeyNotFoundException("Vídeo no encontrado");
+        }
+
+        // Actualizar estado
+        if (isVerified)
+        {
+            // Aprobar vídeo
+            video.IsVerified = true;
+            video.IsActive = true;
+        }
+        else
+        {
+            // Rechazar vídeo
+            video.IsVerified = false;
+            video.IsActive = false;
+        }
+
+        video.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        // TODO: Enviar notificación al doctor (opcional)
+        // await NotifyDoctorVideoStatus(video.DoctorId, isVerified);
+
+        return new VideoAdminDto
+        {
+            Id = video.Id,
+            Title = video.Title,
+            Description = video.Description,
+            Platform = video.Platform,
+            VideoUrl = video.VideoUrl,
+            ViewCount = video.ViewCount ?? 0,
+            LikeCount = video.LikeCount ?? 0,
+            IsVerified = video.IsVerified,
+            IsActive = video.IsActive,
+            CreatedAt = video.CreatedAt,
+            DoctorName = $"{video.Doctor.FirstName} {video.Doctor.LastName}",
+            DoctorId = video.DoctorId
+        };
+    }
+
     // ══════════════════════════════════════════════════════════════
     // ESTADÍSTICAS DEL DASHBOARD
     // ══════════════════════════════════════════════════════════════

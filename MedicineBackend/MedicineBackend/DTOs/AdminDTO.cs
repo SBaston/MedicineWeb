@@ -127,3 +127,18 @@ public class AdminDashboardStatsDto
     public int TotalAdmins { get; set; }
     public int TotalSpecialties { get; set; }
 }
+public class VideoAdminDto
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string Platform { get; set; } = string.Empty;
+    public string VideoUrl { get; set; } = string.Empty;
+    public int ViewCount { get; set; }
+    public int LikeCount { get; set; }
+    public bool IsVerified { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public string DoctorName { get; set; } = string.Empty;
+    public int DoctorId { get; set; }
+}

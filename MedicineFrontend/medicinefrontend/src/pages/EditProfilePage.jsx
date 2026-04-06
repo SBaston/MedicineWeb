@@ -37,20 +37,26 @@ const EditProfilePage = () => {
     const patient = profileData?.patient || profileData;
 
     // Actualizar formulario cuando se cargan los datos
+    // ✅ Solución: Mover la lógica de inicialización fuera del useEffect
     useEffect(() => {
         if (patient && !isInitialized.current) {
-            setFormData({
-                phoneNumber: patient.phoneNumber || '',
-                address: patient.address || '',
-                city: patient.city || '',
-                postalCode: patient.postalCode || '',
-                country: patient.country || 'España',
-                gender: patient.gender || '',
-                emergencyContact: patient.emergencyContact || '',
-                medicalHistory: patient.medicalHistory || '',
-                profilePictureUrl: patient.profilePictureUrl || '',
-            });
-            isInitialized.current = true;
+            // Usar setTimeout para ejecutar en el siguiente ciclo de render
+            const timeoutId = setTimeout(() => {
+                setFormData({
+                    phoneNumber: patient.phoneNumber || '',
+                    address: patient.address || '',
+                    city: patient.city || '',
+                    postalCode: patient.postalCode || '',
+                    country: patient.country || 'España',
+                    gender: patient.gender || '',
+                    emergencyContact: patient.emergencyContact || '',
+                    medicalHistory: patient.medicalHistory || '',
+                    profilePictureUrl: patient.profilePictureUrl || '',
+                });
+                isInitialized.current = true;
+            }, 0);
+
+            return () => clearTimeout(timeoutId);
         }
     }, [patient]);
 
