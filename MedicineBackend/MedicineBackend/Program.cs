@@ -75,7 +75,7 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IDoctorManagementService, DoctorManagementService>();
 builder.Services.AddScoped<ISpecialtyService, SpecialtyService>();
-builder.Services.AddScoped<IOcrService, OcrService>();
+//builder.Services.AddScoped<IOcrService, OcrService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<IDoctorDashboardService, DoctorDashboardService>();

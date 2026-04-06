@@ -1,157 +1,156 @@
-﻿// ═══════════════════════════════════════════════════════════════
-// Backend/DTOs/DoctorDtos.cs
-// DTOs para registro y gestión de doctores
-// ═══════════════════════════════════════════════════════════════
-
+﻿using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
-namespace MedicineBackend.DTOs
+namespace MedicineBackend.DTOs.Doctor;
+
+/// <summary>
+/// DTO para registro de doctor - ACTUALIZADO con 6 imágenes
+/// </summary>
+public class DoctorRegisterDto
 {
-    // ═══════════════════════════════════════════════════════════
-    // DTO PARA REGISTRO DE DOCTOR (desde formulario)
-    // ═══════════════════════════════════════════════════════════
-    public class DoctorRegistrationDto
-    {
-        [Required(ErrorMessage = "El nombre es obligatorio")]
-        [StringLength(50, MinimumLength = 2)]
-        public string FirstName { get; set; } = string.Empty;
+    // ═══════════════════════════════════════════════════════════════
+    // CREDENCIALES
+    // ═══════════════════════════════════════════════════════════════
 
-        [Required(ErrorMessage = "Los apellidos son obligatorios")]
-        [StringLength(50, MinimumLength = 2)]
-        public string LastName { get; set; } = string.Empty;
+    [Required(ErrorMessage = "El email es obligatorio")]
+    [EmailAddress(ErrorMessage = "Email inválido")]
+    public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El email es obligatorio")]
-        [EmailAddress(ErrorMessage = "Email no válido")]
-        public string Email { get; set; } = string.Empty;
+    [Required(ErrorMessage = "La contraseña es obligatoria")]
+    [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
+    public string Password { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "La contraseña es obligatoria")]
-        [StringLength(100, MinimumLength = 8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres")]
-        public string Password { get; set; } = string.Empty;
+    // ═══════════════════════════════════════════════════════════════
+    // INFORMACIÓN PERSONAL
+    // ═══════════════════════════════════════════════════════════════
 
-        [Required(ErrorMessage = "El número de colegiado es obligatorio")]
-        [RegularExpression(@"^\d{8,10}$", ErrorMessage = "Número de colegiado inválido (8-10 dígitos)")]
-        public string ProfessionalLicense { get; set; } = string.Empty;
+    [Required(ErrorMessage = "El nombre es obligatorio")]
+    [MaxLength(100)]
+    public string FirstName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Debe seleccionar al menos una especialidad")]
-        [MinLength(1, ErrorMessage = "Debe tener al menos una especialidad")]
-        public List<int> SpecialtyIds { get; set; } = new(); // IDs de especialidades
+    [Required(ErrorMessage = "El apellido es obligatorio")]
+    [MaxLength(100)]
+    public string LastName { get; set; } = string.Empty;
 
-        [Range(0, 50, ErrorMessage = "Los años de experiencia deben estar entre 0 y 50")]
-        public int YearsOfExperience { get; set; }
+    [Required(ErrorMessage = "El número de colegiado es obligatorio")]
+    [MaxLength(200)]  // ✅ AUMENTADO de 100 a 200 - Sin límite estricto
+    public string ProfessionalLicense { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El precio por sesión es obligatorio")]
-        [Range(20, 500, ErrorMessage = "El precio debe estar entre 20€ y 500€")]
-        public decimal PricePerSession { get; set; }
+    [MaxLength(20)]
+    public string? PhoneNumber { get; set; }
 
-        [StringLength(1000, ErrorMessage = "La descripción no puede superar 1000 caracteres")]
-        public string? Description { get; set; }
+    [MaxLength(2000)]
+    public string? Description { get; set; }
 
-        [Phone(ErrorMessage = "Número de teléfono inválido")]
-        public string? PhoneNumber { get; set; }
+    public int? YearsOfExperience { get; set; }
 
-        // ═══════════════════════════════════════════════════════════
-        // IMÁGENES EN BASE64
-        // ═══════════════════════════════════════════════════════════
+    [Required(ErrorMessage = "El precio por sesión es obligatorio")]
+    [Range(0.01, 999999.99, ErrorMessage = "El precio debe ser mayor a 0")]
+    public decimal PricePerSession { get; set; }
 
-        /// <summary>Imagen del carnet de colegiado en Base64</summary>
-        [Required(ErrorMessage = "La imagen del carnet de colegiado es obligatoria")]
-        public string ProfessionalLicenseImage { get; set; } = string.Empty;
+    // ═══════════════════════════════════════════════════════════════
+    // ESPECIALIDADES
+    // ═══════════════════════════════════════════════════════════════
 
-        /// <summary>Imagen del DNI/Pasaporte en Base64 (opcional)</summary>
-        public string? IdDocumentImage { get; set; }
+    [Required(ErrorMessage = "Debe seleccionar al menos una especialidad")]
+    [MinLength(1, ErrorMessage = "Debe seleccionar al menos una especialidad")]
+    public List<int> SpecialtyIds { get; set; } = new();
 
-        /// <summary>Imagen del título universitario en Base64 (opcional)</summary>
-        public string? DegreeImage { get; set; }
-    }
+    // ═══════════════════════════════════════════════════════════════
+    // DOCUMENTACIÓN - 6 IMÁGENES OBLIGATORIAS
+    // ═══════════════════════════════════════════════════════════════
 
-    public class UpdateDoctorRequest
-    {
-        public string? Description { get; set; }
-        public decimal? PricePerSession { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string? ProfilePictureUrl { get; set; }
-    }
+    /// <summary>Carnet de colegiado - DELANTE (OBLIGATORIO)</summary>
+    [Required(ErrorMessage = "La foto frontal del carnet de colegiado es obligatoria")]
+    public IFormFile ProfessionalLicenseFront { get; set; } = null!;
 
-    // ═══════════════════════════════════════════════════════════
-    // DTO PARA RESPUESTA DE REGISTRO
-    // ═══════════════════════════════════════════════════════════
-    public class DoctorRegistrationResponse
-    {
-        public int Id { get; set; }
-        public string Email { get; set; } = string.Empty;
-        public string FullName { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
-        public decimal OcrConfidence { get; set; }
-        public bool DocumentVerified { get; set; }
-    }
+    /// <summary>Carnet de colegiado - ATRÁS (OBLIGATORIO)</summary>
+    [Required(ErrorMessage = "La foto trasera del carnet de colegiado es obligatoria")]
+    public IFormFile ProfessionalLicenseBack { get; set; } = null!;
 
-    // ═══════════════════════════════════════════════════════════
-    // DTO PARA VALIDAR DOCUMENTO (OCR)
-    // ═══════════════════════════════════════════════════════════
-    public class ValidateDocumentRequest
-    {
-        [Required]
-        public string ImageBase64 { get; set; } = string.Empty;
-    }
+    /// <summary>DNI/Pasaporte - DELANTE (OBLIGATORIO)</summary>
+    [Required(ErrorMessage = "La foto frontal del DNI es obligatoria")]
+    public IFormFile IdDocumentFront { get; set; } = null!;
 
-    // ═══════════════════════════════════════════════════════════
-    // DTO INTERNO: CreateDoctorRequest (para DoctorService)
-    // ═══════════════════════════════════════════════════════════
-    public class CreateDoctorRequest
-    {
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-        public string ProfessionalLicense { get; set; } = string.Empty;
-        public List<int> SpecialtyIds { get; set; } = new();
-        public int YearsOfExperience { get; set; }
-        public decimal PricePerSession { get; set; }
-        public string? Description { get; set; }
-        public string? PhoneNumber { get; set; }
+    /// <summary>DNI/Pasaporte - ATRÁS (OBLIGATORIO)</summary>
+    [Required(ErrorMessage = "La foto trasera del DNI es obligatoria")]
+    public IFormFile IdDocumentBack { get; set; } = null!;
 
-        // URLs de imágenes guardadas
-        public string ProfessionalLicenseImageUrl { get; set; } = string.Empty;
-        public string? IdDocumentImageUrl { get; set; }
-        public string? DegreeImageUrl { get; set; }
+    /// <summary>Título de especialidad (OBLIGATORIO)</summary>
+    [Required(ErrorMessage = "El título de especialidad es obligatorio")]
+    public IFormFile SpecialtyDegree { get; set; } = null!;
 
-        // Datos del OCR
-        public string? OcrData { get; set; }
-        public bool IsDocumentVerified { get; set; }
-    }
+    /// <summary>Título universitario (OBLIGATORIO)</summary>
+    [Required(ErrorMessage = "El título universitario es obligatorio")]
+    public IFormFile UniversityDegree { get; set; } = null!;
 
-    // ═══════════════════════════════════════════════════════════
-    // DTO PARA MOSTRAR DOCTOR
-    // ═══════════════════════════════════════════════════════════
-    public class DoctorDto
-    {
-        public int Id { get; set; }
-        public string FullName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string ProfessionalLicense { get; set; } = string.Empty;
-        public List<string> Specialties { get; set; } = new();
-        public int YearsOfExperience { get; set; }
-        public decimal PricePerSession { get; set; }
-        public string? Description { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string? ProfilePictureUrl { get; set; }
-        public string Status { get; set; } = string.Empty;
-        public bool IsDocumentVerified { get; set; }
-        public DateTime CreatedAt { get; set; }
-    }
+    /// <summary>Foto de perfil (OPCIONAL)</summary>
+    public IFormFile? ProfilePicture { get; set; }
+}
 
-    // ═══════════════════════════════════════════════════════════
-    // DTO PARA RESULTADO DE OCR
-    // ═══════════════════════════════════════════════════════════
-    public class OcrResultDto
-    {
-        public bool Success { get; set; }
-        public string? ExtractedText { get; set; }
-        public string? ProfessionalLicense { get; set; }
-        public string? FullName { get; set; }
-        public string? Specialty { get; set; }
-        public decimal Confidence { get; set; }
-        public List<string> Errors { get; set; } = new();
-    }
+/// <summary>
+/// Request interno para crear un doctor (usado por DoctorService)
+/// Contiene las URLs ya procesadas de las imágenes
+/// </summary>
+public class CreateDoctorRequest
+{
+    // CREDENCIALES
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+
+    // INFORMACIÓN PERSONAL
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string ProfessionalLicense { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public string? Description { get; set; }
+    public int? YearsOfExperience { get; set; }
+    public decimal PricePerSession { get; set; }
+
+    // ESPECIALIDADES
+    public List<int> SpecialtyIds { get; set; } = new();
+
+    // ✅ IMÁGENES - 6 URLS (ya guardadas en almacenamiento)
+    public string? ProfessionalLicenseFrontImageUrl { get; set; }
+    public string? ProfessionalLicenseBackImageUrl { get; set; }
+    public string? IdDocumentFrontImageUrl { get; set; }
+    public string? IdDocumentBackImageUrl { get; set; }
+    public string? SpecialtyDegreeImageUrl { get; set; }
+    public string? UniversityDegreeImageUrl { get; set; }
+    public string? ProfilePictureUrl { get; set; }
+}
+
+/// <summary>
+/// DTO para la lista de doctores pendientes en el admin panel
+/// </summary>
+public class PendingDoctorDto
+{
+    public int Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string ProfessionalLicense { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public string? Description { get; set; }
+    public int? YearsOfExperience { get; set; }
+    public decimal PricePerSession { get; set; }
+    public List<string> Specialties { get; set; } = new();
+    public string? ProfilePictureUrl { get; set; }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DOCUMENTACIÓN - 6 IMÁGENES
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>URLs de las imágenes del carnet de colegiado</summary>
+    public string? ProfessionalLicenseFrontImageUrl { get; set; }
+    public string? ProfessionalLicenseBackImageUrl { get; set; }
+
+    /// <summary>URLs de las imágenes del DNI/Pasaporte</summary>
+    public string? IdDocumentFrontImageUrl { get; set; }
+    public string? IdDocumentBackImageUrl { get; set; }
+
+    /// <summary>URLs de los títulos</summary>
+    public string? SpecialtyDegreeImageUrl { get; set; }
+    public string? UniversityDegreeImageUrl { get; set; }
+
+    public DateTime CreatedAt { get; set; }
 }

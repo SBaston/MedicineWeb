@@ -46,6 +46,7 @@ public class AdminMeResponse
 
 // ════════════════════════════════════════════════════════════════
 // GESTIÓN DE DOCTORES (Admin y SuperAdmin)
+// ✅ ACTUALIZADO: 6 imágenes sin OCR
 // ════════════════════════════════════════════════════════════════
 
 public class PendingDoctorDto
@@ -64,24 +65,29 @@ public class PendingDoctorDto
     public List<string> Specialties { get; set; } = new();
 
     // ═══════════════════════════════════════════════════════════
-    // DOCUMENTOS SUBIDOS (URLs de las imágenes)
+    // DOCUMENTOS SUBIDOS (URLs de las 6 imágenes)
+    // ✅ ACTUALIZADO: 6 imágenes sin OCR
     // ═══════════════════════════════════════════════════════════
 
-    /// <summary>Carnet de colegiado (obligatorio)</summary>
-    public string? ProfessionalLicenseImageUrl { get; set; }
+    /// <summary>Carnet de colegiado - DELANTE (OBLIGATORIO)</summary>
+    public string? ProfessionalLicenseFrontImageUrl { get; set; }
 
-    /// <summary>DNI o Pasaporte (opcional)</summary>
-    public string? IdDocumentImageUrl { get; set; }
+    /// <summary>Carnet de colegiado - ATRÁS (OBLIGATORIO)</summary>
+    public string? ProfessionalLicenseBackImageUrl { get; set; }
 
-    /// <summary>Título universitario (opcional)</summary>
-    public string? DegreeImageUrl { get; set; }
+    /// <summary>DNI/Pasaporte - DELANTE (OBLIGATORIO)</summary>
+    public string? IdDocumentFrontImageUrl { get; set; }
 
-    /// <summary>Datos extraídos del OCR del carnet (JSON)</summary>
-    public string? OcrData { get; set; }
+    /// <summary>DNI/Pasaporte - ATRÁS (OBLIGATORIO)</summary>
+    public string? IdDocumentBackImageUrl { get; set; }
 
-    /// <summary>Si el documento ha sido verificado automáticamente</summary>
-    public bool IsDocumentVerified { get; set; }
+    /// <summary>Título de especialidad (OBLIGATORIO)</summary>
+    public string? SpecialtyDegreeImageUrl { get; set; }
+
+    /// <summary>Título universitario (OBLIGATORIO)</summary>
+    public string? UniversityDegreeImageUrl { get; set; }
 }
+
 public class DoctorAdminDto : PendingDoctorDto
 {
     public string? StatusReason { get; set; }

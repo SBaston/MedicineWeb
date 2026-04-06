@@ -1,14 +1,15 @@
 ﻿using MedicineBackend.Data;
-using MedicineBackend.DTOs;
+using MedicineBackend.DTOs.Doctor;
 using MedicineBackend.Models;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-
+namespace MedicineBackend.Services;
 
 /// <summary>
 /// Servicio para gestionar doctores con soporte de caché
+/// ✅ ACTUALIZADO: Con 6 campos de imágenes y ProfessionalLicenseExistsAsync
 /// </summary>
 public class DoctorService : IDoctorService
 {
@@ -71,12 +72,17 @@ public class DoctorService : IDoctorService
                 PricePerSession = request.PricePerSession,
                 Description = request.Description,
                 PhoneNumber = request.PhoneNumber,
+                ProfilePictureUrl = request.ProfilePictureUrl,
                 Status = DoctorStatus.PendingReview,
-                ProfessionalLicenseImageUrl = request.ProfessionalLicenseImageUrl,
-                IdDocumentImageUrl = request.IdDocumentImageUrl,
-                DegreeImageUrl = request.DegreeImageUrl,
-                OcrData = request.OcrData,
-                IsDocumentVerified = request.IsDocumentVerified,
+
+                // ✅ NUEVOS CAMPOS DE 6 IMÁGENES
+                ProfessionalLicenseFrontImageUrl = request.ProfessionalLicenseFrontImageUrl,
+                ProfessionalLicenseBackImageUrl = request.ProfessionalLicenseBackImageUrl,
+                IdDocumentFrontImageUrl = request.IdDocumentFrontImageUrl,
+                IdDocumentBackImageUrl = request.IdDocumentBackImageUrl,
+                SpecialtyDegreeImageUrl = request.SpecialtyDegreeImageUrl,
+                UniversityDegreeImageUrl = request.UniversityDegreeImageUrl,
+
                 Specialties = specialties,
                 CreatedAt = DateTime.UtcNow
             };
@@ -86,7 +92,7 @@ public class DoctorService : IDoctorService
 
             await transaction.CommitAsync();
 
-            _logger.LogInformation($"✅ Doctor registrado: {doctor.FirstName} {doctor.LastName} (ID: {doctor.Id})");
+            _logger.LogInformation($"✅ Doctor registrado: {doctor.FirstName} {doctor.LastName} (ID: {doctor.Id}) - Estado: {doctor.Status}");
 
             return doctor;
         }
@@ -105,7 +111,16 @@ public class DoctorService : IDoctorService
     }
 
     /// <summary>
-    /// Obtiene todos los doctores (con caché)
+    /// ✅ NUEVO: Verifica si un número de colegiado ya está registrado
+    /// </summary>
+    public async Task<bool> ProfessionalLicenseExistsAsync(string professionalLicense)
+    {
+        return await _context.Doctors
+            .AnyAsync(d => d.ProfessionalLicense == professionalLicense && d.DeletedAt == null);
+    }
+
+    /// <summary>
+    /// Obtiene todos los doctores activos (con caché)
     /// </summary>
     public async Task<List<Doctor>> GetAllDoctorsAsync()
     {
@@ -123,7 +138,7 @@ public class DoctorService : IDoctorService
         var doctors = await _context.Doctors
             .Include(d => d.Specialties)
             .Include(d => d.User)
-            .Where(d => d.IsVerified && d.IsAcceptingPatients)
+            .Where(d => d.Status == DoctorStatus.Active && d.DeletedAt == null && d.IsAcceptingPatients)
             .OrderByDescending(d => d.AverageRating)
             .ToListAsync();
 
@@ -190,7 +205,8 @@ public class DoctorService : IDoctorService
             .Include(d => d.Specialties)
             .Include(d => d.User)
             .Where(d => d.Specialties.Any(s => s.Id == specialtyId)
-                     && d.IsVerified
+                     && d.Status == DoctorStatus.Active
+                     && d.DeletedAt == null
                      && d.IsAcceptingPatients)
             .OrderByDescending(d => d.AverageRating)
             .ToListAsync();

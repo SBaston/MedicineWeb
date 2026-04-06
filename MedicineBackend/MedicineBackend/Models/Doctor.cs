@@ -40,9 +40,10 @@ public class Doctor
 
     /// <summary>
     /// Número de colegiado/licencia profesional — ÚNICO en la base de datos
+    /// ✅ SIN LÍMITE DE CARACTERES - puede ser alfanumérico y de longitud variable
     /// </summary>
     [Required]
-    [MaxLength(50)]
+    [MaxLength(200)]  // ✅ Aumentado de 50 a 200 para permitir formatos largos
     public string ProfessionalLicense { get; set; } = string.Empty;
 
     /// <summary>Descripción profesional del médico. Se mostrará en su perfil público.</summary>
@@ -75,7 +76,9 @@ public class Doctor
     /// <summary>Total de valoraciones recibidas</summary>
     public int TotalReviews { get; set; } = 0;
 
-    // ── NUEVO: Sistema de estados (reemplaza IsVerified) ─────────────────────
+    // ══════════════════════════════════════════════════════════════
+    // SISTEMA DE ESTADOS (reemplaza IsVerified)
+    // ══════════════════════════════════════════════════════════════
 
     /// <summary>
     /// Estado del profesional en la plataforma, gestionado por el admin.
@@ -96,7 +99,65 @@ public class Doctor
     /// <summary>Fecha en que el admin tomó la última decisión</summary>
     public DateTime? ReviewedAt { get; set; }
 
-    // ── NUEVO: Soft delete — RGPD ─────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+    // DOCUMENTACIÓN - 6 IMÁGENES NUEVAS (SIN OCR)
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>Carnet de colegiado - CARA DELANTERA (OBLIGATORIO)</summary>
+    [MaxLength(500)]
+    public string? ProfessionalLicenseFrontImageUrl { get; set; }
+
+    /// <summary>Carnet de colegiado - CARA TRASERA (OBLIGATORIO)</summary>
+    [MaxLength(500)]
+    public string? ProfessionalLicenseBackImageUrl { get; set; }
+
+    /// <summary>DNI/Pasaporte - CARA DELANTERA (OPCIONAL)</summary>
+    [MaxLength(500)]
+    public string? IdDocumentFrontImageUrl { get; set; }
+
+    /// <summary>DNI/Pasaporte - CARA TRASERA (OPCIONAL)</summary>
+    [MaxLength(500)]
+    public string? IdDocumentBackImageUrl { get; set; }
+
+    /// <summary>Título de especialidad (OPCIONAL)</summary>
+    [MaxLength(500)]
+    public string? SpecialtyDegreeImageUrl { get; set; }
+
+    /// <summary>Título universitario (OPCIONAL)</summary>
+    [MaxLength(500)]
+    public string? UniversityDegreeImageUrl { get; set; }
+
+    // ══════════════════════════════════════════════════════════════
+    // CAMPOS ANTIGUOS - MANTENER TEMPORALMENTE PARA COMPATIBILIDAD
+    // Se eliminarán en una migración futura una vez migrados los datos
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>URL de la imagen del carnet de colegiado (DEPRECADO - usar ProfessionalLicenseFrontImageUrl)</summary>
+    [Obsolete("Usar ProfessionalLicenseFrontImageUrl y ProfessionalLicenseBackImageUrl en su lugar")]
+    [MaxLength(500)]
+    public string? ProfessionalLicenseImageUrl { get; set; }
+
+    /// <summary>URL del documento de identidad (DEPRECADO - usar IdDocumentFrontImageUrl)</summary>
+    [Obsolete("Usar IdDocumentFrontImageUrl y IdDocumentBackImageUrl en su lugar")]
+    [MaxLength(500)]
+    public string? IdDocumentImageUrl { get; set; }
+
+    /// <summary>URL del título universitario (DEPRECADO - usar UniversityDegreeImageUrl)</summary>
+    [Obsolete("Usar UniversityDegreeImageUrl en su lugar")]
+    [MaxLength(500)]
+    public string? DegreeImageUrl { get; set; }
+
+    /// <summary>Datos extraídos del OCR (DEPRECADO - ya no usamos OCR)</summary>
+    [Obsolete("Ya no se usa OCR - eliminar en próxima migración")]
+    public string? OcrData { get; set; }
+
+    /// <summary>Si el documento ha sido verificado automáticamente (DEPRECADO - verificación manual por admin)</summary>
+    [Obsolete("Ya no se usa verificación automática - eliminar en próxima migración")]
+    public bool IsDocumentVerified { get; set; }
+
+    // ══════════════════════════════════════════════════════════════
+    // SOFT DELETE — RGPD
+    // ══════════════════════════════════════════════════════════════
 
     /// <summary>
     /// Fecha de baja lógica. El profesional pierde el acceso pero sus datos
@@ -112,7 +173,9 @@ public class Doctor
 
     public int? DeletedByAdminId { get; set; }
 
-    // ── Sin cambios respecto a tu versión original ────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+    // OTROS CAMPOS
+    // ══════════════════════════════════════════════════════════════
 
     /// <summary>Indica si el doctor acepta nuevos pacientes</summary>
     public bool IsAcceptingPatients { get; set; } = true;
@@ -120,9 +183,9 @@ public class Doctor
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
-    // ============================================
-    // RELACIONES — sin cambios
-    // ============================================
+    // ══════════════════════════════════════════════════════════════
+    // RELACIONES
+    // ══════════════════════════════════════════════════════════════
 
     [ForeignKey("UserId")]
     public User User { get; set; } = null!;
@@ -135,9 +198,9 @@ public class Doctor
     public ICollection<DoctorAvailability> Availabilities { get; set; } = new List<DoctorAvailability>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
-    // ============================================
+    // ══════════════════════════════════════════════════════════════
     // PROPIEDADES CALCULADAS
-    // ============================================
+    // ══════════════════════════════════════════════════════════════
 
     [NotMapped]
     public string FullName => $"{FirstName} {LastName}";
@@ -160,20 +223,4 @@ public class Doctor
     /// </summary>
     [NotMapped]
     public bool IsVerified => Status == DoctorStatus.Active;
-
-    /// <summary>URL de la imagen del carnet de colegiado</summary>
-    public string? ProfessionalLicenseImageUrl { get; set; }
-
-    /// <summary>URL del documento de identidad (DNI/Pasaporte)</summary>
-    public string? IdDocumentImageUrl { get; set; }
-
-    /// <summary>URL del título universitario o certificado</summary>
-    public string? DegreeImageUrl { get; set; }
-
-    /// <summary>Datos extraídos del OCR del carnet</summary>
-    public string? OcrData { get; set; }
-
-    /// <summary>Si el documento ha sido verificado automáticamente</summary>
-    public bool IsDocumentVerified { get; set; }
-    
 }

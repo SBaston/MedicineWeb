@@ -8,6 +8,7 @@ namespace MedicineBackend.Services;
 
 /// <summary>
 /// Implementación del servicio de gestión de profesionales (doctores).
+/// ✅ ACTUALIZADO: Mapeo con 6 imágenes (sin OCR)
 /// </summary>
 public class DoctorManagementService : IDoctorManagementService
 {
@@ -186,6 +187,7 @@ public class DoctorManagementService : IDoctorManagementService
         return admin?.Id ?? 0;
     }
 
+    // ✅ ACTUALIZADO: Mapeo con 6 imágenes (sin OCR)
     private static PendingDoctorDto ToPendingDto(Doctor d) => new()
     {
         Id = d.Id,
@@ -200,11 +202,14 @@ public class DoctorManagementService : IDoctorManagementService
         Status = d.Status.ToString(),
         RegisteredAt = d.CreatedAt,
         Specialties = d.Specialties.Select(s => s.Name).ToList(),
-        ProfessionalLicenseImageUrl = d.ProfessionalLicenseImageUrl,
-        IdDocumentImageUrl = d.IdDocumentImageUrl,
-        DegreeImageUrl = d.DegreeImageUrl,
-        OcrData = d.OcrData,
-        IsDocumentVerified = d.IsDocumentVerified,
+
+        // ✅ NUEVOS CAMPOS: 6 IMÁGENES
+        ProfessionalLicenseFrontImageUrl = d.ProfessionalLicenseFrontImageUrl,
+        ProfessionalLicenseBackImageUrl = d.ProfessionalLicenseBackImageUrl,
+        IdDocumentFrontImageUrl = d.IdDocumentFrontImageUrl,
+        IdDocumentBackImageUrl = d.IdDocumentBackImageUrl,
+        SpecialtyDegreeImageUrl = d.SpecialtyDegreeImageUrl,
+        UniversityDegreeImageUrl = d.UniversityDegreeImageUrl,
     };
 
     private static DoctorAdminDto ToAdminDto(Doctor d) => new()

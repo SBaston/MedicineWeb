@@ -1,10 +1,12 @@
 ﻿// ═══════════════════════════════════════════════════════════════
 // Backend/Controllers/DoctorAuthController.cs
+// ✅ ACTUALIZADO: 6 imágenes OBLIGATORIAS (sin OCR)
 // ═══════════════════════════════════════════════════════════════
 
-using MedicineBackend.DTOs; // ← IMPORTANTE: Importar DTOs
-using MedicineBackend.Services.Interfaces;
+using MedicineBackend.DTOs.Doctor;
 using MedicineBackend.Services;
+using MedicineBackend.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -15,30 +17,28 @@ namespace MedicineBackend.Controllers
     public class DoctorAuthController : ControllerBase
     {
         private readonly IDoctorService _doctorService;
-        private readonly IOcrService _ocrService;
         private readonly IFileStorageService _fileStorage;
         private readonly ILogger<DoctorAuthController> _logger;
 
         public DoctorAuthController(
             IDoctorService doctorService,
-            IOcrService ocrService,
             IFileStorageService fileStorage,
             ILogger<DoctorAuthController> logger)
         {
             _doctorService = doctorService;
-            _ocrService = ocrService;
             _fileStorage = fileStorage;
             _logger = logger;
         }
 
         // ═══════════════════════════════════════════════════════════
         // POST /api/doctors/register
-        // Registro completo de doctor con documentos
+        // Registro completo de doctor con 6 documentos OBLIGATORIOS
         // ═══════════════════════════════════════════════════════════
         [HttpPost("register")]
-        [ProducesResponseType(typeof(DoctorRegistrationResponse), 201)]
+        [RequestSizeLimit(60_000_000)] // 60MB para 6 imágenes
+        [ProducesResponseType(201)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> Register([FromBody] DoctorRegistrationDto dto)
+        public async Task<IActionResult> Register([FromForm] DoctorRegisterDto dto)
         {
             try
             {
@@ -48,63 +48,93 @@ namespace MedicineBackend.Controllers
                     return BadRequest(new { message = "El email ya está registrado" });
                 }
 
-                // 2. Procesar imagen del carnet con OCR
-                var ocrResult = await _ocrService.ProcessImageAsync(dto.ProfessionalLicenseImage);
-
-                if (!ocrResult.Success)
+                // 2. Validar que el número de colegiado no esté registrado
+                if (await _doctorService.ProfessionalLicenseExistsAsync(dto.ProfessionalLicense))
                 {
-                    return BadRequest(new
-                    {
-                        message = "No se pudo procesar la imagen del carnet de colegiado",
-                        errors = ocrResult.Errors
-                    });
+                    return BadRequest(new { message = "El número de colegiado ya está registrado" });
                 }
 
-                // 3. Validar número de colegiado extraído
-                var isLicenseValid = await _ocrService.ValidateProfessionalLicenseAsync(
-                    ocrResult.ProfessionalLicense ?? "",
-                    dto.ProfessionalLicense
-                );
-
-                if (!isLicenseValid && ocrResult.Confidence > 0.5m)
+                // 3. Validar imágenes OBLIGATORIAS (6 obligatorias)
+                if (dto.ProfessionalLicenseFront == null)
                 {
-                    _logger.LogWarning(
-                        $"Número de colegiado no coincide. Proporcionado: {dto.ProfessionalLicense}, " +
-                        $"Extraído: {ocrResult.ProfessionalLicense}"
-                    );
+                    return BadRequest(new { message = "La imagen frontal del carnet de colegiado es obligatoria" });
+                }
 
-                    return BadRequest(new
-                    {
-                        message = "El número de colegiado no coincide con el documento",
-                        provided = dto.ProfessionalLicense,
-                        extracted = ocrResult.ProfessionalLicense
-                    });
+                if (dto.ProfessionalLicenseBack == null)
+                {
+                    return BadRequest(new { message = "La imagen trasera del carnet de colegiado es obligatoria" });
+                }
+
+                if (dto.IdDocumentFront == null)
+                {
+                    return BadRequest(new { message = "La imagen frontal del DNI es obligatoria" });
+                }
+
+                if (dto.IdDocumentBack == null)
+                {
+                    return BadRequest(new { message = "La imagen trasera del DNI es obligatoria" });
+                }
+
+                if (dto.SpecialtyDegree == null)
+                {
+                    return BadRequest(new { message = "El título de especialidad es obligatorio" });
+                }
+
+                if (dto.UniversityDegree == null)
+                {
+                    return BadRequest(new { message = "El título universitario es obligatorio" });
                 }
 
                 // 4. Guardar imágenes en almacenamiento
-                var licenseImageUrl = await _fileStorage.SaveImageAsync(
-                    dto.ProfessionalLicenseImage,
-                    "professional-licenses",
-                    $"{dto.ProfessionalLicense}_{Guid.NewGuid()}"
+                var licensePrefix = $"{dto.ProfessionalLicense}_{Guid.NewGuid()}";
+
+                // OBLIGATORIAS: Carnet de colegiado (delante y atrás)
+                var licenseFrontUrl = await _fileStorage.SaveFileAsync(
+                    dto.ProfessionalLicenseFront,
+                    "doctors/documents",
+                    $"{licensePrefix}_license_front"
                 );
 
-                string? idDocumentUrl = null;
-                if (!string.IsNullOrEmpty(dto.IdDocumentImage))
-                {
-                    idDocumentUrl = await _fileStorage.SaveImageAsync(
-                        dto.IdDocumentImage,
-                        "id-documents",
-                        $"{dto.ProfessionalLicense}_id_{Guid.NewGuid()}"
-                    );
-                }
+                var licenseBackUrl = await _fileStorage.SaveFileAsync(
+                    dto.ProfessionalLicenseBack,
+                    "doctors/documents",
+                    $"{licensePrefix}_license_back"
+                );
 
-                string? degreeUrl = null;
-                if (!string.IsNullOrEmpty(dto.DegreeImage))
+                // OBLIGATORIAS: DNI (delante y atrás)
+                var idFrontUrl = await _fileStorage.SaveFileAsync(
+                    dto.IdDocumentFront,
+                    "doctors/documents",
+                    $"{licensePrefix}_id_front"
+                );
+
+                var idBackUrl = await _fileStorage.SaveFileAsync(
+                    dto.IdDocumentBack,
+                    "doctors/documents",
+                    $"{licensePrefix}_id_back"
+                );
+
+                // OBLIGATORIAS: Títulos
+                var specialtyDegreeUrl = await _fileStorage.SaveFileAsync(
+                    dto.SpecialtyDegree,
+                    "doctors/documents",
+                    $"{licensePrefix}_specialty_degree"
+                );
+
+                var universityDegreeUrl = await _fileStorage.SaveFileAsync(
+                    dto.UniversityDegree,
+                    "doctors/documents",
+                    $"{licensePrefix}_university_degree"
+                );
+
+                // OPCIONAL: Foto de perfil
+                string? profilePictureUrl = null;
+                if (dto.ProfilePicture != null)
                 {
-                    degreeUrl = await _fileStorage.SaveImageAsync(
-                        dto.DegreeImage,
-                        "degrees",
-                        $"{dto.ProfessionalLicense}_degree_{Guid.NewGuid()}"
+                    profilePictureUrl = await _fileStorage.SaveFileAsync(
+                        dto.ProfilePicture,
+                        "doctors/profiles",
+                        $"{licensePrefix}_profile"
                     );
                 }
 
@@ -116,73 +146,53 @@ namespace MedicineBackend.Controllers
                     Email = dto.Email,
                     Password = dto.Password,
                     ProfessionalLicense = dto.ProfessionalLicense,
-                    SpecialtyIds = dto.SpecialtyIds, // ← Lista de IDs
+                    SpecialtyIds = dto.SpecialtyIds,
                     YearsOfExperience = dto.YearsOfExperience,
                     PricePerSession = dto.PricePerSession,
                     Description = dto.Description,
                     PhoneNumber = dto.PhoneNumber,
-                    ProfessionalLicenseImageUrl = licenseImageUrl,
-                    IdDocumentImageUrl = idDocumentUrl,
-                    DegreeImageUrl = degreeUrl,
-                    OcrData = System.Text.Json.JsonSerializer.Serialize(ocrResult),
-                    IsDocumentVerified = isLicenseValid && ocrResult.Confidence > 0.7m
+                    ProfilePictureUrl = profilePictureUrl,
+
+                    // ✅ 6 IMÁGENES OBLIGATORIAS
+                    ProfessionalLicenseFrontImageUrl = licenseFrontUrl,
+                    ProfessionalLicenseBackImageUrl = licenseBackUrl,
+                    IdDocumentFrontImageUrl = idFrontUrl,
+                    IdDocumentBackImageUrl = idBackUrl,
+                    SpecialtyDegreeImageUrl = specialtyDegreeUrl,
+                    UniversityDegreeImageUrl = universityDegreeUrl
                 });
 
-                _logger.LogInformation($"Doctor registrado: {dto.Email} (ID: {doctor.Id})");
+                _logger.LogInformation(
+                    $"✅ Doctor registrado: {dto.Email} (ID: {doctor.Id}) - Estado: {doctor.Status}"
+                );
 
                 return CreatedAtAction(
                     nameof(GetById),
                     new { id = doctor.Id },
-                    new DoctorRegistrationResponse
+                    new
                     {
-                        Id = doctor.Id,
-                        Email = dto.Email,
-                        FullName = $"{doctor.FirstName} {doctor.LastName}",
-                        Status = doctor.Status.ToString(),
-                        Message = "Registro exitoso. Tu solicitud será revisada por un administrador en las próximas 24-48 horas.",
-                        OcrConfidence = ocrResult.Confidence,
-                        DocumentVerified = doctor.IsDocumentVerified
+                        id = doctor.Id,
+                        email = dto.Email,
+                        fullName = $"{doctor.FirstName} {doctor.LastName}",
+                        status = doctor.Status.ToString(),
+                        message = "✅ Registro exitoso. Tu solicitud será revisada por un administrador en las próximas 24-48 horas. " +
+                                  "Recibirás un email cuando sea aprobada y podrás acceder a la plataforma.",
+                        documentsUploaded = new
+                        {
+                            professionalLicenseFront = !string.IsNullOrEmpty(licenseFrontUrl),
+                            professionalLicenseBack = !string.IsNullOrEmpty(licenseBackUrl),
+                            idDocumentFront = !string.IsNullOrEmpty(idFrontUrl),
+                            idDocumentBack = !string.IsNullOrEmpty(idBackUrl),
+                            specialtyDegree = !string.IsNullOrEmpty(specialtyDegreeUrl),
+                            universityDegree = !string.IsNullOrEmpty(universityDegreeUrl)
+                        }
                     }
                 );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error durante el registro de doctor");
-                return StatusCode(500, new { message = "Error interno del servidor" });
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        // POST /api/doctors/validate-document
-        // Validar documento antes de enviar el registro completo
-        // ═══════════════════════════════════════════════════════════
-        [HttpPost("validate-document")]
-        [ProducesResponseType(typeof(OcrResultDto), 200)]
-        public async Task<IActionResult> ValidateDocument([FromBody] ValidateDocumentRequest request)
-        {
-            try
-            {
-                var ocrResult = await _ocrService.ProcessImageAsync(request.ImageBase64);
-
-                return Ok(new
-                {
-                    success = ocrResult.Success,
-                    extractedLicense = ocrResult.ProfessionalLicense,
-                    extractedName = ocrResult.FullName,
-                    extractedSpecialty = ocrResult.Specialty,
-                    confidence = ocrResult.Confidence,
-                    isValid = ocrResult.Confidence >= 0.5m,
-                    message = ocrResult.Confidence >= 0.7m
-                        ? "Documento validado correctamente"
-                        : ocrResult.Confidence >= 0.5m
-                            ? "Documento detectado con baja confianza. Verifica que la imagen sea clara."
-                            : "No se pudo leer el documento. Asegúrate de que la imagen sea clara y esté bien iluminada."
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validando documento");
-                return BadRequest(new { message = "Error procesando el documento" });
+                _logger.LogError(ex, "❌ Error durante el registro de doctor");
+                return StatusCode(500, new { message = "Error interno del servidor", details = ex.Message });
             }
         }
 
@@ -191,7 +201,7 @@ namespace MedicineBackend.Controllers
         // Obtener información de un doctor
         // ═══════════════════════════════════════════════════════════
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(DoctorDto), 200)]
+        [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> GetById(int id)
         {
@@ -200,6 +210,18 @@ namespace MedicineBackend.Controllers
                 return NotFound(new { message = "Doctor no encontrado" });
 
             return Ok(doctor);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // GET /api/doctors
+        // Listar todos los doctores activos
+        // ═══════════════════════════════════════════════════════════
+        [HttpGet]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> GetAll()
+        {
+            var doctors = await _doctorService.GetAllDoctorsAsync();
+            return Ok(doctors);
         }
     }
 }

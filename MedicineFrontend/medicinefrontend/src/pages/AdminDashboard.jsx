@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -68,7 +68,64 @@ const ConfirmModal = ({ title, description, requireReason, reasonLabel, danger, 
 };
 
 // ════════════════════════════════════════════════════════════════
-// PROFESIONALES PENDIENTES
+// ✅ COMPONENTE DE IMAGEN INDIVIDUAL (FUERA DE PendingDoctorRow)
+// ════════════════════════════════════════════════════════════════
+
+const ImageCard = ({ url, title, required = false, icon: IconComponent = FileText, onView }) => {
+    if (!url) {
+        return (
+            <div className={`${required ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'} rounded-lg border-2 border-dashed p-4 flex flex-col items-center justify-center h-64`}>
+                <IconComponent className={`w-8 h-8 ${required ? 'text-red-300' : 'text-gray-300'} mb-2`} />
+                <p className={`text-xs font-semibold ${required ? 'text-red-700' : 'text-gray-600'}`}>{title}</p>
+                <p className={`text-xs ${required ? 'text-red-600' : 'text-gray-400'} mt-1`}>
+                    {required ? '⚠️ No subido' : 'No subido'}
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
+            <div className={`p-3 ${required ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'} border-b`}>
+                <p className={`font-semibold text-sm ${required ? 'text-blue-900' : 'text-gray-900'} flex items-center gap-2`}>
+                    <IconComponent className="w-4 h-4" />
+                    {title}
+                </p>
+                <p className={`text-xs ${required ? 'text-blue-700' : 'text-gray-600'} mt-0.5`}>
+                    {required ? 'Obligatorio' : 'Opcional'}
+                </p>
+            </div>
+            <div className="p-2">
+                <img
+                    src={url}
+                    alt={title}
+                    className="w-full h-48 object-contain bg-gray-100 rounded cursor-pointer hover:opacity-80 transition"
+                    onClick={() => onView({ url, title })}
+                />
+                <div className="flex gap-2 mt-2">
+                    <button
+                        onClick={() => onView({ url, title })}
+                        className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                    >
+                        <Eye className="w-3 h-3" />
+                        Ver
+                    </button>
+                    <a
+                        href={url}
+                        download
+                        className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
+                    >
+                        <Download className="w-3 h-3" />
+                        Descargar
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ════════════════════════════════════════════════════════════════
+// PROFESIONALES PENDIENTES - CON 6 IMÁGENES
 // ════════════════════════════════════════════════════════════════
 
 const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
@@ -141,178 +198,82 @@ const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
                             </div>
                         )}
 
-                        {/* DOCUMENTOS */}
+                        {/* ✅ DOCUMENTOS - 6 IMÁGENES */}
                         <div className="mb-4">
                             <p className="text-sm text-gray-700 font-semibold mb-3 flex items-center gap-2">
                                 <FileText className="w-4 h-4 text-primary-600" />
                                 Documentos de Verificación
                             </p>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                                {/* Carnet de Colegiado */}
-                                {doctor.professionalLicenseImageUrl ? (
-                                    <div className="bg-white rounded-lg border-2 border-blue-200 overflow-hidden">
-                                        <div className="p-3 bg-blue-50 border-b border-blue-200">
-                                            <p className="font-semibold text-sm text-blue-900 flex items-center gap-2">
-                                                <Shield className="w-4 h-4" />
-                                                Carnet de Colegiado
-                                            </p>
-                                            <p className="text-xs text-blue-700 mt-0.5">Obligatorio</p>
-                                        </div>
-                                        <div className="p-2">
-                                            <img
-                                                src={doctor.professionalLicenseImageUrl}
-                                                alt="Carnet de colegiado"
-                                                className="w-full h-48 object-contain bg-gray-100 rounded cursor-pointer hover:opacity-80 transition"
-                                                onClick={() => setShowImageModal({
-                                                    url: doctor.professionalLicenseImageUrl,
-                                                    title: 'Carnet de Colegiado'
-                                                })}
-                                            />
-                                            <div className="flex gap-2 mt-2">
-                                                <button
-                                                    onClick={() => setShowImageModal({
-                                                        url: doctor.professionalLicenseImageUrl,
-                                                        title: 'Carnet de Colegiado'
-                                                    })}
-                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
-                                                >
-                                                    <Eye className="w-3 h-3" />
-                                                    Ver
-                                                </button>
-                                                <a
-                                                    href={doctor.professionalLicenseImageUrl}
-                                                    download
-                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
-                                                >
-                                                    <Download className="w-3 h-3" />
-                                                    Descargar
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="bg-red-50 rounded-lg border-2 border-dashed border-red-200 p-4 flex flex-col items-center justify-center h-64">
-                                        <Shield className="w-8 h-8 text-red-300 mb-2" />
-                                        <p className="text-xs font-semibold text-red-700">Carnet de Colegiado</p>
-                                        <p className="text-xs text-red-600 mt-1">⚠️ No subido</p>
-                                    </div>
-                                )}
+                            {/* CARNET DE COLEGIADO - OBLIGATORIO */}
+                            <div className="mb-4">
+                                <h4 className="text-xs font-semibold text-gray-900 mb-2">
+                                    📋 Carnet de Colegiado <span className="text-red-500">(Obligatorio)</span>
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <ImageCard
+                                        url={doctor.professionalLicenseFrontImageUrl}
+                                        title="Cara Delantera"
+                                        required
+                                        icon={Shield}
+                                        onView={setShowImageModal}
+                                    />
+                                    <ImageCard
+                                        url={doctor.professionalLicenseBackImageUrl}
+                                        title="Cara Trasera"
+                                        required
+                                        icon={Shield}
+                                        onView={setShowImageModal}
+                                    />
+                                </div>
+                            </div>
 
-                                {/* DNI/Pasaporte */}
-                                {doctor.idDocumentImageUrl ? (
-                                    <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
-                                        <div className="p-3 bg-gray-50 border-b border-gray-200">
-                                            <p className="font-semibold text-sm text-gray-900 flex items-center gap-2">
-                                                <User className="w-4 h-4" />
-                                                DNI / Pasaporte
-                                            </p>
-                                            <p className="text-xs text-gray-600 mt-0.5">Opcional</p>
-                                        </div>
-                                        <div className="p-2">
-                                            <img
-                                                src={doctor.idDocumentImageUrl}
-                                                alt="DNI/Pasaporte"
-                                                className="w-full h-48 object-contain bg-gray-100 rounded cursor-pointer hover:opacity-80 transition"
-                                                onClick={() => setShowImageModal({
-                                                    url: doctor.idDocumentImageUrl,
-                                                    title: 'DNI/Pasaporte'
-                                                })}
-                                            />
-                                            <div className="flex gap-2 mt-2">
-                                                <button
-                                                    onClick={() => setShowImageModal({
-                                                        url: doctor.idDocumentImageUrl,
-                                                        title: 'DNI/Pasaporte'
-                                                    })}
-                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
-                                                >
-                                                    <Eye className="w-3 h-3" />
-                                                    Ver
-                                                </button>
-                                                <a
-                                                    href={doctor.idDocumentImageUrl}
-                                                    download
-                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
-                                                >
-                                                    <Download className="w-3 h-3" />
-                                                    Descargar
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 p-4 flex flex-col items-center justify-center h-64">
-                                        <User className="w-8 h-8 text-gray-300 mb-2" />
-                                        <p className="text-xs font-semibold text-gray-600">DNI / Pasaporte</p>
-                                        <p className="text-xs text-gray-400 mt-1">No subido</p>
-                                    </div>
-                                )}
+                            {/* DNI/PASAPORTE - OBLIGATORIO */}
+                            <div className="mb-4">
+                                <h4 className="text-xs font-semibold text-gray-900 mb-2">
+                                    🪪 DNI/Pasaporte <span className="text-red-500">(Obligatorio)</span>
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <ImageCard
+                                        url={doctor.idDocumentFrontImageUrl}
+                                        title="Cara Delantera"
+                                        required 
+                                        icon={User}
+                                        onView={setShowImageModal}
+                                    />
+                                    <ImageCard
+                                        url={doctor.idDocumentBackImageUrl}
+                                        title="Cara Trasera"
+                                        required  
+                                        icon={User}
+                                        onView={setShowImageModal}
+                                    />
+                                </div>
+                            </div>
 
-                                {/* Título Universitario */}
-                                {doctor.degreeImageUrl ? (
-                                    <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
-                                        <div className="p-3 bg-gray-50 border-b border-gray-200">
-                                            <p className="font-semibold text-sm text-gray-900 flex items-center gap-2">
-                                                <FileText className="w-4 h-4" />
-                                                Título Universitario
-                                            </p>
-                                            <p className="text-xs text-gray-600 mt-0.5">Opcional</p>
-                                        </div>
-                                        <div className="p-2">
-                                            <img
-                                                src={doctor.degreeImageUrl}
-                                                alt="Título universitario"
-                                                className="w-full h-48 object-contain bg-gray-100 rounded cursor-pointer hover:opacity-80 transition"
-                                                onClick={() => setShowImageModal({
-                                                    url: doctor.degreeImageUrl,
-                                                    title: 'Título Universitario'
-                                                })}
-                                            />
-                                            <div className="flex gap-2 mt-2">
-                                                <button
-                                                    onClick={() => setShowImageModal({
-                                                        url: doctor.degreeImageUrl,
-                                                        title: 'Título Universitario'
-                                                    })}
-                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
-                                                >
-                                                    <Eye className="w-3 h-3" />
-                                                    Ver
-                                                </button>
-                                                <a
-                                                    href={doctor.degreeImageUrl}
-                                                    download
-                                                    className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
-                                                >
-                                                    <Download className="w-3 h-3" />
-                                                    Descargar
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 p-4 flex flex-col items-center justify-center h-64">
-                                        <FileText className="w-8 h-8 text-gray-300 mb-2" />
-                                        <p className="text-xs font-semibold text-gray-600">Título Universitario</p>
-                                        <p className="text-xs text-gray-400 mt-1">No subido</p>
-                                    </div>
-                                )}
+                            {/* TÍTULOS ACADÉMICOS - OBLIGATORIO */}
+                            <div>
+                                <h4 className="text-xs font-semibold text-gray-900 mb-2">
+                                    🎓 Títulos Académicos <span className="text-red-500">(Obligatorio)</span>
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <ImageCard
+                                        url={doctor.specialtyDegreeImageUrl}
+                                        title="Título de Especialidad"
+                                        required  
+                                        icon={FileText}
+                                        onView={setShowImageModal}
+                                    />
+                                    <ImageCard
+                                        url={doctor.universityDegreeImageUrl}
+                                        title="Título Universitario"
+                                        required  
+                                        icon={FileText}
+                                        onView={setShowImageModal}
+                                    />
+                                </div>
                             </div>
                         </div>
-
-                        {/* Datos OCR */}
-                        {doctor.ocrData && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                <p className="text-xs text-blue-900 font-semibold mb-1">Datos extraídos por OCR</p>
-                                <pre className="text-xs text-blue-800 overflow-x-auto whitespace-pre-wrap">
-                                    {typeof doctor.ocrData === 'string'
-                                        ? JSON.stringify(JSON.parse(doctor.ocrData), null, 2)
-                                        : JSON.stringify(doctor.ocrData, null, 2)
-                                    }
-                                </pre>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
@@ -349,6 +310,7 @@ const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
         </>
     );
 };
+
 // ════════════════════════════════════════════════════════════════
 // TABLA DE PROFESIONALES
 // ════════════════════════════════════════════════════════════════

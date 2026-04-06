@@ -3,36 +3,52 @@
   "WorkspaceRootPath": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\services\\adminservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\services\\adminservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\loginpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\loginpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\admindashboard.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\admindashboard.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\registerpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\registerpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\vite.config.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\vite.config.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\loginpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\loginpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\doctorregisterpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\doctorregisterpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\components\\layout\\navbar.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\components\\layout\\navbar.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\services\\adminservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\services\\adminservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\services\\doctorservice.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\services\\doctorservice.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\services\\authservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\services\\authservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\adminspecialtiespage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\adminspecialtiespage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\components\\layout\\footer.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\components\\layout\\footer.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\patientdashboard.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\patientdashboard.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\registerpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\registerpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\services\\doctorservice.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\services\\doctorservice.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\components\\layout\\navbar.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\components\\layout\\navbar.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\patientdashboard.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\patientdashboard.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\services\\api.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
@@ -43,10 +59,6 @@
       "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\earningspage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\doctorregisterpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\doctorregisterpage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\createcoursepage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\createcoursepage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
@@ -55,20 +67,12 @@
       "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\app.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\services\\authservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\services\\authservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\services\\specialtyservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\services\\specialtyservice.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\completeprofilepage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\completeprofilepage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\adminspecialtiespage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\src\\pages\\adminspecialtiespage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\src\\pages\\availabilitypage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
@@ -117,10 +121,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\vite.config.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|solutionrelative:medicinefrontend\\vite.config.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B3C8EA02-BF9E-55CE-3C81-EF52D23A4AC5}|MedicineFrontend\\medicinefrontend.esproj|c:\\users\\swser\\source\\repos\\medicinefrontend\\medicinefrontend\\.env||{8B382828-6202-11D1-8870-0000F87579D2}",
@@ -206,11 +206,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 13,
               "Title": "EarningsPage.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\EarningsPage.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\EarningsPage.jsx",
@@ -223,154 +223,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "App.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\App.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\App.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\App.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\App.jsx",
-              "ViewState": "AgIAAHQAAAAAAAAAAAAAwIYAAAA7AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-01-31T11:25:17.419Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "Navbar.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\components\\layout\\Navbar.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\components\\layout\\Navbar.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\components\\layout\\Navbar.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\components\\layout\\Navbar.jsx",
-              "ViewState": "AgIAABsAAAAAAAAAAAAAAB8AAABIAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-01-31T12:06:13.824Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "RegisterPage.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\RegisterPage.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\RegisterPage.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\RegisterPage.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\pages\\RegisterPage.jsx",
-              "ViewState": "AgIAAGYAAAAAAAAAAAAAAGsAAABMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-01-31T12:07:39.507Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "PatientDashboard.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\PatientDashboard.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\PatientDashboard.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\PatientDashboard.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\pages\\PatientDashboard.jsx",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-02-08T18:59:10.474Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "Footer.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\components\\layout\\Footer.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\components\\layout\\Footer.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\components\\layout\\Footer.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\components\\layout\\Footer.jsx",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAsAAABKAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-01-31T12:06:38.749Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AdminDashboard.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\AdminDashboard.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\AdminDashboard.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\AdminDashboard.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\pages\\AdminDashboard.jsx",
-              "ViewState": "AgIAAIMCAAAAAAAAAAAIwJACAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-02-22T16:42:11.735Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "adminService.js",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\adminService.js",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\adminService.js",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\adminService.js",
-              "RelativeToolTip": "medicinefrontend\\src\\services\\adminService.js",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAIwBkAAABAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2026-03-30T08:19:23.262Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "api.js",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\api.js",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\api.js",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\api.js",
-              "RelativeToolTip": "medicinefrontend\\src\\services\\api.js",
-              "ViewState": "AgIAABAAAAAAAAAAAAAowCoAAAATAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2026-03-30T08:06:52.07Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
               "Title": "LoginPage.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\LoginPage.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\LoginPage.jsx",
               "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\LoginPage.jsx",
               "RelativeToolTip": "medicinefrontend\\src\\pages\\LoginPage.jsx",
-              "ViewState": "AgIAACQAAAAAAAAAAAAAADIAAABMAAAAAAAAAA==",
+              "ViewState": "AgIAAF4AAAAAAAAAAAAAAGoAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-01-31T12:07:18.579Z"
+              "WhenOpened": "2026-01-31T12:07:18.579Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "DoctorRegisterPage.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\DoctorRegisterPage.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\DoctorRegisterPage.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\DoctorRegisterPage.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\pages\\DoctorRegisterPage.jsx",
-              "ViewState": "AgIAAE0AAAAAAAAAAAAqwFgAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-08T11:28:17.438Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "doctorService.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\doctorService.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\doctorService.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\doctorService.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\services\\doctorService.jsx",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAAABUAAAAfAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-01-31T12:04:48.367Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "CreateCoursePage.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\CreateCoursePage.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\CreateCoursePage.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\CreateCoursePage.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\pages\\CreateCoursePage.jsx",
-              "ViewState": "AgIAAJAAAAAAAAAAAAAYwJ0AAABKAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-12T06:31:20.736Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 6,
               "Title": "authService.js",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\authService.js",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\authService.js",
@@ -382,43 +248,69 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "specialtyService.js",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\specialtyService.js",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\specialtyService.js",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\specialtyService.js",
-              "RelativeToolTip": "medicinefrontend\\src\\services\\specialtyService.js",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAAAEkAAAAgAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "doctorService.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\doctorService.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\doctorService.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\doctorService.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\services\\doctorService.jsx",
+              "ViewState": "AgIAAE8AAAAAAAAAAAAuwG0AAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-01-31T12:04:48.367Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "DoctorRegisterPage.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\DoctorRegisterPage.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\DoctorRegisterPage.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\DoctorRegisterPage.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\pages\\DoctorRegisterPage.jsx",
+              "ViewState": "AgIAAF8AAAAAAAAAAAAAAHEAAABBAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-08T11:28:17.438Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "vite.config.js",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\vite.config.js",
+              "RelativeDocumentMoniker": "medicinefrontend\\vite.config.js",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\vite.config.js",
+              "RelativeToolTip": "medicinefrontend\\vite.config.js",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAkwBoAAAACAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2026-03-02T09:14:50.988Z"
+              "WhenOpened": "2026-01-31T11:26:21.903Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
-              "Title": "CreateAdminPage.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\CreateAdminPage.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\CreateAdminPage.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\CreateAdminPage.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\pages\\CreateAdminPage.jsx",
-              "ViewState": "AgIAAPsAAAAAAAAAAAAAABQAAAATAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "AdminDashboard.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\AdminDashboard.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\AdminDashboard.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\AdminDashboard.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\pages\\AdminDashboard.jsx",
+              "ViewState": "AgIAAPoAAAAAAAAAAAAqwA0BAAAyAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-02-22T22:45:35.071Z"
+              "WhenOpened": "2026-02-22T16:42:11.735Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
-              "Title": "AvailabilityPage.jsx",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\AvailabilityPage.jsx",
-              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\AvailabilityPage.jsx",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\AvailabilityPage.jsx",
-              "RelativeToolTip": "medicinefrontend\\src\\pages\\AvailabilityPage.jsx",
-              "ViewState": "AgIAALUAAAAAAAAAAAAYwMIAAABGAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-12T06:29:28.105Z"
+              "DocumentIndex": 4,
+              "Title": "adminService.js",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\adminService.js",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\adminService.js",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\adminService.js",
+              "RelativeToolTip": "medicinefrontend\\src\\services\\adminService.js",
+              "ViewState": "AgIAABQAAAAAAAAAAAAqwCwAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-30T08:19:23.262Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 7,
               "Title": "AdminSpecialtiesPage.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\AdminSpecialtiesPage.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\AdminSpecialtiesPage.jsx",
@@ -430,7 +322,127 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Footer.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\components\\layout\\Footer.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\components\\layout\\Footer.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\components\\layout\\Footer.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\components\\layout\\Footer.jsx",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAsAAABKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-01-31T12:06:38.749Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "PatientDashboard.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\PatientDashboard.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\PatientDashboard.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\PatientDashboard.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\pages\\PatientDashboard.jsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-02-08T18:59:10.474Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "RegisterPage.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\RegisterPage.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\RegisterPage.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\RegisterPage.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\pages\\RegisterPage.jsx",
+              "ViewState": "AgIAAGYAAAAAAAAAAAAAAGsAAABMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-01-31T12:07:39.507Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Navbar.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\components\\layout\\Navbar.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\components\\layout\\Navbar.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\components\\layout\\Navbar.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\components\\layout\\Navbar.jsx",
+              "ViewState": "AgIAABsAAAAAAAAAAAAAAB8AAABIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-01-31T12:06:13.824Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 15,
+              "Title": "App.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\App.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\App.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\App.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\App.jsx",
+              "ViewState": "AgIAAHQAAAAAAAAAAAAAwIYAAAA7AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-01-31T11:25:17.419Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "api.js",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\api.js",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\api.js",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\api.js",
+              "RelativeToolTip": "medicinefrontend\\src\\services\\api.js",
+              "ViewState": "AgIAABAAAAAAAAAAAAAowCoAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-30T08:06:52.07Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "CreateCoursePage.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\CreateCoursePage.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\CreateCoursePage.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\CreateCoursePage.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\pages\\CreateCoursePage.jsx",
+              "ViewState": "AgIAAJAAAAAAAAAAAAAYwJ0AAABKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-12T06:31:20.736Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "specialtyService.js",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\specialtyService.js",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\specialtyService.js",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\specialtyService.js",
+              "RelativeToolTip": "medicinefrontend\\src\\services\\specialtyService.js",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAAAEkAAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-02T09:14:50.988Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "CreateAdminPage.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\CreateAdminPage.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\CreateAdminPage.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\CreateAdminPage.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\pages\\CreateAdminPage.jsx",
+              "ViewState": "AgIAAPsAAAAAAAAAAAAAABQAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-02-22T22:45:35.071Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "AvailabilityPage.jsx",
+              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\AvailabilityPage.jsx",
+              "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\AvailabilityPage.jsx",
+              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\AvailabilityPage.jsx",
+              "RelativeToolTip": "medicinefrontend\\src\\pages\\AvailabilityPage.jsx",
+              "ViewState": "AgIAALUAAAAAAAAAAAAYwMIAAABGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-12T06:29:28.105Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
               "Title": "CompleteProfilePage.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\CompleteProfilePage.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\CompleteProfilePage.jsx",
@@ -442,7 +454,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 20,
               "Title": "PricingPage.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\PricingPage.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\PricingPage.jsx",
@@ -454,7 +466,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 21,
               "Title": "ProfessionalPage.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\ProfessionalPage.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\ProfessionalPage.jsx",
@@ -466,7 +478,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 22,
               "Title": "UploadVideosPage.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\UploadVideosPage.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\UploadVideosPage.jsx",
@@ -478,7 +490,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 23,
               "Title": "HomePage.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\HomePage.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\HomePage.jsx",
@@ -490,7 +502,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 24,
               "Title": "EditProfilePage.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\pages\\EditProfilePage.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\pages\\EditProfilePage.jsx",
@@ -502,7 +514,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 25,
               "Title": "professionalsService.js",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\services\\professionalsService.js",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\services\\professionalsService.js",
@@ -514,7 +526,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 26,
               "Title": "SpecialtySelector.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\components\\SpecialtySelector.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\components\\SpecialtySelector.jsx",
@@ -526,7 +538,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 27,
               "Title": "AuthContext.jsx",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\src\\context\\AuthContext.jsx",
               "RelativeDocumentMoniker": "medicinefrontend\\src\\context\\AuthContext.jsx",
@@ -538,7 +550,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 28,
               "Title": "index.html",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\index.html",
               "RelativeDocumentMoniker": "medicinefrontend\\index.html",
@@ -563,18 +575,6 @@
             {
               "$type": "Document",
               "DocumentIndex": 29,
-              "Title": "vite.config.js",
-              "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\vite.config.js",
-              "RelativeDocumentMoniker": "medicinefrontend\\vite.config.js",
-              "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\vite.config.js",
-              "RelativeToolTip": "medicinefrontend\\vite.config.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAACAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2026-01-31T11:26:21.903Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 28,
               "Title": "Dockerfile",
               "DocumentMoniker": "C:\\Users\\swser\\source\\repos\\MedicineFrontend\\medicinefrontend\\Dockerfile",
               "RelativeDocumentMoniker": "medicinefrontend\\Dockerfile",

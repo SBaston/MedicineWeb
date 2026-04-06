@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // Frontend/src/pages/DoctorRegisterPage.jsx
-// Formulario completo de registro de doctores con captura de documentos
+// Formulario completo de registro de doctores con 6 imágenes
+// ✅ ACTUALIZADO: 6 campos de imágenes (sin OCR)
 // ═══════════════════════════════════════════════════════════════
 
 import { useState } from 'react';
@@ -12,14 +13,14 @@ import SpecialtySelector from '../components/SpecialtySelector';
 import {
     Stethoscope, Camera, Upload, CheckCircle, AlertCircle,
     Loader, ChevronRight, FileText, Shield, User, Mail,
-    Lock, Phone, DollarSign, Briefcase, FileCheck
+    Lock, Phone, DollarSign, Briefcase, FileCheck, Home
 } from 'lucide-react';
 import doctorService from '../services/doctorService';
 
 const DoctorRegisterPage = () => {
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(1);
-    const [showCamera, setShowCamera] = useState(null); // 'license' | 'id' | 'degree' | null
+    const [showCamera, setShowCamera] = useState(null); // 'licenseFront' | 'licenseBack' | 'idFront' | 'idBack' | 'specialty' | 'university' | 'profile' | null
 
     // ═══════════════════════════════════════════════════════════
     // Estado del formulario
@@ -40,40 +41,18 @@ const DoctorRegisterPage = () => {
         pricePerSession: 50,
         description: '',
 
-        // Documentos (Base64)
-        professionalLicenseImage: '',
-        idDocumentImage: '',
-        degreeImage: ''
+        // ✅ DOCUMENTOS - 6 IMÁGENES (Base64)
+        professionalLicenseFront: '',      // OBLIGATORIO
+        professionalLicenseBack: '',       // OBLIGATORIO
+        idDocumentFront: '',               // OPCIONAL
+        idDocumentBack: '',                // OPCIONAL
+        specialtyDegree: '',               // OPCIONAL
+        universityDegree: '',              // OPCIONAL
+        profilePicture: ''                 // OPCIONAL
     });
 
     const [errors, setErrors] = useState({});
-    const [ocrValidation, setOcrValidation] = useState(null);
 
-    // ═══════════════════════════════════════════════════════════
-    // Mutación para validar documento
-    // ═══════════════════════════════════════════════════════════
-    const validateDocMutation = useMutation({
-        mutationFn: (imageBase64) => doctorService.validateDocument(imageBase64),
-        onSuccess: (data) => {
-            setOcrValidation(data);
-
-            // Auto-rellenar si el OCR detectó datos
-            if (data.extractedLicense && !formData.professionalLicense) {
-                setFormData(prev => ({
-                    ...prev,
-                    professionalLicense: data.extractedLicense
-                }));
-            }
-        },
-        onError: () => {
-            setErrors(prev => ({
-                ...prev,
-                professionalLicenseImage: 'Error validando el documento'
-            }));
-        }
-    });
-
-    
     // ═══════════════════════════════════════════════════════════
     // Mutación para registro
     // ═══════════════════════════════════════════════════════════
@@ -84,7 +63,7 @@ const DoctorRegisterPage = () => {
             navigate('/login', {
                 state: {
                     registrationSuccess: true,
-                    message: 'Registro exitoso. Tu cuenta está pendiente de verificación. Recibirás un email cuando sea aprobada.',
+                    message: '✅ Registro exitoso. Tu cuenta está pendiente de verificación por un administrador. Recibirás un email cuando sea aprobada.',
                     email: formData.email
                 }
             });
@@ -110,13 +89,9 @@ const DoctorRegisterPage = () => {
     const handleCameraCapture = (imageBase64, docType) => {
         setFormData(prev => ({
             ...prev,
-            [`${docType}Image`]: imageBase64
+            [docType]: imageBase64
         }));
-
-        // Si es el carnet de colegiado, validar con OCR
-        if (docType === 'professionalLicense') {
-            validateDocMutation.mutate(imageBase64);
-        }
+        setShowCamera(null);
     };
 
     // ═══════════════════════════════════════════════════════════
@@ -144,8 +119,6 @@ const DoctorRegisterPage = () => {
         if (step === 2) {
             if (!formData.professionalLicense.trim()) {
                 newErrors.professionalLicense = 'Número de colegiado obligatorio';
-            } else if (!/^\d{8,10}$/.test(formData.professionalLicense)) {
-                newErrors.professionalLicense = 'Formato inválido (8-10 dígitos)';
             }
             if (formData.specialties.length === 0) {
                 newErrors.specialties = 'Selecciona al menos una especialidad';
@@ -156,11 +129,24 @@ const DoctorRegisterPage = () => {
         }
 
         if (step === 3) {
-            if (!formData.professionalLicenseImage) {
-                newErrors.professionalLicenseImage = 'Carnet de colegiado obligatorio';
+            // ✅ VALIDAR IMÁGENES OBLIGATORIAS (6 obligatorias)
+            if (!formData.professionalLicenseFront) {
+                newErrors.professionalLicenseFront = 'La imagen frontal del carnet de colegiado es obligatoria';
             }
-            if (ocrValidation && !ocrValidation.isValid) {
-                newErrors.professionalLicenseImage = 'El documento no es válido o no es legible';
+            if (!formData.professionalLicenseBack) {
+                newErrors.professionalLicenseBack = 'La imagen trasera del carnet de colegiado es obligatoria';
+            }
+            if (!formData.idDocumentFront) {
+                newErrors.idDocumentFront = 'La imagen frontal del DNI es obligatoria';
+            }
+            if (!formData.idDocumentBack) {
+                newErrors.idDocumentBack = 'La imagen trasera del DNI es obligatoria';
+            }
+            if (!formData.specialtyDegree) {
+                newErrors.specialtyDegree = 'El título de especialidad es obligatorio';
+            }
+            if (!formData.universityDegree) {
+                newErrors.universityDegree = 'El título universitario es obligatorio';
             }
         }
 
@@ -181,21 +167,18 @@ const DoctorRegisterPage = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateStep(3)) {
-            // Convertir especialidades a IDs para el backend
+            // Preparar datos para enviar
             const dataToSend = {
                 ...formData,
-                specialtyIds: formData.specialties.map(s => s.id), // ← Enviar solo IDs
-                phoneNumber: formData.phoneNumber?.trim() || null, // ← null si está vacío
-                idDocumentImage: formData.idDocumentImage || null,
-                degreeImage: formData.degreeImage || null
+                specialtyIds: formData.specialties.map(s => s.id),
+                phoneNumber: formData.phoneNumber?.trim() || null,
             };
-            delete dataToSend.specialties; // Eliminar el array de objetos
-            delete dataToSend.confirmPassword; // No enviar confirmación de contraseña
+            delete dataToSend.specialties;
+            delete dataToSend.confirmPassword;
 
             registerMutation.mutate(dataToSend);
         }
     };
-
 
     // ═══════════════════════════════════════════════════════════
     // Render
@@ -204,6 +187,17 @@ const DoctorRegisterPage = () => {
         <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-50 py-12 px-4">
             <div className="container-custom max-w-4xl">
 
+                {/* ✅ LINK AL HOME */}
+                <div className="mb-6">
+                    <Link
+                        to="/"
+                        className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                    >
+                        <Home className="w-5 h-5" />
+                        Volver al inicio
+                    </Link>
+                </div>
+
                 {/* Cabecera */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm mb-4">
@@ -211,7 +205,7 @@ const DoctorRegisterPage = () => {
                         <span className="font-bold text-lg text-gray-900">Registro de Profesional</span>
                     </div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        Únete a NexusSalud Link
+                        Únete a NexusSalud
                     </h1>
                     <p className="text-gray-600">
                         Completa tu registro para empezar a atender pacientes
@@ -388,14 +382,13 @@ const DoctorRegisterPage = () => {
                                         value={formData.professionalLicense}
                                         onChange={handleChange}
                                         className={`input-field ${errors.professionalLicense ? 'border-red-300' : ''}`}
-                                        placeholder="12345678"
-                                        maxLength={10}
+                                        placeholder="280012345"
                                     />
                                     {errors.professionalLicense && (
                                         <p className="text-red-600 text-sm mt-1">{errors.professionalLicense}</p>
                                     )}
                                     <p className="text-gray-500 text-xs mt-1">
-                                        Será validado con tu carnet de colegiado en el siguiente paso
+                                        ✅ Sin límite de caracteres
                                     </p>
                                 </div>
 
@@ -455,151 +448,24 @@ const DoctorRegisterPage = () => {
                                         value={formData.description}
                                         onChange={handleChange}
                                         rows={4}
-                                        maxLength={1000}
+                                        maxLength={2000}
                                         className="input-field resize-none"
                                         placeholder="Cuéntanos sobre tu experiencia, enfoque y qué te diferencia como profesional..."
                                     />
                                     <p className="text-gray-500 text-xs mt-1">
-                                        {formData.description.length}/1000 caracteres
+                                        {formData.description.length}/2000 caracteres
                                     </p>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 3: Documentos */}
+                        {/* PASO 3: Documentos - 6 IMÁGENES */}
                         {currentStep === 3 && (
-                            <div className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                    <FileCheck className="w-5 h-5 text-primary-600" />
-                                    Documentos de Verificación
-                                </h2>
-
-                                {/* Carnet de colegiado */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Carnet de Colegiado *
-                                    </label>
-
-                                    {!formData.professionalLicenseImage ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCamera('professionalLicense')}
-                                            className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-primary-500 hover:bg-primary-50 transition-all group"
-                                        >
-                                            <Camera className="w-12 h-12 mx-auto mb-2 text-gray-400 group-hover:text-primary-600" />
-                                            <p className="font-medium text-gray-700 group-hover:text-primary-700">
-                                                Capturar o subir carnet de colegiado
-                                            </p>
-                                            <p className="text-sm text-gray-500 mt-1">
-                                                Usa la cámara o sube una foto clara del documento
-                                            </p>
-                                        </button>
-                                    ) : (
-                                        <div className="relative">
-                                            <img
-                                                src={formData.professionalLicenseImage}
-                                                alt="Carnet de colegiado"
-                                                className="w-full h-64 object-contain bg-gray-100 rounded-lg"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowCamera('professionalLicense')}
-                                                className="absolute top-2 right-2 bg-white hover:bg-gray-100 p-2 rounded-full shadow-lg"
-                                            >
-                                                <Camera className="w-4 h-4" />
-                                            </button>
-
-                                            {/* Estado de validación OCR */}
-                                            {validateDocMutation.isPending && (
-                                                <div className="mt-2 flex items-center gap-2 text-blue-600">
-                                                    <Loader className="w-4 h-4 animate-spin" />
-                                                    <span className="text-sm">Validando documento...</span>
-                                                </div>
-                                            )}
-
-                                            {ocrValidation && (
-                                                <div className={`mt-2 p-3 rounded-lg ${ocrValidation.isValid
-                                                        ? 'bg-green-50 border border-green-200'
-                                                        : 'bg-yellow-50 border border-yellow-200'
-                                                    }`}>
-                                                    <div className="flex items-start gap-2">
-                                                        {ocrValidation.isValid ? (
-                                                            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                                                        ) : (
-                                                            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                                        )}
-                                                        <div className="flex-1">
-                                                            <p className={`font-medium text-sm ${ocrValidation.isValid ? 'text-green-900' : 'text-yellow-900'
-                                                                }`}>
-                                                                {ocrValidation.message}
-                                                            </p>
-                                                            {ocrValidation.extractedLicense && (
-                                                                <p className="text-xs text-gray-600 mt-1">
-                                                                    Nº detectado: {ocrValidation.extractedLicense}
-                                                                </p>
-                                                            )}
-                                                            <p className="text-xs text-gray-500 mt-1">
-                                                                Confianza: {(ocrValidation.confidence * 100).toFixed(0)}%
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {errors.professionalLicenseImage && (
-                                        <p className="text-red-600 text-sm mt-2">{errors.professionalLicenseImage}</p>
-                                    )}
-                                </div>
-
-                                {/* Documentos opcionales */}
-                                <div className="bg-gray-50 rounded-lg p-4">
-                                    <p className="text-sm text-gray-600 mb-3">
-                                        <strong>Documentos adicionales (opcionales):</strong> Pueden acelerar el proceso de verificación
-                                    </p>
-
-                                    <div className="space-y-3">
-                                        {/* DNI */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCamera('idDocument')}
-                                            className="w-full text-left border border-gray-200 rounded-lg p-3 hover:border-primary-500 hover:bg-white transition-all"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <FileText className="w-5 h-5 text-gray-400" />
-                                                <span className="text-sm font-medium text-gray-700">
-                                                    {formData.idDocumentImage ? '✓ DNI/Pasaporte cargado' : 'Subir DNI/Pasaporte'}
-                                                </span>
-                                            </div>
-                                        </button>
-
-                                        {/* Título */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCamera('degree')}
-                                            className="w-full text-left border border-gray-200 rounded-lg p-3 hover:border-primary-500 hover:bg-white transition-all"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <FileText className="w-5 h-5 text-gray-400" />
-                                                <span className="text-sm font-medium text-gray-700">
-                                                    {formData.degreeImage ? '✓ Título universitario cargado' : 'Subir título universitario'}
-                                                </span>
-                                            </div>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Info adicional */}
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
-                                    <p className="font-semibold mb-2">📋 Proceso de verificación:</p>
-                                    <ul className="list-disc list-inside space-y-1 text-xs">
-                                        <li>Tu documentación será revisada por nuestro equipo en 24-48 horas</li>
-                                        <li>Recibirás un email con el estado de tu solicitud</li>
-                                        <li>Una vez aprobado, podrás completar tu perfil y empezar a atender pacientes</li>
-                                    </ul>
-                                </div>
-                            </div>
+                            <DocumentUploadSection
+                                formData={formData}
+                                errors={errors}
+                                setShowCamera={setShowCamera}
+                            />
                         )}
 
                         {/* Error de envío */}
@@ -671,20 +537,191 @@ const DoctorRegisterPage = () => {
             {/* Modal de cámara */}
             {showCamera && (
                 <CameraCapture
-                    title={
-                        showCamera === 'professionalLicense' ? 'Carnet de Colegiado' :
-                            showCamera === 'idDocument' ? 'DNI/Pasaporte' :
-                                'Título Universitario'
-                    }
-                    onCapture={(image) => {
-                        handleCameraCapture(image, showCamera);
-                        setShowCamera(null);
-                    }}
+                    title={getCameraTitle(showCamera)}
+                    onCapture={(image) => handleCameraCapture(image, showCamera)}
                     onClose={() => setShowCamera(null)}
                 />
             )}
         </div>
     );
+};
+
+// ════════════════════════════════════════════════════════════════
+// COMPONENTE: SECCIÓN DE DOCUMENTOS CON 6 IMÁGENES
+// ════════════════════════════════════════════════════════════════
+
+const DocumentUploadSection = ({ formData, errors, setShowCamera }) => {
+    return (
+        <div className="space-y-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <FileCheck className="w-5 h-5 text-primary-600" />
+                Documentos de Verificación
+            </h2>
+
+            {/* CARNET DE COLEGIADO - OBLIGATORIO */}
+            <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                    📋 Carnet de Colegiado * <span className="text-red-500">(Obligatorio)</span>
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                    <DocumentCard
+                        label="Cara Delantera *"
+                        image={formData.professionalLicenseFront}
+                        onCapture={() => setShowCamera('professionalLicenseFront')}
+                        error={errors.professionalLicenseFront}
+                        required
+                    />
+                    <DocumentCard
+                        label="Cara Trasera *"
+                        image={formData.professionalLicenseBack}
+                        onCapture={() => setShowCamera('professionalLicenseBack')}
+                        error={errors.professionalLicenseBack}
+                        required
+                    />
+                </div>
+            </div>
+
+            {/* DNI/PASAPORTE - OBLIGATORIO */}
+            <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                    🪪 DNI/Pasaporte * <span className="text-red-500">(Obligatorio)</span>
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                    <DocumentCard
+                        label="Cara Delantera *"
+                        image={formData.idDocumentFront}
+                        onCapture={() => setShowCamera('idDocumentFront')}
+                        error={errors.idDocumentFront}
+                        required
+                    />
+                    <DocumentCard
+                        label="Cara Trasera *"
+                        image={formData.idDocumentBack}
+                        onCapture={() => setShowCamera('idDocumentBack')}
+                        error={errors.idDocumentBack}
+                        required
+                    />
+                </div>
+            </div>
+
+            {/* TÍTULOS ACADÉMICOS - OBLIGATORIO */}
+            <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                    🎓 Títulos Académicos * <span className="text-red-500">(Obligatorio)</span>
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                    <DocumentCard
+                        label="Título de Especialidad *"
+                        image={formData.specialtyDegree}
+                        onCapture={() => setShowCamera('specialtyDegree')}
+                        error={errors.specialtyDegree}
+                        required
+                    />
+                    <DocumentCard
+                        label="Título Universitario *"
+                        image={formData.universityDegree}
+                        onCapture={() => setShowCamera('universityDegree')}
+                        error={errors.universityDegree}
+                        required
+                    />
+                </div>
+            </div>
+
+            {/* FOTO DE PERFIL - OPCIONAL */}
+            <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                    👤 Foto de Perfil <span className="text-gray-500">(Opcional)</span>
+                </h3>
+                <div className="max-w-xs">
+                    <DocumentCard
+                        label="Foto de Perfil"
+                        image={formData.profilePicture}
+                        onCapture={() => setShowCamera('profilePicture')}
+                    />
+                </div>
+            </div>
+
+            {/* Info adicional */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
+                <p className="font-semibold mb-2">📋 Proceso de verificación:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Tu documentación será revisada por nuestro equipo en 24-48 horas</li>
+                    <li>Recibirás un email con el estado de tu solicitud</li>
+                    <li>Una vez aprobado, podrás completar tu perfil y empezar a atender pacientes</li>
+                </ul>
+            </div>
+        </div>
+    );
+};
+
+// ════════════════════════════════════════════════════════════════
+// COMPONENTE: CARD DE DOCUMENTO
+// ════════════════════════════════════════════════════════════════
+
+const DocumentCard = ({ label, image, onCapture, error }) => {
+    return (
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+                {label}
+            </label>
+
+            {!image ? (
+                <button
+                    type="button"
+                    onClick={onCapture}
+                    className={`w-full border-2 border-dashed rounded-lg p-6 hover:border-primary-500 hover:bg-primary-50 transition-all group ${error ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                >
+                    <Camera className="w-10 h-10 mx-auto mb-2 text-gray-400 group-hover:text-primary-600" />
+                    <p className="text-sm font-medium text-gray-700 group-hover:text-primary-700">
+                        Capturar o subir
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG, WEBP
+                    </p>
+                </button>
+            ) : (
+                <div className="relative">
+                    <img
+                        src={image}
+                        alt={label}
+                        className="w-full h-32 object-cover bg-gray-100 rounded-lg border-2 border-green-500"
+                    />
+                    <button
+                        type="button"
+                        onClick={onCapture}
+                        className="absolute top-2 right-2 bg-white hover:bg-gray-100 p-2 rounded-full shadow-lg"
+                    >
+                        <Camera className="w-4 h-4" />
+                    </button>
+                    <div className="absolute bottom-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                        ✓ Cargada
+                    </div>
+                </div>
+            )}
+
+            {error && (
+                <p className="text-red-600 text-xs mt-1">{error}</p>
+            )}
+        </div>
+    );
+};
+
+// ════════════════════════════════════════════════════════════════
+// HELPER: Título de cámara según tipo
+// ════════════════════════════════════════════════════════════════
+
+const getCameraTitle = (type) => {
+    const titles = {
+        professionalLicenseFront: 'Carnet de Colegiado (Delante)',
+        professionalLicenseBack: 'Carnet de Colegiado (Atrás)',
+        idDocumentFront: 'DNI/Pasaporte (Delante)',
+        idDocumentBack: 'DNI/Pasaporte (Atrás)',
+        specialtyDegree: 'Título de Especialidad',
+        universityDegree: 'Título Universitario',
+        profilePicture: 'Foto de Perfil'
+    };
+    return titles[type] || 'Documento';
 };
 
 export default DoctorRegisterPage;

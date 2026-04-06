@@ -131,6 +131,7 @@ public class AuthService : IAuthService
 
     /// <summary>
     /// Autentica a un usuario y retorna un token JWT
+    /// ✅ ACTUALIZADO: Bloquea login de doctores pendientes de aprobación
     /// </summary>
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
@@ -156,6 +157,44 @@ public class AuthService : IAuthService
         if (!user.IsActive)
         {
             throw new UnauthorizedAccessException("La cuenta está desactivada");
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // ✅ NUEVO: BLOQUEO DE LOGIN PARA DOCTORES PENDIENTES
+        // ══════════════════════════════════════════════════════════════
+        if (user.Role == "Doctor" && user.Doctor != null)
+        {
+            switch (user.Doctor.Status)
+            {
+                case DoctorStatus.PendingReview:
+                    throw new UnauthorizedAccessException(
+                        "Tu cuenta está pendiente de aprobación por el equipo de NexusSalud. " +
+                        "Recibirás un email cuando sea aprobada."
+                    );
+
+                case DoctorStatus.Rejected:
+                    var rejectionReason = string.IsNullOrEmpty(user.Doctor.StatusReason)
+                        ? "No especificado"
+                        : user.Doctor.StatusReason;
+                    throw new UnauthorizedAccessException(
+                        $"Tu solicitud ha sido rechazada. Motivo: {rejectionReason}"
+                    );
+
+                case DoctorStatus.Suspended:
+                    throw new UnauthorizedAccessException(
+                        "Tu cuenta ha sido suspendida temporalmente. Contacta con soporte para más información."
+                    );
+
+                case DoctorStatus.Deleted:
+                    throw new UnauthorizedAccessException(
+                        "Tu cuenta ha sido desactivada. Contacta con soporte si crees que es un error."
+                    );
+
+                // Solo DoctorStatus.Active puede hacer login
+                case DoctorStatus.Active:
+                    // Continuar con el login normal
+                    break;
+            }
         }
 
         // Actualizar último login

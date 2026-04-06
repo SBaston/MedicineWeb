@@ -1,3 +1,9 @@
+// ═══════════════════════════════════════════════════════════════
+// Frontend/src/services/adminService.js
+// Servicio para gestión de administradores y doctores
+// ✅ Compatible con 6 imágenes de doctores
+// ═══════════════════════════════════════════════════════════════
+
 import api from './api';
 
 const adminService = {
@@ -13,6 +19,13 @@ const adminService = {
 
     // ══════════════════════════════════════════════════════════════
     // GESTIÓN DE PROFESIONALES
+    // ✅ Los DTOs retornados incluyen las 6 imágenes:
+    // - professionalLicenseFrontImageUrl
+    // - professionalLicenseBackImageUrl
+    // - idDocumentFrontImageUrl
+    // - idDocumentBackImageUrl
+    // - specialtyDegreeImageUrl
+    // - universityDegreeImageUrl
     // ══════════════════════════════════════════════════════════════
     getPending: () => api.get('/admin/doctors/pending').then(r => r.data),
     getAllDoctors: (status = '') => api.get(`/admin/doctors${status ? `?status=${status}` : ''}`).then(r => r.data),

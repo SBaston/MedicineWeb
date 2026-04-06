@@ -1,9 +1,12 @@
 version: '3.9'
 
 services:
+  # ═══════════════════════════════════════════════════════════════
+  # POSTGRESQL DATABASE
+  # ═══════════════════════════════════════════════════════════════
   postgres:
     image: postgres:15
-    container_name: NexusSalud-postgres
+    container_name: nexussalud-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -18,11 +21,15 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - NexusSalud-network
+      - nexussalud-network
+    restart: unless-stopped
 
+  # ═══════════════════════════════════════════════════════════════
+  # REDIS CACHE
+  # ═══════════════════════════════════════════════════════════════
   redis:
-    image: redis:7
-    container_name: NexusSalud-redis
+    image: redis:7-alpine
+    container_name: nexussalud-redis
     ports:
       - "6379:6379"
     volumes:
@@ -33,28 +40,41 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - NexusSalud-network
+      - nexussalud-network
+    restart: unless-stopped
 
+  # ═══════════════════════════════════════════════════════════════
+  # BACKEND (.NET 10)
+  # ✅ SIN TESSERACT OCR
+  # ═══════════════════════════════════════════════════════════════
   backend:
     build:
       context: ./MedicineBackend/MedicineBackend
       dockerfile: Dockerfile
-    container_name: NexusSalud-backend
+    container_name: nexussalud-backend
     environment:
+      # Database
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=NexusSaludDB;Username=postgres;Password=postgres"
       ConnectionStrings__Redis: "redis:6379"
       
+      # ASP.NET Core
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: "http://+:5000"
       
+      # JWT Configuration
       JwtSettings__Issuer: "http://localhost:5000"
       JwtSettings__Audience: "http://localhost:5173"
       JwtSettings__SecretKey: "TuClaveSecretaMuySeguraDeAlMenos32CaracteresParaJWT2024!"
       JwtSettings__ExpirationMinutes: "60"
       
-      TESSDATA_PREFIX: "/app/tessdata"
+      # File Storage (sin Tesseract)
       FileStorage__BasePath: "/app/uploads"
       FileStorage__MaxFileSizeMB: "10"
+      
+      # Initial Admin (SuperAdmin por defecto)
+      InitialAdminSettings__Email: "admin@nexussalud.com"
+      InitialAdminSettings__Password: "Admin123!"
+      InitialAdminSettings__FullName: "Administrador Principal"
       
     ports:
       - "5000:5000"
@@ -66,32 +86,53 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - NexusSalud-network
+      - nexussalud-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
+  # ═══════════════════════════════════════════════════════════════
+  # FRONTEND (React + Vite)
+  # ✅ ACTUALIZADO: Variables para API e imágenes
+  # ═══════════════════════════════════════════════════════════════
   frontend:
     build:
       context: ./MedicineFrontend/medicinefrontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: "http://localhost:5000/api"
-    container_name: NexusSalud-frontend
+        VITE_API_URL: "http://localhost:5000/api"      # Para llamadas API
+        VITE_BACKEND_URL: "http://localhost:5000"       # Para imágenes/uploads
+    container_name: nexussalud-frontend
     ports:
       - "5173:5173"
     depends_on:
       - backend
     networks:
-      - NexusSalud-network
+      - nexussalud-network
     restart: unless-stopped
 
+# ═══════════════════════════════════════════════════════════════
+# VOLUMES
+# ═══════════════════════════════════════════════════════════════
 volumes:
   postgres_data:
     driver: local
+    name: nexussalud-postgres-data
   redis_data:
     driver: local
+    name: nexussalud-redis-data
   uploads_data:
     driver: local
+    name: nexussalud-uploads
 
+# ═══════════════════════════════════════════════════════════════
+# NETWORKS
+# ═══════════════════════════════════════════════════════════════
 networks:
-  NexusSalud-network:
+  nexussalud-network:
     driver: bridge
+    name: nexussalud-network

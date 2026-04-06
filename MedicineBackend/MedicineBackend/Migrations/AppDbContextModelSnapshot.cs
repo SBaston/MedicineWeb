@@ -369,7 +369,8 @@ namespace MedicineBackend.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DegreeImageUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -390,8 +391,17 @@ namespace MedicineBackend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("IdDocumentBackImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("IdDocumentFrontImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("IdDocumentImageUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<bool>("IsAcceptingPatients")
                         .HasColumnType("boolean");
@@ -419,8 +429,17 @@ namespace MedicineBackend.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("ProfessionalLicenseBackImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ProfessionalLicenseFrontImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("ProfessionalLicenseImageUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("ProfilePictureUrl")
                         .HasMaxLength(500)
@@ -431,6 +450,10 @@ namespace MedicineBackend.Migrations
 
                     b.Property<int?>("ReviewedByAdminId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("SpecialtyDegreeImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -446,6 +469,10 @@ namespace MedicineBackend.Migrations
 
                     b.Property<int>("TotalReviews")
                         .HasColumnType("integer");
+
+                    b.Property<string>("UniversityDegreeImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

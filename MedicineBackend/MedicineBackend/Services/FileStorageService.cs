@@ -1,7 +1,9 @@
 ﻿// ═══════════════════════════════════════════════════════════════
-// Backend/Services/LocalFileStorageService.cs
+// Backend/Services/FileStorageService.cs
+// ✅ ACTUALIZADO: Con SaveFileAsync para IFormFile
 // ═══════════════════════════════════════════════════════════════
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
@@ -75,18 +77,92 @@ namespace MedicineBackend.Services
                     });
                 }
 
-                // Retornar URL absoluta
-                var baseUrl = _configuration["AppUrl"];
-                var absoluteUrl = $"{baseUrl}/uploads/{folder}/{fullFilename}";
-                _logger.LogInformation($"✅ Imagen guardada: {absoluteUrl}");
-                return absoluteUrl;
-                
-
+                // Retornar URL relativa
+                var relativeUrl = $"/uploads/{folder}/{fullFilename}";
+                _logger.LogInformation($"✅ Imagen guardada: {relativeUrl}");
+                return relativeUrl;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error guardando imagen");
+                _logger.LogError(ex, "❌ Error guardando imagen desde Base64");
                 throw new InvalidOperationException("Error al guardar la imagen", ex);
+            }
+        }
+
+        /// <summary>
+        /// ✅ NUEVO: Guarda un archivo IFormFile (para upload multipart/form-data)
+        /// </summary>
+        public async Task<string> SaveFileAsync(IFormFile file, string folder, string filename)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    throw new ArgumentException("El archivo está vacío");
+                }
+
+                // Crear carpeta si no existe
+                var folderPath = Path.Combine(_basePath, folder);
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                // Determinar extensión del archivo
+                var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant() ?? ".jpg";
+
+                // Validar extensiones permitidas
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf" };
+                if (!allowedExtensions.Contains(extension))
+                {
+                    throw new InvalidOperationException($"Extensión no permitida: {extension}");
+                }
+
+                // Generar nombre de archivo único
+                var fullFilename = $"{filename}{extension}";
+                var filePath = Path.Combine(folderPath, fullFilename);
+
+                // Si es imagen, optimizar antes de guardar
+                if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".webp")
+                {
+                    using (var stream = file.OpenReadStream())
+                    using (var image = await Image.LoadAsync(stream))
+                    {
+                        // Redimensionar si es muy grande (max 1920px)
+                        if (image.Width > 1920 || image.Height > 1920)
+                        {
+                            image.Mutate(x => x.Resize(new ResizeOptions
+                            {
+                                Mode = ResizeMode.Max,
+                                Size = new Size(1920, 1920)
+                            }));
+                        }
+
+                        // Guardar como JPEG con calidad 85%
+                        await image.SaveAsJpegAsync(filePath, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder
+                        {
+                            Quality = 85
+                        });
+                    }
+                }
+                else
+                {
+                    // Para archivos no-imagen (como PDFs), guardar directamente
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+                }
+
+                // Retornar URL relativa
+                var relativeUrl = $"/uploads/{folder}/{fullFilename}";
+                _logger.LogInformation($"✅ Archivo guardado: {relativeUrl} ({file.Length} bytes)");
+                return relativeUrl;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error guardando archivo IFormFile");
+                throw new InvalidOperationException("Error al guardar el archivo", ex);
             }
         }
 
