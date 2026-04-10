@@ -23,6 +23,7 @@ import DoctorProfilePage from './pages/DoctorProfilePage';
 import PricingPage from './pages/PricingPage';
 import AdminVideosManagement from './pages/AdminVideosManagement';
 
+
 const SuperAdminRoute = ({ children }) => {
     const { isAuthenticated, user, loading } = useAuth();
 

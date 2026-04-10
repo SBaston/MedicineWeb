@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // services/doctorDashboardService.js
-// Servicio para conectar con el backend del dashboard
+// ✅ SISTEMA SIMPLIFICADO: Sin métodos de correcciones
 // ═══════════════════════════════════════════════════════════════
 
 import api from './api';

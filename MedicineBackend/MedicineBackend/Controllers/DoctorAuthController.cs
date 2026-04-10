@@ -42,10 +42,11 @@ namespace MedicineBackend.Controllers
         {
             try
             {
-                // 1. Validar que el email no esté registrado
-                if (await _doctorService.EmailExistsAsync(dto.Email))
+                // 1. ✅ CORREGIDO: Validar email con lógica de re-registro
+                var emailCheck = await _doctorService.CheckEmailAvailabilityAsync(dto.Email);
+                if (!emailCheck.IsAvailable)
                 {
-                    return BadRequest(new { message = "El email ya está registrado" });
+                    return BadRequest(new { message = emailCheck.Message });
                 }
 
                 // 2. Validar que el número de colegiado no esté registrado

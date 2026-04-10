@@ -14,9 +14,9 @@ const LoginPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // ✅ Mensaje de éxito desde el registro
+    // ✅ NUEVO: Detectar si viene de registro exitoso
     const registrationSuccess = location.state?.registrationSuccess;
-    const successMessage = location.state?.message;
+    const registrationMessage = location.state?.message;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -28,63 +28,18 @@ const LoginPage = () => {
             const userRole = response.user?.role;
 
             if (userRole === 'Admin') {
-                // Admins (incluido SuperAdmin) → Dashboard de admin
                 navigate('/admin');
             } else if (userRole === 'Doctor') {
-                // Doctores → Dashboard de doctor
                 navigate('/doctor/dashboard');
             } else if (userRole === 'Patient') {
-                // Pacientes → Dashboard de paciente
                 navigate('/dashboard');
             } else {
-                // Fallback por si hay otro rol
                 navigate('/');
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Email o contraseña incorrectos');
         } finally {
             setLoading(false);
-        }
-    };
-
-    // ✅ DETECTAR TIPO DE ERROR Y MOSTRAR ESTILO APROPIADO
-    const getErrorStyle = () => {
-        if (error.includes('pendiente de aprobación') || error.includes('pendiente de verificación')) {
-            return 'bg-yellow-50 border-yellow-300';
-        } else if (error.includes('rechazada')) {
-            return 'bg-red-50 border-red-300';
-        } else if (error.includes('suspendida')) {
-            return 'bg-orange-50 border-orange-300';
-        } else if (error.includes('desactivada')) {
-            return 'bg-gray-50 border-gray-300';
-        } else {
-            return 'bg-red-50 border-red-300';
-        }
-    };
-
-    const getErrorIcon = () => {
-        if (error.includes('pendiente de aprobación') || error.includes('pendiente de verificación')) {
-            return (
-                <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            );
-        } else {
-            return <AlertCircle className="w-5 h-5 text-red-600" />;
-        }
-    };
-
-    const getErrorTextColor = () => {
-        if (error.includes('pendiente de aprobación') || error.includes('pendiente de verificación')) {
-            return 'text-yellow-800';
-        } else if (error.includes('rechazada')) {
-            return 'text-red-800';
-        } else if (error.includes('suspendida')) {
-            return 'text-orange-800';
-        } else if (error.includes('desactivada')) {
-            return 'text-gray-800';
-        } else {
-            return 'text-red-700';
         }
     };
 
@@ -109,47 +64,30 @@ const LoginPage = () => {
                 {/* Formulario */}
                 <div className="bg-white rounded-2xl shadow-xl p-8">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* ✅ MENSAJE DE ÉXITO DESDE REGISTRO */}
-                        {registrationSuccess && successMessage && (
-                            <div className="bg-green-50 border border-green-300 rounded-lg p-4 flex items-start gap-3">
-                                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <p className="text-green-800 text-sm font-medium whitespace-pre-line">
-                                        {successMessage}
-                                    </p>
-                                    <p className="text-xs text-green-700 mt-2">
-                                        💡 Recibirás un email cuando tu cuenta sea aprobada.
-                                    </p>
+                        {/* ✅ NUEVO: Mensaje verde de registro exitoso */}
+                        {registrationSuccess && (
+                            <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-green-800 font-semibold text-sm mb-1">
+                                            ✅ Registro Exitoso
+                                        </p>
+                                        <p className="text-green-700 text-sm leading-relaxed">
+                                            {registrationMessage ||
+                                                'Tu solicitud está siendo revisada por un administrador. ' +
+                                                'Recibirás un email cuando sea aprobada y podrás acceder a la plataforma.'}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* ✅ ERROR CON ESTILOS DINÁMICOS */}
+                        {/* Error */}
                         {error && (
-                            <div className={`border rounded-lg p-4 flex items-start gap-3 ${getErrorStyle()}`}>
-                                <div className="flex-shrink-0 mt-0.5">
-                                    {getErrorIcon()}
-                                </div>
-                                <div className="flex-1">
-                                    <p className={`text-sm font-medium whitespace-pre-line ${getErrorTextColor()}`}>
-                                        {error}
-                                    </p>
-                                    {error.includes('pendiente de aprobación') && (
-                                        <p className="text-xs text-yellow-700 mt-2">
-                                            💡 Tu cuenta está siendo revisada. Recibirás un email cuando sea aprobada.
-                                        </p>
-                                    )}
-                                    {error.includes('pendiente de verificación') && (
-                                        <p className="text-xs text-yellow-700 mt-2">
-                                            💡 Tu documentación está siendo verificada por nuestro equipo.
-                                        </p>
-                                    )}
-                                    {error.includes('rechazada') && (
-                                        <p className="text-xs text-red-700 mt-2">
-                                            💡 Contacta con soporte si necesitas más información.
-                                        </p>
-                                    )}
-                                </div>
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+                                <AlertCircle className="w-5 h-5 text-red-600" />
+                                <span className="text-red-700 text-sm">{error}</span>
                             </div>
                         )}
 
@@ -213,16 +151,13 @@ const LoginPage = () => {
                     </form>
 
                     {/* Registro */}
-                    <div className="mt-6 text-center space-y-3">
+                    <div className="mt-6 text-center">
                         <p className="text-gray-600 text-sm">
                             ¿No tienes cuenta?{' '}
                             <Link to="/register" className="text-primary-600 hover:text-primary-700 font-semibold">
                                 Regístrate aquí
                             </Link>
                         </p>
-
-                        
-                        
                     </div>
                 </div>
             </div>

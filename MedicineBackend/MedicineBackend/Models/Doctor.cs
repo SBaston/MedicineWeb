@@ -9,11 +9,11 @@ namespace MedicineBackend.Models;
 /// </summary>
 public enum DoctorStatus
 {
-    PendingReview = 0,  // Recién registrado, esperando revisión del admin
-    Active = 1,  // Verificado y activo, puede recibir pacientes
-    Rejected = 2,  // Rechazado por el admin (con motivo)
-    Suspended = 3,  // Suspendido temporalmente
-    Deleted = 4,  // Baja lógica — datos conservados por RGPD
+    PendingReview = 1,
+    Active = 2,
+    Suspended = 3,
+    Rejected = 4,
+    Deleted = 5
 }
 
 /// <summary>
@@ -43,7 +43,7 @@ public class Doctor
     /// ✅ SIN LÍMITE DE CARACTERES - puede ser alfanumérico y de longitud variable
     /// </summary>
     [Required]
-    [MaxLength(200)]  // ✅ Aumentado de 50 a 200 para permitir formatos largos
+    [MaxLength(200)]
     public string ProfessionalLicense { get; set; } = string.Empty;
 
     /// <summary>Descripción profesional del médico. Se mostrará en su perfil público.</summary>
@@ -88,7 +88,7 @@ public class Doctor
 
     /// <summary>
     /// Motivo del último cambio de estado (rechazo, suspensión...).
-    /// Se comunica al profesional por email.
+    /// Se usa para guardar el motivo del rechazo que se enviará por email.
     /// </summary>
     [MaxLength(1000)]
     public string? StatusReason { get; set; }
@@ -100,7 +100,7 @@ public class Doctor
     public DateTime? ReviewedAt { get; set; }
 
     // ══════════════════════════════════════════════════════════════
-    // DOCUMENTACIÓN - 6 IMÁGENES NUEVAS (SIN OCR)
+    // DOCUMENTACIÓN - 6 IMÁGENES (SIN OCR)
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>Carnet de colegiado - CARA DELANTERA (OBLIGATORIO)</summary>
@@ -129,30 +129,24 @@ public class Doctor
 
     // ══════════════════════════════════════════════════════════════
     // CAMPOS ANTIGUOS - MANTENER TEMPORALMENTE PARA COMPATIBILIDAD
-    // Se eliminarán en una migración futura una vez migrados los datos
     // ══════════════════════════════════════════════════════════════
 
-    /// <summary>URL de la imagen del carnet de colegiado (DEPRECADO - usar ProfessionalLicenseFrontImageUrl)</summary>
-    [Obsolete("Usar ProfessionalLicenseFrontImageUrl y ProfessionalLicenseBackImageUrl en su lugar")]
+    [Obsolete("Usar ProfessionalLicenseFrontImageUrl y ProfessionalLicenseBackImageUrl")]
     [MaxLength(500)]
     public string? ProfessionalLicenseImageUrl { get; set; }
 
-    /// <summary>URL del documento de identidad (DEPRECADO - usar IdDocumentFrontImageUrl)</summary>
-    [Obsolete("Usar IdDocumentFrontImageUrl y IdDocumentBackImageUrl en su lugar")]
+    [Obsolete("Usar IdDocumentFrontImageUrl y IdDocumentBackImageUrl")]
     [MaxLength(500)]
     public string? IdDocumentImageUrl { get; set; }
 
-    /// <summary>URL del título universitario (DEPRECADO - usar UniversityDegreeImageUrl)</summary>
-    [Obsolete("Usar UniversityDegreeImageUrl en su lugar")]
+    [Obsolete("Usar UniversityDegreeImageUrl")]
     [MaxLength(500)]
     public string? DegreeImageUrl { get; set; }
 
-    /// <summary>Datos extraídos del OCR (DEPRECADO - ya no usamos OCR)</summary>
-    [Obsolete("Ya no se usa OCR - eliminar en próxima migración")]
+    [Obsolete("Ya no se usa OCR")]
     public string? OcrData { get; set; }
 
-    /// <summary>Si el documento ha sido verificado automáticamente (DEPRECADO - verificación manual por admin)</summary>
-    [Obsolete("Ya no se usa verificación automática - eliminar en próxima migración")]
+    [Obsolete("Ya no se usa verificación automática")]
     public bool IsDocumentVerified { get; set; }
 
     // ══════════════════════════════════════════════════════════════
@@ -160,11 +154,8 @@ public class Doctor
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Fecha de baja lógica. El profesional pierde el acceso pero sus datos
-    /// históricos (citas, pagos, reseñas) se conservan por obligación legal:
-    ///   · Ley General Tributaria: mínimo 5 años para datos fiscales
-    ///   · Ley de Autonomía del Paciente: mínimo 5 años para historial médico
-    /// NUNCA ejecutar DELETE físico sobre este registro.
+    /// Fecha de baja lógica. Conserva datos históricos por obligación legal.
+    /// También se usa al rechazar definitivamente para permitir re-registro.
     /// </summary>
     public DateTime? DeletedAt { get; set; }
 
@@ -217,10 +208,7 @@ public class Doctor
     [NotMapped]
     public bool IsDeleted => DeletedAt != null;
 
-    /// <summary>
-    /// Compatibilidad con código existente que usara IsVerified.
-    /// En código nuevo usar Status directamente.
-    /// </summary>
+    /// <summary>Compatibilidad con código existente</summary>
     [NotMapped]
     public bool IsVerified => Status == DoctorStatus.Active;
 }

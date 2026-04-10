@@ -7,8 +7,8 @@ using Microsoft.Extensions.Logging;
 namespace MedicineBackend.Services;
 
 /// <summary>
-/// Implementación del servicio de gestión de profesionales (doctores).
-/// ✅ ACTUALIZADO: Mapeo con 6 imágenes (sin OCR)
+/// Servicio de gestión de profesionales - Sistema simplificado
+/// ✅ ACTUALIZADO: Sin sistema de correcciones, solo aprobar/rechazar
 /// </summary>
 public class DoctorManagementService : IDoctorManagementService
 {
@@ -25,14 +25,38 @@ public class DoctorManagementService : IDoctorManagementService
     // LISTAR PROFESIONALES PENDIENTES DE REVISIÓN
     // ══════════════════════════════════════════════════════════════
 
-    public async Task<List<PendingDoctorDto>> GetPendingAsync() =>
-        await _db.Doctors
+    public async Task<List<PendingDoctorDto>> GetPendingAsync()
+    {
+        return await _db.Doctors
             .Include(d => d.User)
             .Include(d => d.Specialties)
-            .Where(d => d.Status == DoctorStatus.PendingReview && d.DeletedAt == null)
+            .Where(d => d.DeletedAt == null && d.Status == DoctorStatus.PendingReview)
             .OrderBy(d => d.CreatedAt)
-            .Select(d => ToPendingDto(d))
+            .Select(d => new PendingDoctorDto
+            {
+                Id = d.Id,
+                FullName = d.FullName,
+                Email = d.User.Email,
+                ProfessionalLicense = d.ProfessionalLicense,
+                Description = d.Description,
+                PhoneNumber = d.PhoneNumber,
+                ProfilePictureUrl = d.ProfilePictureUrl,
+                YearsOfExperience = d.YearsOfExperience,
+                PricePerSession = d.PricePerSession,
+                Status = d.Status.ToString(),
+                RegisteredAt = d.CreatedAt,
+                Specialties = d.Specialties.Select(s => s.Name).ToList(),
+
+                // Imágenes
+                ProfessionalLicenseFrontImageUrl = d.ProfessionalLicenseFrontImageUrl,
+                ProfessionalLicenseBackImageUrl = d.ProfessionalLicenseBackImageUrl,
+                IdDocumentFrontImageUrl = d.IdDocumentFrontImageUrl,
+                IdDocumentBackImageUrl = d.IdDocumentBackImageUrl,
+                SpecialtyDegreeImageUrl = d.SpecialtyDegreeImageUrl,
+                UniversityDegreeImageUrl = d.UniversityDegreeImageUrl
+            })
             .ToListAsync();
+    }
 
     // ══════════════════════════════════════════════════════════════
     // LISTAR TODOS LOS PROFESIONALES (con filtro opcional)
@@ -51,7 +75,7 @@ public class DoctorManagementService : IDoctorManagementService
             "active" => q.Where(d => d.Status == DoctorStatus.Active && d.DeletedAt == null),
             "rejected" => q.Where(d => d.Status == DoctorStatus.Rejected && d.DeletedAt == null),
             "deleted" => q.Where(d => d.DeletedAt != null),
-            _ => q.Where(d => d.DeletedAt == null),  // Por defecto: excluir eliminados
+            _ => q.Where(d => d.DeletedAt == null),
         };
 
         return await q.OrderByDescending(d => d.CreatedAt)
@@ -90,29 +114,58 @@ public class DoctorManagementService : IDoctorManagementService
     }
 
     // ══════════════════════════════════════════════════════════════
-    // RECHAZAR solicitud del profesional
+    // RECHAZAR - ELIMINA User y Doctor para liberar el email
     // ══════════════════════════════════════════════════════════════
 
+    /// <summary>
+    /// ✅ CORREGIDO: Rechaza y ELIMINA completamente sin guardar el motivo
+    /// </summary>
     public async Task<DoctorAdminDto> RejectAsync(int doctorId, int adminUserId, string reason)
     {
-        var doctor = await GetDoctorOrThrowAsync(doctorId);
+        var doctor = await _db.Doctors
+            .Include(d => d.User)
+            .Include(d => d.Specialties)
+            .FirstOrDefaultAsync(d => d.Id == doctorId);
+
+        if (doctor == null)
+            throw new KeyNotFoundException("Doctor no encontrado");
+
+        if (doctor.DeletedAt != null)
+            throw new InvalidOperationException("El doctor ya está eliminado");
+
+        // Guardar info SOLO para logging (no para BD)
+        var doctorEmail = doctor.User.Email;
+        var doctorName = doctor.FullName;
         var adminId = await GetAdminIdAsync(adminUserId);
 
-        doctor.Status = DoctorStatus.Rejected;
-        doctor.StatusReason = reason;
-        doctor.ReviewedByAdminId = adminId;
-        doctor.ReviewedAt = DateTime.UtcNow;
-        doctor.UpdatedAt = DateTime.UtcNow;
-        doctor.User.IsActive = false;
+        // Crear DTO ANTES de eliminar (para la respuesta)
+        var resultDto = new DoctorAdminDto
+        {
+            Id = doctor.Id,
+            FullName = doctor.FullName,
+            Email = doctor.User.Email,
+            ProfessionalLicense = doctor.ProfessionalLicense,
+            Status = "Rejected"
+        };
+
+        // ✅ ELIMINAR DIRECTAMENTE - Sin guardar nada en BD
+        _db.Doctors.Remove(doctor);
+        _db.Users.Remove(doctor.User);
 
         await _db.SaveChangesAsync();
 
+        // Log con el motivo (para auditoría)
         _logger.LogWarning(
-            "Admin {AdminUser} rechazó al profesional {DoctorId}. Motivo: {Reason}",
-            adminUserId, doctorId, reason);
+            "📧 Admin {AdminId} rechazó definitivamente al doctor {DoctorName} ({Email}). " +
+            "User y Doctor eliminados de la BD. Email liberado para re-registro. " +
+            "Motivo: {Reason}",
+            adminUserId, doctorName, doctorEmail, reason
+        );
 
-        // TODO: Enviar email al profesional con el motivo del rechazo
-        return ToAdminDto(doctor);
+        // TODO: Enviar email con el motivo cuando implementes emails
+        // await _emailService.SendRejectionEmail(doctorEmail, doctorName, reason);
+
+        return resultDto;
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -120,9 +173,7 @@ public class DoctorManagementService : IDoctorManagementService
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Baja lógica del profesional. Los datos se conservan por obligación legal:
-    ///   • Ley General Tributaria: mínimo 5 años (datos fiscales y pagos)
-    ///   • Ley de Autonomía del Paciente: mínimo 5 años (historial médico)
+    /// Baja lógica del profesional. Los datos se conservan por obligación legal.
     /// Las citas futuras pendientes se cancelan automáticamente.
     /// </summary>
     public async Task SoftDeleteAsync(int doctorId, int adminUserId, string reason)
@@ -187,31 +238,6 @@ public class DoctorManagementService : IDoctorManagementService
         return admin?.Id ?? 0;
     }
 
-    // ✅ ACTUALIZADO: Mapeo con 6 imágenes (sin OCR)
-    private static PendingDoctorDto ToPendingDto(Doctor d) => new()
-    {
-        Id = d.Id,
-        FullName = d.FullName,
-        Email = d.User.Email,
-        ProfessionalLicense = d.ProfessionalLicense,
-        Description = d.Description,
-        PhoneNumber = d.PhoneNumber,
-        ProfilePictureUrl = d.ProfilePictureUrl,
-        YearsOfExperience = d.YearsOfExperience,
-        PricePerSession = d.PricePerSession,
-        Status = d.Status.ToString(),
-        RegisteredAt = d.CreatedAt,
-        Specialties = d.Specialties.Select(s => s.Name).ToList(),
-
-        // ✅ NUEVOS CAMPOS: 6 IMÁGENES
-        ProfessionalLicenseFrontImageUrl = d.ProfessionalLicenseFrontImageUrl,
-        ProfessionalLicenseBackImageUrl = d.ProfessionalLicenseBackImageUrl,
-        IdDocumentFrontImageUrl = d.IdDocumentFrontImageUrl,
-        IdDocumentBackImageUrl = d.IdDocumentBackImageUrl,
-        SpecialtyDegreeImageUrl = d.SpecialtyDegreeImageUrl,
-        UniversityDegreeImageUrl = d.UniversityDegreeImageUrl,
-    };
-
     private static DoctorAdminDto ToAdminDto(Doctor d) => new()
     {
         Id = d.Id,
@@ -224,14 +250,23 @@ public class DoctorManagementService : IDoctorManagementService
         YearsOfExperience = d.YearsOfExperience,
         PricePerSession = d.PricePerSession,
         Status = d.Status.ToString(),
-        StatusReason = d.StatusReason,
         RegisteredAt = d.CreatedAt,
+        Specialties = d.Specialties.Select(s => s.Name).ToList(),
+
+        // Imágenes
+        ProfessionalLicenseFrontImageUrl = d.ProfessionalLicenseFrontImageUrl,
+        ProfessionalLicenseBackImageUrl = d.ProfessionalLicenseBackImageUrl,
+        IdDocumentFrontImageUrl = d.IdDocumentFrontImageUrl,
+        IdDocumentBackImageUrl = d.IdDocumentBackImageUrl,
+        SpecialtyDegreeImageUrl = d.SpecialtyDegreeImageUrl,
+        UniversityDegreeImageUrl = d.UniversityDegreeImageUrl,
+
+        // Datos admin
         ReviewedAt = d.ReviewedAt,
         DeletedAt = d.DeletedAt,
         DeletedReason = d.DeletedReason,
         AverageRating = d.AverageRating,
         TotalReviews = d.TotalReviews,
-        TotalEarnings = d.TotalEarnings,
-        Specialties = d.Specialties.Select(s => s.Name).ToList(),
+        TotalEarnings = d.TotalEarnings
     };
 }

@@ -9,7 +9,7 @@ namespace MedicineBackend.Services;
 
 /// <summary>
 /// Servicio para gestionar doctores con soporte de caché
-/// ✅ ACTUALIZADO: Con 6 campos de imágenes y ProfessionalLicenseExistsAsync
+/// ✅ SISTEMA SIMPLIFICADO: Email validation simple para re-registro
 /// </summary>
 public class DoctorService : IDoctorService
 {
@@ -75,7 +75,7 @@ public class DoctorService : IDoctorService
                 ProfilePictureUrl = request.ProfilePictureUrl,
                 Status = DoctorStatus.PendingReview,
 
-                // ✅ NUEVOS CAMPOS DE 6 IMÁGENES
+                // 6 IMÁGENES
                 ProfessionalLicenseFrontImageUrl = request.ProfessionalLicenseFrontImageUrl,
                 ProfessionalLicenseBackImageUrl = request.ProfessionalLicenseBackImageUrl,
                 IdDocumentFrontImageUrl = request.IdDocumentFrontImageUrl,
@@ -92,7 +92,9 @@ public class DoctorService : IDoctorService
 
             await transaction.CommitAsync();
 
-            _logger.LogInformation($"✅ Doctor registrado: {doctor.FirstName} {doctor.LastName} (ID: {doctor.Id}) - Estado: {doctor.Status}");
+            _logger.LogInformation(
+                "✅ Doctor registrado: {Name} ({Email}) - ID: {Id} - Estado: {Status}",
+                doctor.FullName, request.Email, doctor.Id, doctor.Status);
 
             return doctor;
         }
@@ -111,20 +113,33 @@ public class DoctorService : IDoctorService
     }
 
     /// <summary>
-    /// ✅ NUEVO: Verifica si un número de colegiado ya está registrado
+    /// ✅ SISTEMA SIMPLIFICADO: Valida si un email está disponible
+    /// Si el doctor fue rechazado y eliminado, el email estará disponible automáticamente
     /// </summary>
+    public async Task<EmailAvailabilityResult> CheckEmailAvailabilityAsync(string email)
+    {
+        var existingUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+
+        // Email no existe → Disponible
+        if (existingUser == null)
+        {
+            return EmailAvailabilityResult.Available();
+        }
+
+        // Email existe → No disponible
+        // (Si fue rechazado y eliminado, el User ya no existe, así que no llegaría aquí)
+        return EmailAvailabilityResult.Unavailable("El email ya está registrado");
+    }
+
     public async Task<bool> ProfessionalLicenseExistsAsync(string professionalLicense)
     {
         return await _context.Doctors
             .AnyAsync(d => d.ProfessionalLicense == professionalLicense && d.DeletedAt == null);
     }
 
-    /// <summary>
-    /// Obtiene todos los doctores activos (con caché)
-    /// </summary>
     public async Task<List<Doctor>> GetAllDoctorsAsync()
     {
-        // 1. Intentar obtener del caché
         var cachedDoctors = await _cache.GetAsync<List<Doctor>>(AllDoctorsCacheKey);
 
         if (cachedDoctors != null)
@@ -133,7 +148,6 @@ public class DoctorService : IDoctorService
             return cachedDoctors;
         }
 
-        // 2. Si no está en caché, obtener de la base de datos
         _logger.LogInformation("Doctores obtenidos desde base de datos");
         var doctors = await _context.Doctors
             .Include(d => d.Specialties)
@@ -142,20 +156,15 @@ public class DoctorService : IDoctorService
             .OrderByDescending(d => d.AverageRating)
             .ToListAsync();
 
-        // 3. Guardar en caché por 10 minutos
         await _cache.SetAsync(AllDoctorsCacheKey, doctors, TimeSpan.FromMinutes(10));
 
         return doctors;
     }
 
-    /// <summary>
-    /// Obtiene un doctor por ID (con caché)
-    /// </summary>
     public async Task<Doctor?> GetDoctorByIdAsync(int id)
     {
         var cacheKey = $"{DoctorByIdCacheKeyPrefix}{id}";
 
-        // 1. Intentar obtener del caché
         var cachedDoctor = await _cache.GetAsync<Doctor>(cacheKey);
 
         if (cachedDoctor != null)
@@ -164,7 +173,6 @@ public class DoctorService : IDoctorService
             return cachedDoctor;
         }
 
-        // 2. Obtener de la base de datos
         _logger.LogInformation("Doctor {DoctorId} obtenido desde base de datos", id);
         var doctor = await _context.Doctors
             .Include(d => d.Specialties)
@@ -176,21 +184,16 @@ public class DoctorService : IDoctorService
 
         if (doctor != null)
         {
-            // 3. Guardar en caché por 30 minutos
             await _cache.SetAsync(cacheKey, doctor, TimeSpan.FromMinutes(30));
         }
 
         return doctor;
     }
 
-    /// <summary>
-    /// Obtiene doctores por especialidad (con caché)
-    /// </summary>
     public async Task<List<Doctor>> GetDoctorsBySpecialtyAsync(int specialtyId)
     {
         var cacheKey = $"{DoctorsBySpecialtyCacheKeyPrefix}{specialtyId}";
 
-        // 1. Intentar obtener del caché
         var cachedDoctors = await _cache.GetAsync<List<Doctor>>(cacheKey);
 
         if (cachedDoctors != null)
@@ -199,7 +202,6 @@ public class DoctorService : IDoctorService
             return cachedDoctors;
         }
 
-        // 2. Obtener de la base de datos
         _logger.LogInformation("Doctores de especialidad {SpecialtyId} obtenidos desde base de datos", specialtyId);
         var doctors = await _context.Doctors
             .Include(d => d.Specialties)
@@ -211,15 +213,11 @@ public class DoctorService : IDoctorService
             .OrderByDescending(d => d.AverageRating)
             .ToListAsync();
 
-        // 3. Guardar en caché por 15 minutos
         await _cache.SetAsync(cacheKey, doctors, TimeSpan.FromMinutes(15));
 
         return doctors;
     }
 
-    /// <summary>
-    /// Actualiza un doctor e invalida el caché relacionado
-    /// </summary>
     public async Task<Doctor> UpdateDoctorAsync(int id, Doctor updatedDoctor)
     {
         var doctor = await _context.Doctors.FindAsync(id);
@@ -229,7 +227,6 @@ public class DoctorService : IDoctorService
             throw new KeyNotFoundException($"Doctor con ID {id} no encontrado");
         }
 
-        // Actualizar campos
         doctor.FirstName = updatedDoctor.FirstName;
         doctor.LastName = updatedDoctor.LastName;
         doctor.Description = updatedDoctor.Description;
@@ -237,8 +234,6 @@ public class DoctorService : IDoctorService
         doctor.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-
-        // IMPORTANTE: Invalidar caché relacionado
         await InvalidateDoctorCache(id);
 
         _logger.LogInformation("Doctor {DoctorId} actualizado y caché invalidado", id);
@@ -246,20 +241,10 @@ public class DoctorService : IDoctorService
         return doctor;
     }
 
-    /// <summary>
-    /// Invalida todo el caché relacionado con un doctor
-    /// </summary>
     private async Task InvalidateDoctorCache(int doctorId)
     {
-        // Eliminar caché específico del doctor
         await _cache.RemoveAsync($"{DoctorByIdCacheKeyPrefix}{doctorId}");
-
-        // Eliminar caché de listado general
         await _cache.RemoveAsync(AllDoctorsCacheKey);
-
-        // Opcional: Eliminar caché de especialidades
-        // (requeriría conocer las especialidades del doctor)
-
         _logger.LogDebug("Caché invalidado para doctor {DoctorId}", doctorId);
     }
 }

@@ -1,8 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // DoctorDashboard.jsx - Dashboard Principal del Doctor
-// ✅ Completitud basada en 4 campos editables
-// ❌ Sin especialidades (no editables)
-// ❌ Sin vídeos como requisito (opcional)
+// ✅ Con botón "Ver mi perfil" cuando está completado al 100%
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect } from 'react';
@@ -78,7 +76,7 @@ const DoctorDashboard = () => {
             </div>
 
             <div className="max-w-7xl mx-auto px-6 py-8">
-                {/* ✅ PERFIL COMPLETO (100%) - Mensaje verde con botón "Ver mi perfil" */}
+                {/* ✅ PERFIL COMPLETO - Mensaje de éxito con botón */}
                 {stats.profileCompletion === 100 && (
                     <div className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-2xl p-6 mb-8 shadow-lg">
                         <div className="flex items-start gap-4">
@@ -101,7 +99,7 @@ const DoctorDashboard = () => {
                     </div>
                 )}
 
-                {/* ⚠️ PERFIL INCOMPLETO (<100%) - Alerta naranja con progreso */}
+                {/* ⚠️ PERFIL INCOMPLETO - Alerta con progreso */}
                 {stats.profileCompletion < 100 && (
                     <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl p-6 mb-8 shadow-lg">
                         <div className="flex items-start gap-4">
@@ -109,7 +107,7 @@ const DoctorDashboard = () => {
                             <div className="flex-1">
                                 <h3 className="font-bold text-lg mb-2">Completa tu perfil profesional</h3>
                                 <p className="mb-4 text-white/90">
-                                    Tu perfil está al {stats.profileCompletion}%. Completa la información básica para empezar a recibir pacientes.
+                                    Tu perfil está al {stats.profileCompletion}%. Completa la información para empezar a recibir pacientes.
                                 </p>
 
                                 {/* Barra de progreso */}
@@ -124,17 +122,6 @@ const DoctorDashboard = () => {
                                             style={{ width: `${stats.profileCompletion}%` }}
                                         />
                                     </div>
-                                </div>
-
-                                {/* Info sobre campos requeridos */}
-                                <div className="bg-white/10 rounded-lg p-3 mb-4">
-                                    <p className="text-sm text-white/90 mb-2 font-medium">Campos requeridos para completar tu perfil:</p>
-                                    <ul className="text-sm text-white/80 space-y-1">
-                                        <li>• Teléfono de contacto</li>
-                                        <li>• Años de experiencia</li>
-                                        <li>• Biografía profesional (mínimo 50 caracteres)</li>
-                                        <li>• Precio por sesión</li>
-                                    </ul>
                                 </div>
 
                                 <button
@@ -209,7 +196,7 @@ const DoctorDashboard = () => {
                 {/* Quick Actions */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                     <button
-                        onClick={() => navigate('/doctor/availability')}
+                        onClick={() => navigate('/doctor/appointments')}
                         className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition-all text-center"
                     >
                         <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
@@ -247,7 +234,7 @@ const DoctorDashboard = () => {
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-slate-900">Próximas citas</h2>
                             <button
-                                onClick={() => navigate('/doctor/availability')}
+                                onClick={() => navigate('/doctor/appointments')}
                                 className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-1"
                             >
                                 Ver todas

@@ -14,6 +14,12 @@ public interface IDoctorService
     Task<List<Doctor>> GetAllDoctorsAsync();
 
     /// <summary>
+    /// ✅ NUEVO: Valida si un email está disponible para registro.
+    /// Permite re-registro si el doctor fue rechazado y tiene DeletedAt.
+    /// </summary>
+    Task<EmailAvailabilityResult> CheckEmailAvailabilityAsync(string email);
+
+    /// <summary>
     /// Verifica si un email ya está registrado
     /// </summary>
     Task<bool> EmailExistsAsync(string email);
@@ -42,4 +48,33 @@ public interface IDoctorService
     /// Actualiza la información de un doctor
     /// </summary>
     Task<Doctor> UpdateDoctorAsync(int id, Doctor updatedDoctor);
+}
+
+/// <summary>
+/// ✅ NUEVA CLASE: Resultado de la validación de disponibilidad de email
+/// </summary>
+public class EmailAvailabilityResult
+{
+    public bool IsAvailable { get; set; }
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Helper para crear resultado disponible
+    /// </summary>
+    public static EmailAvailabilityResult Available() =>
+        new EmailAvailabilityResult
+        {
+            IsAvailable = true,
+            Message = "Email disponible"
+        };
+
+    /// <summary>
+    /// Helper para crear resultado no disponible
+    /// </summary>
+    public static EmailAvailabilityResult Unavailable(string message) =>
+        new EmailAvailabilityResult
+        {
+            IsAvailable = false,
+            Message = message
+        };
 }

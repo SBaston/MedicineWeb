@@ -46,7 +46,7 @@ public class AdminMeResponse
 
 // ════════════════════════════════════════════════════════════════
 // GESTIÓN DE DOCTORES (Admin y SuperAdmin)
-// ✅ ACTUALIZADO: 6 imágenes sin OCR
+// ✅ ACTUALIZADO: 6 imágenes sin OCR - Sistema simplificado
 // ════════════════════════════════════════════════════════════════
 
 public class PendingDoctorDto
@@ -66,31 +66,18 @@ public class PendingDoctorDto
 
     // ═══════════════════════════════════════════════════════════
     // DOCUMENTOS SUBIDOS (URLs de las 6 imágenes)
-    // ✅ ACTUALIZADO: 6 imágenes sin OCR
     // ═══════════════════════════════════════════════════════════
 
-    /// <summary>Carnet de colegiado - DELANTE (OBLIGATORIO)</summary>
     public string? ProfessionalLicenseFrontImageUrl { get; set; }
-
-    /// <summary>Carnet de colegiado - ATRÁS (OBLIGATORIO)</summary>
     public string? ProfessionalLicenseBackImageUrl { get; set; }
-
-    /// <summary>DNI/Pasaporte - DELANTE (OBLIGATORIO)</summary>
     public string? IdDocumentFrontImageUrl { get; set; }
-
-    /// <summary>DNI/Pasaporte - ATRÁS (OBLIGATORIO)</summary>
     public string? IdDocumentBackImageUrl { get; set; }
-
-    /// <summary>Título de especialidad (OBLIGATORIO)</summary>
     public string? SpecialtyDegreeImageUrl { get; set; }
-
-    /// <summary>Título universitario (OBLIGATORIO)</summary>
     public string? UniversityDegreeImageUrl { get; set; }
 }
 
 public class DoctorAdminDto : PendingDoctorDto
 {
-    public string? StatusReason { get; set; }
     public DateTime? ReviewedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
     public string? DeletedReason { get; set; }
@@ -127,6 +114,7 @@ public class AdminDashboardStatsDto
     public int TotalAdmins { get; set; }
     public int TotalSpecialties { get; set; }
 }
+
 public class VideoAdminDto
 {
     public int Id { get; set; }

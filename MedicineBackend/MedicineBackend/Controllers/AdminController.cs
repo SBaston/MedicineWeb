@@ -30,10 +30,6 @@ public class AdminController : ControllerBase
     // DATOS DEL ADMIN LOGUEADO
     // ════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Devuelve datos del admin autenticado, incluido IsSuperAdmin.
-    /// El frontend lo usa para mostrar u ocultar la sección de gestión de admins.
-    /// </summary>
     [HttpGet("me")]
     public async Task<IActionResult> GetMe()
     {
@@ -46,7 +42,6 @@ public class AdminController : ControllerBase
     // DASHBOARD
     // ════════════════════════════════════════════════════════════════
 
-    /// <summary>Estadísticas generales para el dashboard del admin</summary>
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard()
     {
@@ -55,7 +50,7 @@ public class AdminController : ControllerBase
     }
 
     // ════════════════════════════════════════════════════════════════
-    // GESTIÓN DE PROFESIONALES — todos los admins pueden hacer esto
+    // GESTIÓN DE PROFESIONALES
     // ════════════════════════════════════════════════════════════════
 
     /// <summary>Lista profesionales pendientes de revisión</summary>
@@ -90,7 +85,11 @@ public class AdminController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
-    /// <summary>Rechaza la solicitud del profesional con un motivo obligatorio</summary>
+    /// <summary>
+    /// Rechaza la solicitud del profesional.
+    /// ✅ SISTEMA SIMPLIFICADO: Elimina User y Doctor para liberar el email.
+    /// El doctor podrá volver a registrarse con el mismo email.
+    /// </summary>
     [HttpPut("doctors/{doctorId:int}/reject")]
     public async Task<IActionResult> RejectDoctor(int doctorId, [FromBody] RejectDoctorRequest req)
     {
@@ -98,9 +97,14 @@ public class AdminController : ControllerBase
         try
         {
             var result = await _doctorMgmt.RejectAsync(doctorId, GetUserId(), req.Reason);
-            return Ok(new { message = "Solicitud rechazada.", doctor = result });
+            return Ok(new
+            {
+                message = "Doctor rechazado y eliminado. El email queda disponible para nuevo registro.",
+                doctor = result
+            });
         }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
     /// <summary>
@@ -121,10 +125,9 @@ public class AdminController : ControllerBase
     }
 
     // ════════════════════════════════════════════════════════════════
-    // GESTIÓN DE ADMINS — solo SuperAdmin puede hacer esto
+    // GESTIÓN DE ADMINS — solo SuperAdmin
     // ════════════════════════════════════════════════════════════════
 
-    /// <summary>Lista todos los admins. Solo SuperAdmin.</summary>
     [HttpGet("admins")]
     public async Task<IActionResult> GetAdmins()
     {
@@ -135,7 +138,6 @@ public class AdminController : ControllerBase
         return Ok(admins);
     }
 
-    /// <summary>Crea un nuevo admin. Solo SuperAdmin.</summary>
     [HttpPost("admins")]
     public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminRequest req)
     {
@@ -149,7 +151,6 @@ public class AdminController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
-    /// <summary>Desactiva un admin. Solo SuperAdmin.</summary>
     [HttpDelete("admins/{adminId:int}")]
     public async Task<IActionResult> DeactivateAdmin(int adminId)
     {
@@ -163,7 +164,6 @@ public class AdminController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
     }
 
-    /// <summary>Reactiva un admin desactivado. Solo SuperAdmin.</summary>
     [HttpPut("admins/{adminId:int}/reactivate")]
     public async Task<IActionResult> ReactivateAdmin(int adminId)
     {
@@ -181,9 +181,6 @@ public class AdminController : ControllerBase
     // GESTIÓN DE VÍDEOS — Verificación por admin
     // ════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Lista vídeos según filtro: pending, verified, rejected
-    /// </summary>
     [HttpGet("videos")]
     public async Task<IActionResult> GetVideos([FromQuery] string filter = "pending")
     {
@@ -199,9 +196,6 @@ public class AdminController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Verifica (aprueba o rechaza) un vídeo
-    /// </summary>
     [HttpPatch("videos/{videoId:int}/verify")]
     public async Task<IActionResult> VerifyVideo(int videoId, [FromBody] VerifyVideoRequest req)
     {
@@ -226,8 +220,6 @@ public class AdminController : ControllerBase
             return StatusCode(500, new { message = "Error al verificar el vídeo" });
         }
     }
-
-
 
     // ════════════════════════════════════════════════════════════════
     // HELPER
