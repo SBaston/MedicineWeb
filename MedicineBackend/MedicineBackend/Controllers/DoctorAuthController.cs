@@ -1,6 +1,6 @@
 ﻿// ═══════════════════════════════════════════════════════════════
 // Backend/Controllers/DoctorAuthController.cs
-// ✅ ACTUALIZADO: 6 imágenes OBLIGATORIAS (sin OCR)
+// ✅ ACTUALIZADO: Con captura de IP, UserAgent, términos y redes sociales
 // ═══════════════════════════════════════════════════════════════
 
 using MedicineBackend.DTOs.Doctor;
@@ -32,7 +32,7 @@ namespace MedicineBackend.Controllers
 
         // ═══════════════════════════════════════════════════════════
         // POST /api/doctors/register
-        // Registro completo de doctor con 6 documentos OBLIGATORIOS
+        // Registro completo de doctor con términos y redes sociales
         // ═══════════════════════════════════════════════════════════
         [HttpPost("register")]
         [RequestSizeLimit(60_000_000)] // 60MB para 6 imágenes
@@ -42,7 +42,11 @@ namespace MedicineBackend.Controllers
         {
             try
             {
-                // 1. ✅ CORREGIDO: Validar email con lógica de re-registro
+                // ✅ NUEVO: Capturar IP y UserAgent
+                var ipAddress = GetClientIp();
+                var userAgent = Request.Headers["User-Agent"].ToString();
+
+                // 1. Validar email con lógica de re-registro
                 var emailCheck = await _doctorService.CheckEmailAvailabilityAsync(dto.Email);
                 if (!emailCheck.IsAvailable)
                 {
@@ -140,31 +144,41 @@ namespace MedicineBackend.Controllers
                 }
 
                 // 5. Crear doctor en la base de datos
-                var doctor = await _doctorService.RegisterAsync(new CreateDoctorRequest
-                {
-                    FirstName = dto.FirstName,
-                    LastName = dto.LastName,
-                    Email = dto.Email,
-                    Password = dto.Password,
-                    ProfessionalLicense = dto.ProfessionalLicense,
-                    SpecialtyIds = dto.SpecialtyIds,
-                    YearsOfExperience = dto.YearsOfExperience,
-                    PricePerSession = dto.PricePerSession,
-                    Description = dto.Description,
-                    PhoneNumber = dto.PhoneNumber,
-                    ProfilePictureUrl = profilePictureUrl,
+                // ✅ ACTUALIZADO: Pasar IP, UserAgent, términos y redes sociales
+                var doctor = await _doctorService.RegisterAsync(
+                    new CreateDoctorRequest
+                    {
+                        FirstName = dto.FirstName,
+                        LastName = dto.LastName,
+                        Email = dto.Email,
+                        Password = dto.Password,
+                        ProfessionalLicense = dto.ProfessionalLicense,
+                        SpecialtyIds = dto.SpecialtyIds,
+                        YearsOfExperience = dto.YearsOfExperience,
+                        PricePerSession = dto.PricePerSession,
+                        Description = dto.Description,
+                        PhoneNumber = dto.PhoneNumber,
+                        ProfilePictureUrl = profilePictureUrl,
 
-                    // ✅ 6 IMÁGENES OBLIGATORIAS
-                    ProfessionalLicenseFrontImageUrl = licenseFrontUrl,
-                    ProfessionalLicenseBackImageUrl = licenseBackUrl,
-                    IdDocumentFrontImageUrl = idFrontUrl,
-                    IdDocumentBackImageUrl = idBackUrl,
-                    SpecialtyDegreeImageUrl = specialtyDegreeUrl,
-                    UniversityDegreeImageUrl = universityDegreeUrl
-                });
+                        // 6 IMÁGENES OBLIGATORIAS
+                        ProfessionalLicenseFrontImageUrl = licenseFrontUrl,
+                        ProfessionalLicenseBackImageUrl = licenseBackUrl,
+                        IdDocumentFrontImageUrl = idFrontUrl,
+                        IdDocumentBackImageUrl = idBackUrl,
+                        SpecialtyDegreeImageUrl = specialtyDegreeUrl,
+                        UniversityDegreeImageUrl = universityDegreeUrl,
+
+                        // ✅ NUEVO: Términos y redes sociales
+                        AcceptContentTerms = dto.AcceptContentTerms,
+                        TermsVersion = dto.TermsVersion,
+                        SocialMediaLinks = dto.SocialMediaLinks
+                    },
+                    ipAddress,      // ✅ NUEVO
+                    userAgent);     // ✅ NUEVO
 
                 _logger.LogInformation(
-                    $"✅ Doctor registrado: {dto.Email} (ID: {doctor.Id}) - Estado: {doctor.Status}"
+                    "✅ Doctor registrado: {Email} (ID: {Id}) - Estado: {Status} - IP: {IP}",
+                    dto.Email, doctor.Id, doctor.Status, ipAddress
                 );
 
                 return CreatedAtAction(
@@ -186,7 +200,9 @@ namespace MedicineBackend.Controllers
                             idDocumentBack = !string.IsNullOrEmpty(idBackUrl),
                             specialtyDegree = !string.IsNullOrEmpty(specialtyDegreeUrl),
                             universityDegree = !string.IsNullOrEmpty(universityDegreeUrl)
-                        }
+                        },
+                        contentTermsAccepted = dto.AcceptContentTerms,
+                        socialMediaLinksCount = dto.SocialMediaLinks?.Count ?? 0
                     }
                 );
             }
@@ -223,6 +239,25 @@ namespace MedicineBackend.Controllers
         {
             var doctors = await _doctorService.GetAllDoctorsAsync();
             return Ok(doctors);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // ✅ NUEVO: Helper para obtener IP del cliente
+        // ═══════════════════════════════════════════════════════════
+        private string GetClientIp()
+        {
+            // Intentar obtener IP real detrás de proxy/load balancer
+            var forwardedFor = Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(forwardedFor))
+            {
+                // X-Forwarded-For puede contener múltiples IPs: "client, proxy1, proxy2"
+                // La primera es la IP original del cliente
+                return forwardedFor.Split(',')[0].Trim();
+            }
+
+            // Si no hay proxy, obtener IP directa
+            var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            return remoteIp ?? "unknown";
         }
     }
 }

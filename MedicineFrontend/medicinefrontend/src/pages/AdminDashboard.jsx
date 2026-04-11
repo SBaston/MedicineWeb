@@ -629,13 +629,13 @@ const AdminDashboard = () => {
                     </button>
 
                     {/* BOTÓN DE VÍDEOS */}
-                    <button
-                        onClick={() => navigate('/admin/videos')}
-                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg px-5 py-2.5 transition-colors"
-                    >
-                        <Video className="w-4 h-4" />
-                        Verificar Vídeos
-                    </button>
+                    {/*<button*/}
+                    {/*    onClick={() => navigate('/admin/videos')}*/}
+                    {/*    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg px-5 py-2.5 transition-colors"*/}
+                    {/*>*/}
+                    {/*    <Video className="w-4 h-4" />*/}
+                    {/*    Verificar Vídeos*/}
+                    {/*</button>*/}
                 </div>
             </div>
 

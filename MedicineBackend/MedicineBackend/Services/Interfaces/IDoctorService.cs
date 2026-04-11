@@ -32,7 +32,10 @@ public interface IDoctorService
     /// <summary>
     /// Registra un nuevo doctor
     /// </summary>
-    Task<Doctor> RegisterAsync(CreateDoctorRequest request);
+    Task<Doctor> RegisterAsync(
+    CreateDoctorRequest request,
+    string ipAddress,
+    string userAgent);
 
     /// <summary>
     /// Obtiene un doctor por su ID

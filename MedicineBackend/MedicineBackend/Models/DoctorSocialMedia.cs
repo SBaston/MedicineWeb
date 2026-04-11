@@ -4,10 +4,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MedicineBackend.Models;
 
 /// <summary>
-/// Videos del doctor desde sus redes sociales - OPCIONAL
-/// Sin verificación de admin - El doctor los gestiona libremente
+/// Redes sociales del doctor - OPCIONAL
+/// El doctor las gestiona libremente desde su dashboard
 /// </summary>
-public class SocialMediaVideo
+public class DoctorSocialMedia
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -16,41 +16,28 @@ public class SocialMediaVideo
     [Required]
     public int DoctorId { get; set; }
 
-    [Required]
-    [MaxLength(200)]
-    public string Title { get; set; } = string.Empty;
-
-    [MaxLength(1000)]
-    public string? Description { get; set; }
-
     /// <summary>
-    /// Plataforma del video: YouTube, Instagram, TikTok, Facebook
+    /// Plataforma: YouTube, Instagram, TikTok, Facebook, Twitter, LinkedIn
     /// </summary>
     [Required]
     [MaxLength(50)]
     public string Platform { get; set; } = string.Empty;
 
     /// <summary>
-    /// URL completa del video
+    /// Usuario o URL completo
+    /// Ejemplos: "@drjuanperez", "youtube.com/@drjuanperez", "https://instagram.com/drjuanperez"
     /// </summary>
     [Required]
     [MaxLength(500)]
-    public string VideoUrl { get; set; } = string.Empty;
+    public string ProfileUrl { get; set; } = string.Empty;
 
     /// <summary>
-    /// URL del thumbnail (imagen de portada)
+    /// Número de seguidores (opcional, puede actualizar manualmente)
     /// </summary>
-    [MaxLength(500)]
-    public string? ThumbnailUrl { get; set; }
+    public int? FollowerCount { get; set; }
 
     /// <summary>
-    /// Estadísticas opcionales (puede actualizar manualmente)
-    /// </summary>
-    public int ViewCount { get; set; } = 0;
-    public int LikeCount { get; set; } = 0;
-
-    /// <summary>
-    /// El doctor puede activar/desactivar sus videos
+    /// Si está activo y visible en el perfil público
     /// </summary>
     public bool IsActive { get; set; } = true;
 

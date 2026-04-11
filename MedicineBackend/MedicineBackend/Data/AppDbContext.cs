@@ -30,6 +30,10 @@ public class AppDbContext : DbContext
     public DbSet<DoctorAvailability> DoctorAvailabilities { get; set; }
     public DbSet<Notification> Notifications { get; set; }
 
+    // ✅ NUEVO: Sistema de redes sociales y contenido
+    public DbSet<DoctorSocialMedia> DoctorSocialMedias { get; set; }
+    public DbSet<DoctorContentConsent> DoctorContentConsents { get; set; }
+
     // ============================================
     // CONFIGURACIÓN DE ENTIDADES
     // ============================================
@@ -240,11 +244,68 @@ public class AppDbContext : DbContext
             entity.Property(v => v.Description)
                 .HasMaxLength(1000);
 
+            // Índices
+            entity.HasIndex(v => v.DoctorId);
+            entity.HasIndex(v => v.Platform);
+            entity.HasIndex(v => v.IsActive);
+
             // Relación con Doctor
             entity.HasOne(v => v.Doctor)
                 .WithMany(d => d.SocialMediaVideos)
                 .HasForeignKey(v => v.DoctorId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ============================================
+        // ✅ NUEVO: CONFIGURACIÓN DOCTOR SOCIAL MEDIA
+        // ============================================
+
+        modelBuilder.Entity<DoctorSocialMedia>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            // Índice para búsquedas por doctor
+            entity.HasIndex(e => e.DoctorId);
+
+            // Índice compuesto para validar plataforma única por doctor
+            entity.HasIndex(e => new { e.DoctorId, e.Platform })
+                  .IsUnique()
+                  .HasDatabaseName("IX_DoctorSocialMedia_Doctor_Platform");
+
+            // Índice para filtrar por plataforma
+            entity.HasIndex(e => e.Platform);
+
+            // Índice para filtrar activos
+            entity.HasIndex(e => e.IsActive);
+
+            // Relación con Doctor
+            entity.HasOne(e => e.Doctor)
+                  .WithMany(d => d.SocialMediaAccounts)
+                  .HasForeignKey(e => e.DoctorId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ============================================
+        // ✅ NUEVO: CONFIGURACIÓN DOCTOR CONTENT CONSENT
+        // ============================================
+
+        modelBuilder.Entity<DoctorContentConsent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            // Índice único por doctor (relación 1:1)
+            entity.HasIndex(e => e.DoctorId)
+                  .IsUnique()
+                  .HasDatabaseName("IX_DoctorContentConsent_DoctorId");
+
+            // Índice para filtrar por aceptación
+            entity.HasIndex(e => e.HasAccepted);
+
+            // Relación con Doctor (uno a uno)
+            entity.HasOne(e => e.Doctor)
+                  .WithOne(d => d.ContentConsent)
+                  .HasForeignKey<DoctorContentConsent>(e => e.DoctorId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ============================================
@@ -470,11 +531,5 @@ public class AppDbContext : DbContext
             entity.HasIndex(n => n.IsRead);
             entity.HasIndex(n => n.CreatedAt);
         });
-
-        
-        
     }
-
-   
-
 }

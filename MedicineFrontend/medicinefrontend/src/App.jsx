@@ -21,7 +21,6 @@ import EarningsPage from './pages/EarningsPage';
 import CreateCoursePage from './pages/CreateCoursePage';
 import DoctorProfilePage from './pages/DoctorProfilePage';
 import PricingPage from './pages/PricingPage';
-import AdminVideosManagement from './pages/AdminVideosManagement';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -115,15 +114,15 @@ function App() {
                         />
 
                         // Dentro de tus rutas protegidas de admin:
-                        <Route
-                            path="/admin/videos" element={
-                                <ProtectedRoute allowedRoles={['Admin']}>
-                                    <Layout>
-                                        <AdminVideosManagement />
-                                    </Layout>
-                                </ProtectedRoute>
-                            }
-                        />
+                        {/*<Route*/}
+                        {/*    path="/admin/videos" element={*/}
+                        {/*        <ProtectedRoute allowedRoles={['Admin']}>*/}
+                        {/*            <Layout>*/}
+                        {/*                <AdminVideosManagement />*/}
+                        {/*            </Layout>*/}
+                        {/*        </ProtectedRoute>*/}
+                        {/*    }*/}
+                        {/*/>*/}
 
                         {/* Crear Admin - SOLO SuperAdmin puede acceder */}
                         <Route

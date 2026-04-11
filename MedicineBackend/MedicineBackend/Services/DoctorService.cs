@@ -9,7 +9,7 @@ namespace MedicineBackend.Services;
 
 /// <summary>
 /// Servicio para gestionar doctores con soporte de caché
-/// ✅ SISTEMA SIMPLIFICADO: Email validation simple para re-registro
+/// ✅ ACTUALIZADO: Con soporte para términos y redes sociales
 /// </summary>
 public class DoctorService : IDoctorService
 {
@@ -32,12 +32,22 @@ public class DoctorService : IDoctorService
         _logger = logger;
     }
 
-    public async Task<Doctor> RegisterAsync(CreateDoctorRequest request)
+    // ✅ ACTUALIZADO: Recibe IP y UserAgent
+    public async Task<Doctor> RegisterAsync(
+        CreateDoctorRequest request,
+        string ipAddress,
+        string userAgent)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
+            // ✅ NUEVO: Validar aceptación de términos
+            if (!request.AcceptContentTerms)
+            {
+                throw new InvalidOperationException("Debes aceptar los términos de publicación de contenido para completar el registro");
+            }
+
             // 1. Crear usuario
             var user = new User
             {
@@ -74,6 +84,7 @@ public class DoctorService : IDoctorService
                 PhoneNumber = request.PhoneNumber,
                 ProfilePictureUrl = request.ProfilePictureUrl,
                 Status = DoctorStatus.PendingReview,
+                HasAcceptedContentTerms = true, // ✅ NUEVO
 
                 // 6 IMÁGENES
                 ProfessionalLicenseFrontImageUrl = request.ProfessionalLicenseFrontImageUrl,
@@ -90,18 +101,55 @@ public class DoctorService : IDoctorService
             _context.Doctors.Add(doctor);
             await _context.SaveChangesAsync();
 
+            // ✅ NUEVO: Crear registro de consentimiento de contenido
+            var consent = new DoctorContentConsent
+            {
+                DoctorId = doctor.Id,
+                TermsVersion = request.TermsVersion,
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                HasAccepted = true,
+                AcceptedAt = DateTime.UtcNow
+            };
+
+            _context.DoctorContentConsents.Add(consent);
+            await _context.SaveChangesAsync();
+
+            // ✅ NUEVO: Crear redes sociales si las proporcionó
+            if (request.SocialMediaLinks != null && request.SocialMediaLinks.Any())
+            {
+                foreach (var link in request.SocialMediaLinks)
+                {
+                    var socialMedia = new DoctorSocialMedia
+                    {
+                        DoctorId = doctor.Id,
+                        Platform = link.Platform,
+                        ProfileUrl = link.ProfileUrl,
+                        FollowerCount = link.FollowerCount,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.DoctorSocialMedias.Add(socialMedia);
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
             await transaction.CommitAsync();
 
             _logger.LogInformation(
-                "✅ Doctor registrado: {Name} ({Email}) - ID: {Id} - Estado: {Status}",
-                doctor.FullName, request.Email, doctor.Id, doctor.Status);
+                "✅ Doctor registrado: {Name} ({Email}) - ID: {Id} - Estado: {Status} - " +
+                "Términos v{TermsVersion} aceptados desde IP {IP} - Redes sociales: {SocialCount}",
+                doctor.FullName, request.Email, doctor.Id, doctor.Status,
+                request.TermsVersion, ipAddress, request.SocialMediaLinks?.Count ?? 0);
 
             return doctor;
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            _logger.LogError(ex, "❌ Error al registrar doctor");
+            _logger.LogError(ex, "❌ Error al registrar doctor: {Email}", request.Email);
             throw;
         }
     }

@@ -112,7 +112,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             });
         }
 
-        var verifiedVideos = doctor.SocialMediaVideos.Count(v => v.IsVerified && v.IsActive);
+        var verifiedVideos = doctor.SocialMediaVideos.Count(v =>  v.IsActive);
         if (verifiedVideos < 3)
         {
             pendingTasks.Add(new PendingTaskDto
@@ -338,9 +338,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             VideoUrl = v.VideoUrl,
             Title = v.Title,
             Description = v.Description,
-            Tags = v.Tags,
             IsActive = v.IsActive,
-            IsVerified = v.IsVerified,
             ViewCount = v.ViewCount,
             LikeCount = v.LikeCount,
             CreatedAt = v.CreatedAt.ToString("yyyy-MM-dd")
@@ -356,9 +354,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             VideoUrl = dto.VideoUrl,
             Title = dto.Title,
             Description = dto.Description,
-            Tags = dto.Tags,
             IsActive = true,
-            IsVerified = false
         };
 
         _context.SocialMediaVideos.Add(video);
@@ -371,9 +367,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             VideoUrl = video.VideoUrl,
             Title = video.Title,
             Description = video.Description,
-            Tags = video.Tags,
             IsActive = video.IsActive,
-            IsVerified = video.IsVerified,
             CreatedAt = video.CreatedAt.ToString("yyyy-MM-dd")
         };
     }
@@ -386,7 +380,6 @@ public class DoctorDashboardService : IDoctorDashboardService
 
         video.Title = dto.Title;
         video.Description = dto.Description;
-        video.Tags = dto.Tags;
         video.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -398,9 +391,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             VideoUrl = video.VideoUrl,
             Title = video.Title,
             Description = video.Description,
-            Tags = video.Tags,
             IsActive = video.IsActive,
-            IsVerified = video.IsVerified,
             CreatedAt = video.CreatedAt.ToString("yyyy-MM-dd")
         };
     }
@@ -433,9 +424,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             VideoUrl = video.VideoUrl,
             Title = video.Title,
             Description = video.Description,
-            Tags = video.Tags,
             IsActive = video.IsActive,
-            IsVerified = video.IsVerified,
             CreatedAt = video.CreatedAt.ToString("yyyy-MM-dd")
         };
     }

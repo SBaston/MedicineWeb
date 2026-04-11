@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace MedicineBackend.DTOs.Doctor;
 
 /// <summary>
-/// DTO para registro de doctor - ACTUALIZADO con 6 imágenes
+/// DTO para registro de doctor - ACTUALIZADO con 6 imágenes, términos y redes sociales
 /// </summary>
 public class DoctorRegisterDto
 {
@@ -33,7 +33,7 @@ public class DoctorRegisterDto
     public string LastName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El número de colegiado es obligatorio")]
-    [MaxLength(200)]  // ✅ AUMENTADO de 100 a 200 - Sin límite estricto
+    [MaxLength(200)]
     public string ProfessionalLicense { get; set; } = string.Empty;
 
     [MaxLength(20)]
@@ -55,6 +55,28 @@ public class DoctorRegisterDto
     [Required(ErrorMessage = "Debe seleccionar al menos una especialidad")]
     [MinLength(1, ErrorMessage = "Debe seleccionar al menos una especialidad")]
     public List<int> SpecialtyIds { get; set; } = new();
+
+    // ═══════════════════════════════════════════════════════════════
+    // ✅ NUEVO: REDES SOCIALES (OPCIONAL)
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Redes sociales del doctor (opcional)</summary>
+    public List<SocialMediaLinkDto>? SocialMediaLinks { get; set; }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ✅ NUEVO: TÉRMINOS DE CONTENIDO (OBLIGATORIO)
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Aceptación de términos de publicación de contenido
+    /// Obligatorio para completar el registro
+    /// </summary>
+    [Required(ErrorMessage = "Debes aceptar los términos de contenido")]
+    public bool AcceptContentTerms { get; set; }
+
+    /// <summary>Versión de los términos aceptados</summary>
+    [MaxLength(20)]
+    public string TermsVersion { get; set; } = "v1.0";
 
     // ═══════════════════════════════════════════════════════════════
     // DOCUMENTACIÓN - 6 IMÁGENES OBLIGATORIAS
@@ -110,7 +132,7 @@ public class CreateDoctorRequest
     // ESPECIALIDADES
     public List<int> SpecialtyIds { get; set; } = new();
 
-    // ✅ IMÁGENES - 6 URLS (ya guardadas en almacenamiento)
+    // IMÁGENES - 6 URLS (ya guardadas en almacenamiento)
     public string? ProfessionalLicenseFrontImageUrl { get; set; }
     public string? ProfessionalLicenseBackImageUrl { get; set; }
     public string? IdDocumentFrontImageUrl { get; set; }
@@ -118,6 +140,11 @@ public class CreateDoctorRequest
     public string? SpecialtyDegreeImageUrl { get; set; }
     public string? UniversityDegreeImageUrl { get; set; }
     public string? ProfilePictureUrl { get; set; }
+
+    // ✅ NUEVO: TÉRMINOS Y REDES SOCIALES
+    public bool AcceptContentTerms { get; set; }
+    public string TermsVersion { get; set; } = "v1.0";
+    public List<SocialMediaLinkDto>? SocialMediaLinks { get; set; }
 }
 
 /// <summary>
@@ -136,21 +163,29 @@ public class PendingDoctorDto
     public List<string> Specialties { get; set; } = new();
     public string? ProfilePictureUrl { get; set; }
 
-    // ═══════════════════════════════════════════════════════════════
     // DOCUMENTACIÓN - 6 IMÁGENES
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>URLs de las imágenes del carnet de colegiado</summary>
     public string? ProfessionalLicenseFrontImageUrl { get; set; }
     public string? ProfessionalLicenseBackImageUrl { get; set; }
-
-    /// <summary>URLs de las imágenes del DNI/Pasaporte</summary>
     public string? IdDocumentFrontImageUrl { get; set; }
     public string? IdDocumentBackImageUrl { get; set; }
-
-    /// <summary>URLs de los títulos</summary>
     public string? SpecialtyDegreeImageUrl { get; set; }
     public string? UniversityDegreeImageUrl { get; set; }
 
     public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// DTO para enlaces de redes sociales en el registro
+/// </summary>
+public class SocialMediaLinkDto
+{
+    [Required]
+    [MaxLength(50)]
+    public string Platform { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(500)]
+    public string ProfileUrl { get; set; } = string.Empty;
+
+    public int? FollowerCount { get; set; }
 }

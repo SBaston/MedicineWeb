@@ -150,6 +150,16 @@ public class Doctor
     public bool IsDocumentVerified { get; set; }
 
     // ══════════════════════════════════════════════════════════════
+    // ✅ NUEVO: SISTEMA DE CONTENIDO Y REDES SOCIALES
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Si ha aceptado los términos de publicación de contenido
+    /// Se marca en TRUE durante el registro
+    /// </summary>
+    public bool HasAcceptedContentTerms { get; set; } = false;
+
+    // ══════════════════════════════════════════════════════════════
     // SOFT DELETE — RGPD
     // ══════════════════════════════════════════════════════════════
 
@@ -189,6 +199,9 @@ public class Doctor
     public ICollection<DoctorAvailability> Availabilities { get; set; } = new List<DoctorAvailability>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
+    public ICollection<DoctorSocialMedia> SocialMediaAccounts { get; set; } = new List<DoctorSocialMedia>();
+    public DoctorContentConsent? ContentConsent { get; set; }
+
     // ══════════════════════════════════════════════════════════════
     // PROPIEDADES CALCULADAS
     // ══════════════════════════════════════════════════════════════
@@ -211,4 +224,16 @@ public class Doctor
     /// <summary>Compatibilidad con código existente</summary>
     [NotMapped]
     public bool IsVerified => Status == DoctorStatus.Active;
+
+    /// <summary>Badge de creador de contenido si tiene redes/videos activos</summary>
+    [NotMapped]
+    public bool IsContentCreator =>
+        SocialMediaAccounts.Any(s => s.IsActive) ||
+        SocialMediaVideos.Any(v => v.IsActive);
+
+    /// <summary>Puntuación de contenido para ordenamiento en búsquedas</summary>
+    [NotMapped]
+    public int ContentScore =>
+        SocialMediaAccounts.Count(s => s.IsActive) * 2 +
+        SocialMediaVideos.Count(v => v.IsActive);
 }

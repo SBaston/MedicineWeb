@@ -1,24 +1,25 @@
 // ═══════════════════════════════════════════════════════════════
-// Frontend/src/services/doctorService.js
-// Servicio para registro y gestión de doctores
-// ✅ ACTUALIZADO: 6 imágenes, sin OCR
+// Frontend/src/services/doctorService.jsx
+// ✅ CORREGIDO: specialtyIds maneja objetos y números
 // ═══════════════════════════════════════════════════════════════
 
 import api from './api';
 
 const doctorService = {
     /**
-     * ✅ Registro completo de doctor con 6 imágenes
+     * ✅ Registro completo de doctor con 6 imágenes + términos + redes
      */
     register: async (data) => {
         // Crear FormData para enviar imágenes
         const formData = new FormData();
 
-        // Datos básicos
+        // Datos personales
         formData.append('firstName', data.firstName);
         formData.append('lastName', data.lastName);
         formData.append('email', data.email);
         formData.append('password', data.password);
+
+        // Datos profesionales
         formData.append('professionalLicense', data.professionalLicense);
         formData.append('yearsOfExperience', data.yearsOfExperience || 0);
         formData.append('pricePerSession', data.pricePerSession);
@@ -27,52 +28,92 @@ const doctorService = {
         if (data.description) formData.append('description', data.description);
         if (data.phoneNumber) formData.append('phoneNumber', data.phoneNumber);
 
-        // Especialidades (array de IDs)
+        // ✅ CORREGIDO: Especialidades - Manejar objetos y números
         if (data.specialtyIds && data.specialtyIds.length > 0) {
-            data.specialtyIds.forEach(id => {
-                formData.append('specialtyIds', id);
+            data.specialtyIds.forEach(item => {
+                // Si es un objeto, extraer el id
+                let id;
+                if (typeof item === 'object' && item !== null) {
+                    id = item.id || item.Id || item.ID;
+                } else {
+                    id = item;
+                }
+
+                // Convertir a número y añadir
+                const numericId = parseInt(id);
+                if (!isNaN(numericId)) {
+                    formData.append('specialtyIds', numericId);
+                }
             });
         }
 
-        // ✅ 6 IMÁGENES (Base64 a FormData)
+        // ✅ Términos de contenido
+        formData.append('acceptContentTerms', data.acceptContentTerms || false);
+        formData.append('termsVersion', data.termsVersion || 'v1.0');
+
+        // ✅ Redes sociales (opcional)
+        if (data.socialMediaLinks && data.socialMediaLinks.length > 0) {
+            formData.append('socialMediaLinks', JSON.stringify(data.socialMediaLinks));
+        }
+
+        // ✅ 6 IMÁGENES (Base64 a Blob)
         // OBLIGATORIAS
         if (data.professionalLicenseFront) {
             const blob1 = dataURLtoBlob(data.professionalLicenseFront);
-            formData.append('professionalLicenseFront', blob1, 'license_front.jpg');
+            if (blob1) formData.append('professionalLicenseFront', blob1, 'license_front.jpg');
         }
         if (data.professionalLicenseBack) {
             const blob2 = dataURLtoBlob(data.professionalLicenseBack);
-            formData.append('professionalLicenseBack', blob2, 'license_back.jpg');
+            if (blob2) formData.append('professionalLicenseBack', blob2, 'license_back.jpg');
         }
 
-        // OPCIONALES
+        // OBLIGATORIAS (DNI)
         if (data.idDocumentFront) {
             const blob3 = dataURLtoBlob(data.idDocumentFront);
-            formData.append('idDocumentFront', blob3, 'id_front.jpg');
+            if (blob3) formData.append('idDocumentFront', blob3, 'id_front.jpg');
         }
         if (data.idDocumentBack) {
             const blob4 = dataURLtoBlob(data.idDocumentBack);
-            formData.append('idDocumentBack', blob4, 'id_back.jpg');
+            if (blob4) formData.append('idDocumentBack', blob4, 'id_back.jpg');
         }
+
+        // OBLIGATORIAS (Títulos)
         if (data.specialtyDegree) {
             const blob5 = dataURLtoBlob(data.specialtyDegree);
-            formData.append('specialtyDegree', blob5, 'specialty_degree.jpg');
+            if (blob5) formData.append('specialtyDegree', blob5, 'specialty_degree.jpg');
         }
         if (data.universityDegree) {
             const blob6 = dataURLtoBlob(data.universityDegree);
-            formData.append('universityDegree', blob6, 'university_degree.jpg');
-        }
-        if (data.profilePicture) {
-            const blob7 = dataURLtoBlob(data.profilePicture);
-            formData.append('profilePicture', blob7, 'profile.jpg');
+            if (blob6) formData.append('universityDegree', blob6, 'university_degree.jpg');
         }
 
-        const response = await api.post('/doctors/register', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-        return response.data;
+        // OPCIONAL (Foto de perfil)
+        if (data.profilePicture) {
+            const blob7 = dataURLtoBlob(data.profilePicture);
+            if (blob7) formData.append('profilePicture', blob7, 'profile.jpg');
+        }
+
+        // ✅ DEBUG: Ver qué se envía
+        console.log('📦 FormData construido en doctorService:');
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof Blob) {
+                console.log(`  ${key}: Blob (${value.size} bytes)`);
+            } else {
+                console.log(`  ${key}: ${value}`);
+            }
+        }
+
+        try {
+            const response = await api.post('/doctors/register', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            console.error('❌ Error en API:', error.response?.data);
+            throw error;
+        }
     },
 
     /**
@@ -96,15 +137,25 @@ const doctorService = {
 // HELPER: Convertir Base64 a Blob
 // ═══════════════════════════════════════════════════════════════
 function dataURLtoBlob(dataURL) {
-    const arr = dataURL.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
+    if (!dataURL || !dataURL.includes(',')) {
+        console.error('❌ dataURL inválido:', dataURL?.substring(0, 50));
+        return null;
     }
-    return new Blob([u8arr], { type: mime });
+
+    try {
+        const arr = dataURL.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    } catch (error) {
+        console.error('❌ Error convirtiendo base64 a blob:', error);
+        return null;
+    }
 }
 
 export default doctorService;

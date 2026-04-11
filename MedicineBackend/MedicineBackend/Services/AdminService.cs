@@ -181,8 +181,8 @@ public class AdminService : IAdminService
         // Filtrar según el estado
         query = filter.ToLower() switch
         {
-            "pending" => query.Where(v => !v.IsVerified && v.IsActive),
-            "verified" => query.Where(v => v.IsVerified && v.IsActive),
+            "pending" => query.Where(v =>  v.IsActive),
+            "verified" => query.Where(v => v.IsActive),
             "rejected" => query.Where(v => !v.IsActive),
             _ => query
         };
@@ -196,9 +196,8 @@ public class AdminService : IAdminService
                 Description = v.Description,
                 Platform = v.Platform,
                 VideoUrl = v.VideoUrl,
-                ViewCount = v.ViewCount ?? 0,
-                LikeCount = v.LikeCount ?? 0,
-                IsVerified = v.IsVerified,
+                ViewCount = v.ViewCount,
+                LikeCount = v.LikeCount,
                 IsActive = v.IsActive,
                 CreatedAt = v.CreatedAt,
                 DoctorName = $"{v.Doctor.FirstName} {v.Doctor.LastName}",
@@ -225,13 +224,13 @@ public class AdminService : IAdminService
         if (isVerified)
         {
             // Aprobar vídeo
-            video.IsVerified = true;
+           
             video.IsActive = true;
         }
         else
         {
             // Rechazar vídeo
-            video.IsVerified = false;
+            
             video.IsActive = false;
         }
 
@@ -248,9 +247,8 @@ public class AdminService : IAdminService
             Description = video.Description,
             Platform = video.Platform,
             VideoUrl = video.VideoUrl,
-            ViewCount = video.ViewCount ?? 0,
-            LikeCount = video.LikeCount ?? 0,
-            IsVerified = video.IsVerified,
+            ViewCount = video.ViewCount,
+            LikeCount = video.LikeCount,
             IsActive = video.IsActive,
             CreatedAt = video.CreatedAt,
             DoctorName = $"{video.Doctor.FirstName} {video.Doctor.LastName}",

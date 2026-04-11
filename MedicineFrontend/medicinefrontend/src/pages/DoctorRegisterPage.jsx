@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // Frontend/src/pages/DoctorRegisterPage.jsx
-// Formulario completo de registro de doctores con 6 imágenes
-// ✅ ACTUALIZADO: 6 campos de imágenes (sin OCR)
+// ✅ ACTUALIZADO: Con términos de contenido integrados (Paso 4)
+// ✅ ACTUALIZADO: Con redes sociales opcionales
 // ═══════════════════════════════════════════════════════════════
 
 import { useState } from 'react';
@@ -13,14 +13,15 @@ import SpecialtySelector from '../components/SpecialtySelector';
 import {
     Stethoscope, Camera, Upload, CheckCircle, AlertCircle,
     Loader, ChevronRight, FileText, Shield, User, Mail,
-    Lock, Phone, DollarSign, Briefcase, FileCheck, Home
+    Lock, Phone, DollarSign, Briefcase, FileCheck, Home,
+    Scale, AlertCircle as Alert
 } from 'lucide-react';
 import doctorService from '../services/doctorService';
 
 const DoctorRegisterPage = () => {
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(1);
-    const [showCamera, setShowCamera] = useState(null); // 'licenseFront' | 'licenseBack' | 'idFront' | 'idBack' | 'specialty' | 'university' | 'profile' | null
+    const [showCamera, setShowCamera] = useState(null);
 
     // ═══════════════════════════════════════════════════════════
     // Estado del formulario
@@ -36,19 +37,26 @@ const DoctorRegisterPage = () => {
 
         // Datos profesionales
         professionalLicense: '',
-        specialties: [],
+        specialtyIds: [],
         yearsOfExperience: 0,
         pricePerSession: 50,
         description: '',
 
-        // ✅ DOCUMENTOS - 6 IMÁGENES (Base64)
-        professionalLicenseFront: '',      // OBLIGATORIO
-        professionalLicenseBack: '',       // OBLIGATORIO
-        idDocumentFront: '',               // OPCIONAL
-        idDocumentBack: '',                // OPCIONAL
-        specialtyDegree: '',               // OPCIONAL
-        universityDegree: '',              // OPCIONAL
-        profilePicture: ''                 // OPCIONAL
+        // Documentos - 6 imágenes
+        professionalLicenseFront: '',
+        professionalLicenseBack: '',
+        idDocumentFront: '',
+        idDocumentBack: '',
+        specialtyDegree: '',
+        universityDegree: '',
+        profilePicture: '',
+
+        // ✅ NUEVO: Términos de contenido
+        acceptContentTerms: false,
+        termsVersion: 'v1.0',
+
+        // ✅ NUEVO: Redes sociales opcionales
+        socialMediaLinks: []
     });
 
     const [errors, setErrors] = useState({});
@@ -59,11 +67,10 @@ const DoctorRegisterPage = () => {
     const registerMutation = useMutation({
         mutationFn: (data) => doctorService.register(data),
         onSuccess: () => {
-            // Redirigir a login con mensaje de éxito
             navigate('/login', {
                 state: {
                     registrationSuccess: true,
-                    message: '✅ Registro exitoso. Tu cuenta está pendiente de verificación por un administrador. Recibirás un email cuando sea aprobada.',
+                    message: '✅ Registro exitoso. Tu cuenta está pendiente de verificación por un administrador.',
                     email: formData.email
                 }
             });
@@ -87,10 +94,7 @@ const DoctorRegisterPage = () => {
     };
 
     const handleCameraCapture = (imageBase64, docType) => {
-        setFormData(prev => ({
-            ...prev,
-            [docType]: imageBase64
-        }));
+        setFormData(prev => ({ ...prev, [docType]: imageBase64 }));
         setShowCamera(null);
     };
 
@@ -100,47 +104,44 @@ const DoctorRegisterPage = () => {
     const validateStep = (step) => {
         const newErrors = {};
 
+        // PASO 1: Datos personales
         if (step === 1) {
-            if (!formData.firstName.trim()) newErrors.firstName = 'Nombre obligatorio';
-            if (!formData.lastName.trim()) newErrors.lastName = 'Apellidos obligatorios';
-            if (!formData.email.trim()) newErrors.email = 'Email obligatorio';
-            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-                newErrors.email = 'Email inválido';
-            }
-            if (!formData.password) newErrors.password = 'Contraseña obligatoria';
-            else if (formData.password.length < 8) {
-                newErrors.password = 'Mínimo 8 caracteres';
-            }
+            if (!formData.firstName.trim()) newErrors.firstName = 'El nombre es obligatorio';
+            if (!formData.lastName.trim()) newErrors.lastName = 'Los apellidos son obligatorios';
+            if (!formData.email.trim()) newErrors.email = 'El email es obligatorio';
+            if (!formData.password) newErrors.password = 'La contraseña es obligatoria';
+            if (formData.password.length < 8) newErrors.password = 'Mínimo 8 caracteres';
             if (formData.password !== formData.confirmPassword) {
                 newErrors.confirmPassword = 'Las contraseñas no coinciden';
             }
         }
 
+        // PASO 2: Datos profesionales
         if (step === 2) {
             if (!formData.professionalLicense.trim()) {
-                newErrors.professionalLicense = 'Número de colegiado obligatorio';
+                newErrors.professionalLicense = 'El número de colegiado es obligatorio';
             }
-            if (formData.specialties.length === 0) {
-                newErrors.specialties = 'Selecciona al menos una especialidad';
+            if (!formData.specialtyIds || formData.specialtyIds.length === 0) {
+                newErrors.specialtyIds = 'Selecciona al menos una especialidad';
             }
-            if (formData.pricePerSession < 20 || formData.pricePerSession > 500) {
-                newErrors.pricePerSession = 'Precio entre 20€ y 500€';
+            if (!formData.pricePerSession || formData.pricePerSession < 1) {
+                newErrors.pricePerSession = 'El precio debe ser mayor a 0';
             }
         }
 
+        // PASO 3: Documentos
         if (step === 3) {
-            // ✅ VALIDAR IMÁGENES OBLIGATORIAS (6 obligatorias)
             if (!formData.professionalLicenseFront) {
-                newErrors.professionalLicenseFront = 'La imagen frontal del carnet de colegiado es obligatoria';
+                newErrors.professionalLicenseFront = 'El carnet de colegiado (delante) es obligatorio';
             }
             if (!formData.professionalLicenseBack) {
-                newErrors.professionalLicenseBack = 'La imagen trasera del carnet de colegiado es obligatoria';
+                newErrors.professionalLicenseBack = 'El carnet de colegiado (atrás) es obligatorio';
             }
             if (!formData.idDocumentFront) {
-                newErrors.idDocumentFront = 'La imagen frontal del DNI es obligatoria';
+                newErrors.idDocumentFront = 'El DNI (delante) es obligatorio';
             }
             if (!formData.idDocumentBack) {
-                newErrors.idDocumentBack = 'La imagen trasera del DNI es obligatoria';
+                newErrors.idDocumentBack = 'El DNI (atrás) es obligatorio';
             }
             if (!formData.specialtyDegree) {
                 newErrors.specialtyDegree = 'El título de especialidad es obligatorio';
@@ -150,54 +151,101 @@ const DoctorRegisterPage = () => {
             }
         }
 
+        // ✅ NUEVO: PASO 4 - Términos
+        if (step === 4) {
+            if (!formData.acceptContentTerms) {
+                newErrors.acceptContentTerms = 'Debes aceptar los términos de contenido';
+            }
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const nextStep = () => {
+    const handleNext = () => {
         if (validateStep(currentStep)) {
-            setCurrentStep(prev => Math.min(prev + 1, 3));
+            setCurrentStep(currentStep + 1);
+            window.scrollTo(0, 0);
         }
     };
 
-    const prevStep = () => {
-        setCurrentStep(prev => Math.max(prev - 1, 1));
-    };
-
-    const handleSubmit = (e) => {
+    // ═══════════════════════════════════════════════════════════
+    // Envío del formulario
+    // ═══════════════════════════════════════════════════════════
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (validateStep(3)) {
-            // Preparar datos para enviar
-            const dataToSend = {
-                ...formData,
-                specialtyIds: formData.specialties.map(s => s.id),
-                phoneNumber: formData.phoneNumber?.trim() || null,
-            };
-            delete dataToSend.specialties;
-            delete dataToSend.confirmPassword;
 
-            registerMutation.mutate(dataToSend);
+        if (!validateStep(4)) return;
+
+        try {
+            // ✅ VERIFICAR que hay especialidades
+            if (!formData.specialtyIds || formData.specialtyIds.length === 0) {
+                setErrors({
+                    submit: 'Debes seleccionar al menos una especialidad',
+                    specialties: 'Debes seleccionar al menos una especialidad'
+                });
+                setCurrentStep(2); // Volver al paso 2
+                return;
+            }
+
+            const dataToSend = {
+                // Datos personales
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                password: formData.password,
+                phoneNumber: formData.phoneNumber || '',
+
+                // Datos profesionales
+                professionalLicense: formData.professionalLicense,
+                yearsOfExperience: parseInt(formData.yearsOfExperience) || 0,
+                pricePerSession: parseFloat(formData.pricePerSession),
+                description: formData.description || '',
+
+                // ✅ ESPECIALIDADES - USAR formData.specialtyIds
+                specialtyIds: formData.specialtyIds,
+
+                // Términos
+                acceptContentTerms: formData.acceptContentTerms,
+                termsVersion: formData.termsVersion,
+
+                // Redes sociales
+                socialMediaLinks: formData.socialMediaLinks || [],
+
+                // Imágenes Base64
+                professionalLicenseFront: formData.professionalLicenseFront,
+                professionalLicenseBack: formData.professionalLicenseBack,
+                idDocumentFront: formData.idDocumentFront,
+                idDocumentBack: formData.idDocumentBack,
+                specialtyDegree: formData.specialtyDegree,
+                universityDegree: formData.universityDegree,
+                profilePicture: formData.profilePicture || null
+            };
+
+            // ✅ DEBUG
+            console.log('📤 Enviando:', {
+                ...dataToSend,
+                password: '***',
+                specialtyIds: dataToSend.specialtyIds, // ← Debe mostrar [1, 2, ...]
+                professionalLicenseFront: dataToSend.professionalLicenseFront ? '✅' : '❌',
+            });
+
+            await registerMutation.mutateAsync(dataToSend);
+
+        } catch (error) {
+            console.error('❌ Error:', error);
+            console.error('❌ Detalles:', error.response?.data);
+            setErrors({
+                submit: error.response?.data?.errors?.SpecialtyIds?.[0] ||
+                    error.response?.data?.message ||
+                    'Error al procesar el registro'
+            });
         }
     };
 
-    // ═══════════════════════════════════════════════════════════
-    // Render
-    // ═══════════════════════════════════════════════════════════
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-50 py-12 px-4">
-            <div className="container-custom max-w-4xl">
-
-                {/* ✅ LINK AL HOME */}
-                <div className="mb-6">
-                    <Link
-                        to="/"
-                        className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors"
-                    >
-                        <Home className="w-5 h-5" />
-                        Volver al inicio
-                    </Link>
-                </div>
-
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+            <div className="container max-w-4xl mx-auto px-4">
                 {/* Cabecera */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm mb-4">
@@ -212,9 +260,9 @@ const DoctorRegisterPage = () => {
                     </p>
                 </div>
 
-                {/* Indicador de pasos */}
+                {/* Indicador de pasos - ✅ ACTUALIZADO a 4 pasos */}
                 <div className="flex items-center justify-center mb-8">
-                    {[1, 2, 3].map(step => (
+                    {[1, 2, 3, 4].map(step => (
                         <div key={step} className="flex items-center">
                             <div className={`
                                 w-10 h-10 rounded-full flex items-center justify-center font-bold
@@ -226,7 +274,7 @@ const DoctorRegisterPage = () => {
                             `}>
                                 {step}
                             </div>
-                            {step < 3 && (
+                            {step < 4 && (
                                 <div className={`
                                     w-20 h-1 transition-all duration-300
                                     ${currentStep > step ? 'bg-primary-600' : 'bg-gray-200'}
@@ -249,7 +297,6 @@ const DoctorRegisterPage = () => {
                                 </h2>
 
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    {/* Nombre */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Nombre *
@@ -267,7 +314,6 @@ const DoctorRegisterPage = () => {
                                         )}
                                     </div>
 
-                                    {/* Apellidos */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Apellidos *
@@ -286,7 +332,6 @@ const DoctorRegisterPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Email */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         <Mail className="w-4 h-4 inline mr-1" />
@@ -305,7 +350,6 @@ const DoctorRegisterPage = () => {
                                     )}
                                 </div>
 
-                                {/* Teléfono */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         <Phone className="w-4 h-4 inline mr-1" />
@@ -321,7 +365,6 @@ const DoctorRegisterPage = () => {
                                     />
                                 </div>
 
-                                {/* Contraseña */}
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -370,7 +413,6 @@ const DoctorRegisterPage = () => {
                                     Datos Profesionales
                                 </h2>
 
-                                {/* Número de colegiado */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         <Shield className="w-4 h-4 inline mr-1" />
@@ -387,50 +429,43 @@ const DoctorRegisterPage = () => {
                                     {errors.professionalLicense && (
                                         <p className="text-red-600 text-sm mt-1">{errors.professionalLicense}</p>
                                     )}
-                                    <p className="text-gray-500 text-xs mt-1">
-                                        ✅ Sin límite de caracteres
-                                    </p>
                                 </div>
 
-                                {/* Especialidades */}
                                 <SpecialtySelector
-                                    selectedSpecialties={formData.specialties}
-                                    onChange={(specialties) => setFormData(prev => ({ ...prev, specialties }))}
-                                    error={errors.specialties}
+                                    selectedSpecialties={formData.specialtyIds}
+                                    onChange={(specialtyIds) => setFormData(prev => ({ ...prev, specialtyIds }))}
+                                    error={errors.specialtyIds}
                                 />
 
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    {/* Años de experiencia */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Años de experiencia
+                                            Años de Experiencia
                                         </label>
                                         <input
                                             type="number"
                                             name="yearsOfExperience"
                                             value={formData.yearsOfExperience}
                                             onChange={handleChange}
-                                            min="0"
-                                            max="50"
                                             className="input-field"
+                                            min="0"
+                                            max="60"
                                         />
                                     </div>
 
-                                    {/* Precio por sesión */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <DollarSign className="w-4 h-4 inline mr-1" />
-                                            Precio por sesión (€) *
+                                            Precio por Sesión (€) *
                                         </label>
                                         <input
                                             type="number"
                                             name="pricePerSession"
                                             value={formData.pricePerSession}
                                             onChange={handleChange}
-                                            min="20"
-                                            max="500"
-                                            step="5"
                                             className={`input-field ${errors.pricePerSession ? 'border-red-300' : ''}`}
+                                            min="1"
+                                            step="0.01"
                                         />
                                         {errors.pricePerSession && (
                                             <p className="text-red-600 text-sm mt-1">{errors.pricePerSession}</p>
@@ -438,84 +473,155 @@ const DoctorRegisterPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Descripción */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Descripción profesional
+                                        Descripción Profesional (opcional)
                                     </label>
                                     <textarea
                                         name="description"
                                         value={formData.description}
                                         onChange={handleChange}
                                         rows={4}
-                                        maxLength={2000}
-                                        className="input-field resize-none"
-                                        placeholder="Cuéntanos sobre tu experiencia, enfoque y qué te diferencia como profesional..."
+                                        className="input-field"
+                                        placeholder="Cuéntanos sobre tu experiencia y enfoque profesional..."
                                     />
-                                    <p className="text-gray-500 text-xs mt-1">
-                                        {formData.description.length}/2000 caracteres
-                                    </p>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 3: Documentos - 6 IMÁGENES */}
+                        {/* PASO 3: Documentos */}
                         {currentStep === 3 && (
-                            <DocumentUploadSection
+                            <div className="space-y-6">
+                                <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                    <FileCheck className="w-5 h-5 text-primary-600" />
+                                    Documentación (6 imágenes obligatorias)
+                                </h2>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {/* Carnet de Colegiado - Delante */}
+                                    <DocumentUpload
+                                        title="Carnet de Colegiado (Delante)"
+                                        required
+                                        image={formData.professionalLicenseFront}
+                                        onCapture={() => setShowCamera('professionalLicenseFront')}
+                                        onRemove={() => setFormData(prev => ({ ...prev, professionalLicenseFront: '' }))}
+                                        error={errors.professionalLicenseFront}
+                                    />
+
+                                    {/* Carnet de Colegiado - Atrás */}
+                                    <DocumentUpload
+                                        title="Carnet de Colegiado (Atrás)"
+                                        required
+                                        image={formData.professionalLicenseBack}
+                                        onCapture={() => setShowCamera('professionalLicenseBack')}
+                                        onRemove={() => setFormData(prev => ({ ...prev, professionalLicenseBack: '' }))}
+                                        error={errors.professionalLicenseBack}
+                                    />
+
+                                    {/* DNI - Delante */}
+                                    <DocumentUpload
+                                        title="DNI/Pasaporte (Delante)"
+                                        required
+                                        image={formData.idDocumentFront}
+                                        onCapture={() => setShowCamera('idDocumentFront')}
+                                        onRemove={() => setFormData(prev => ({ ...prev, idDocumentFront: '' }))}
+                                        error={errors.idDocumentFront}
+                                    />
+
+                                    {/* DNI - Atrás */}
+                                    <DocumentUpload
+                                        title="DNI/Pasaporte (Atrás)"
+                                        required
+                                        image={formData.idDocumentBack}
+                                        onCapture={() => setShowCamera('idDocumentBack')}
+                                        onRemove={() => setFormData(prev => ({ ...prev, idDocumentBack: '' }))}
+                                        error={errors.idDocumentBack}
+                                    />
+
+                                    {/* Título de Especialidad */}
+                                    <DocumentUpload
+                                        title="Título de Especialidad"
+                                        required
+                                        image={formData.specialtyDegree}
+                                        onCapture={() => setShowCamera('specialtyDegree')}
+                                        onRemove={() => setFormData(prev => ({ ...prev, specialtyDegree: '' }))}
+                                        error={errors.specialtyDegree}
+                                    />
+
+                                    {/* Título Universitario */}
+                                    <DocumentUpload
+                                        title="Título Universitario"
+                                        required
+                                        image={formData.universityDegree}
+                                        onCapture={() => setShowCamera('universityDegree')}
+                                        onRemove={() => setFormData(prev => ({ ...prev, universityDegree: '' }))}
+                                        error={errors.universityDegree}
+                                    />
+
+                                    {/* Foto de Perfil (Opcional) */}
+                                    <DocumentUpload
+                                        title="Foto de Perfil (Opcional)"
+                                        required={false}
+                                        image={formData.profilePicture}
+                                        onCapture={() => setShowCamera('profilePicture')}
+                                        onRemove={() => setFormData(prev => ({ ...prev, profilePicture: '' }))}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ✅ NUEVO: PASO 4 - Términos de Contenido */}
+                        {currentStep === 4 && (
+                            <TermsContentStep
                                 formData={formData}
+                                setFormData={setFormData}
                                 errors={errors}
-                                setShowCamera={setShowCamera}
                             />
                         )}
 
                         {/* Error de envío */}
                         {errors.submit && (
-                            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-start gap-2">
-                                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="font-semibold">Error en el registro</p>
-                                    <p className="text-sm">{errors.submit}</p>
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
+                                <div className="flex items-center gap-2">
+                                    <AlertCircle className="w-5 h-5 text-red-600" />
+                                    <p className="text-red-800 font-semibold">{errors.submit}</p>
                                 </div>
                             </div>
                         )}
 
-                        {/* Botones de navegación */}
-                        <div className="flex gap-4 mt-8 pt-6 border-t">
+                        {/* Botones de navegación - ✅ ACTUALIZADO */}
+                        <div className="flex gap-4 mt-8">
                             {currentStep > 1 && (
                                 <button
                                     type="button"
-                                    onClick={prevStep}
+                                    onClick={() => setCurrentStep(currentStep - 1)}
                                     className="flex-1 btn-secondary"
                                 >
                                     Anterior
                                 </button>
                             )}
 
-                            {currentStep < 3 ? (
+                            {currentStep < 4 ? (
                                 <button
                                     type="button"
-                                    onClick={nextStep}
-                                    className="flex-1 btn-primary flex items-center justify-center gap-2"
+                                    onClick={handleNext}
+                                    className="flex-1 btn-primary"
                                 >
                                     Siguiente
-                                    <ChevronRight className="w-4 h-4" />
                                 </button>
                             ) : (
                                 <button
                                     type="submit"
-                                    disabled={registerMutation.isPending}
-                                    className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+                                    disabled={registerMutation.isPending || !formData.acceptContentTerms}
+                                    className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {registerMutation.isPending ? (
                                         <>
-                                            <Loader className="w-4 h-4 animate-spin" />
+                                            <Loader className="w-5 h-5 animate-spin inline mr-2" />
                                             Registrando...
                                         </>
                                     ) : (
-                                        <>
-                                            <CheckCircle className="w-4 h-4" />
-                                            Completar registro
-                                        </>
+                                        'Completar Registro'
                                     )}
                                 </button>
                             )}
@@ -523,10 +629,10 @@ const DoctorRegisterPage = () => {
 
                         {/* Link a login */}
                         <div className="text-center mt-6">
-                            <p className="text-sm text-gray-600">
-                                ¿Ya tienes una cuenta?{' '}
-                                <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-                                    Inicia sesión
+                            <p className="text-gray-600">
+                                ¿Ya tienes cuenta?{' '}
+                                <Link to="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
+                                    Iniciar sesión
                                 </Link>
                             </p>
                         </div>
@@ -537,7 +643,6 @@ const DoctorRegisterPage = () => {
             {/* Modal de cámara */}
             {showCamera && (
                 <CameraCapture
-                    title={getCameraTitle(showCamera)}
                     onCapture={(image) => handleCameraCapture(image, showCamera)}
                     onClose={() => setShowCamera(null)}
                 />
@@ -546,182 +651,254 @@ const DoctorRegisterPage = () => {
     );
 };
 
-// ════════════════════════════════════════════════════════════════
-// COMPONENTE: SECCIÓN DE DOCUMENTOS CON 6 IMÁGENES
-// ════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// COMPONENTE: Upload de documentos
+// ═══════════════════════════════════════════════════════════════
 
-const DocumentUploadSection = ({ formData, errors, setShowCamera }) => {
+const DocumentUpload = ({ title, required, image, onCapture, onRemove, error }) => {
+    if (image) {
+        return (
+            <div className="relative">
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                    {title} {required && <span className="text-red-500">*</span>}
+                </p>
+                <div className="relative border-2 border-green-300 rounded-lg overflow-hidden">
+                    <img src={image} alt={title} className="w-full h-48 object-cover" />
+                    <button
+                        type="button"
+                        onClick={onRemove}
+                        className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
+                    >
+                        ✕
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-xs py-1 px-2 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Capturado
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">
+                {title} {required && <span className="text-red-500">*</span>}
+            </p>
+            <button
+                type="button"
+                onClick={onCapture}
+                className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center gap-2 hover:border-primary-500 hover:bg-primary-50 transition-colors ${error ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+            >
+                <Camera className={`w-8 h-8 ${error ? 'text-red-400' : 'text-gray-400'}`} />
+                <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-gray-600'}`}>
+                    Capturar con cámara
+                </span>
+            </button>
+            {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+        </div>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ NUEVO: COMPONENTE - Paso de Términos de Contenido
+// ═══════════════════════════════════════════════════════════════
+
+const TermsContentStep = ({ formData, setFormData, errors }) => {
+    const [hasRead, setHasRead] = useState(false);
+
+    const handleScroll = (e) => {
+        const element = e.target;
+        const isAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+        if (isAtBottom) {
+            setHasRead(true);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <FileCheck className="w-5 h-5 text-primary-600" />
-                Documentos de Verificación
+                <FileText className="w-5 h-5 text-primary-600" />
+                Términos de Publicación de Contenido
             </h2>
 
-            {/* CARNET DE COLEGIADO - OBLIGATORIO */}
-            <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                    📋 Carnet de Colegiado * <span className="text-red-500">(Obligatorio)</span>
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                    <DocumentCard
-                        label="Cara Delantera *"
-                        image={formData.professionalLicenseFront}
-                        onCapture={() => setShowCamera('professionalLicenseFront')}
-                        error={errors.professionalLicenseFront}
-                        required
-                    />
-                    <DocumentCard
-                        label="Cara Trasera *"
-                        image={formData.professionalLicenseBack}
-                        onCapture={() => setShowCamera('professionalLicenseBack')}
-                        error={errors.professionalLicenseBack}
-                        required
-                    />
-                </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-blue-900 font-semibold mb-2 flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    Importante
+                </p>
+                <p className="text-blue-800 text-sm leading-relaxed">
+                    Como profesional de la salud, eres el <strong>único responsable del contenido</strong> que
+                    publiques en NexusSalud. Lee atentamente estos términos.
+                </p>
             </div>
 
-            {/* DNI/PASAPORTE - OBLIGATORIO */}
-            <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                    🪪 DNI/Pasaporte * <span className="text-red-500">(Obligatorio)</span>
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                    <DocumentCard
-                        label="Cara Delantera *"
-                        image={formData.idDocumentFront}
-                        onCapture={() => setShowCamera('idDocumentFront')}
-                        error={errors.idDocumentFront}
-                        required
-                    />
-                    <DocumentCard
-                        label="Cara Trasera *"
-                        image={formData.idDocumentBack}
-                        onCapture={() => setShowCamera('idDocumentBack')}
-                        error={errors.idDocumentBack}
-                        required
-                    />
-                </div>
-            </div>
+            {/* Términos scrolleables */}
+            <div
+                className="bg-white border-2 border-gray-300 rounded-lg p-6 max-h-96 overflow-y-auto"
+                onScroll={handleScroll}
+            >
+                <div className="space-y-4 text-sm text-gray-700">
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                        <Scale className="w-5 h-5" />
+                        Al aceptar estos términos, confirmas que:
+                    </h3>
 
-            {/* TÍTULOS ACADÉMICOS - OBLIGATORIO */}
-            <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                    🎓 Títulos Académicos * <span className="text-red-500">(Obligatorio)</span>
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                    <DocumentCard
-                        label="Título de Especialidad *"
-                        image={formData.specialtyDegree}
-                        onCapture={() => setShowCamera('specialtyDegree')}
-                        error={errors.specialtyDegree}
-                        required
-                    />
-                    <DocumentCard
-                        label="Título Universitario *"
-                        image={formData.universityDegree}
-                        onCapture={() => setShowCamera('universityDegree')}
-                        error={errors.universityDegree}
-                        required
-                    />
-                </div>
-            </div>
+                    <div className="space-y-3">
+                        <TermPoint number="1" title="Responsabilidad del contenido">
+                            Eres el único responsable de todo el contenido que publiques, incluyendo su
+                            exactitud, veracidad y cumplimiento de las normativas sanitarias vigentes.
+                            NexusSalud no revisa ni aprueba el contenido antes de su publicación.
+                        </TermPoint>
 
-            {/* FOTO DE PERFIL - OPCIONAL */}
-            <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                    👤 Foto de Perfil <span className="text-gray-500">(Opcional)</span>
-                </h3>
-                <div className="max-w-xs">
-                    <DocumentCard
-                        label="Foto de Perfil"
-                        image={formData.profilePicture}
-                        onCapture={() => setShowCamera('profilePicture')}
-                    />
-                </div>
-            </div>
+                        <TermPoint number="2" title="Cumplimiento legal">
+                            Todo tu contenido cumple con la Ley 14/1986 General de Sanidad, el Código Deontológico
+                            de tu profesión médica, el RGPD y demás normativas aplicables.
+                        </TermPoint>
 
-            {/* Info adicional */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
-                <p className="font-semibold mb-2">📋 Proceso de verificación:</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                    <li>Tu documentación será revisada por nuestro equipo en 24-48 horas</li>
-                    <li>Recibirás un email con el estado de tu solicitud</li>
-                    <li>Una vez aprobado, podrás completar tu perfil y empezar a atender pacientes</li>
-                </ul>
-            </div>
-        </div>
-    );
-};
+                        <TermPoint number="3" title="Contenido apropiado y ético">
+                            No publicarás contenido que promueva tratamientos no respaldados por evidencia científica,
+                            información falsa, engañosa o que viole derechos de terceros.
+                        </TermPoint>
 
-// ════════════════════════════════════════════════════════════════
-// COMPONENTE: CARD DE DOCUMENTO
-// ════════════════════════════════════════════════════════════════
+                        <TermPoint number="4" title="Derechos de autor">
+                            Todo el contenido que publiques es de tu propiedad o tienes los derechos necesarios.
+                            Otorgas a NexusSalud una licencia no exclusiva para mostrarlo en la plataforma.
+                        </TermPoint>
 
-const DocumentCard = ({ label, image, onCapture, error }) => {
-    return (
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-                {label}
-            </label>
+                        <TermPoint number="5" title="Contenido actualizado">
+                            Te comprometes a mantener tu contenido actualizado conforme a los últimos
+                            avances científicos y a corregir información obsoleta.
+                        </TermPoint>
 
-            {!image ? (
-                <button
-                    type="button"
-                    onClick={onCapture}
-                    className={`w-full border-2 border-dashed rounded-lg p-6 hover:border-primary-500 hover:bg-primary-50 transition-all group ${error ? 'border-red-300' : 'border-gray-300'
-                        }`}
-                >
-                    <Camera className="w-10 h-10 mx-auto mb-2 text-gray-400 group-hover:text-primary-600" />
-                    <p className="text-sm font-medium text-gray-700 group-hover:text-primary-700">
-                        Capturar o subir
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                        PNG, JPG, WEBP
-                    </p>
-                </button>
-            ) : (
-                <div className="relative">
-                    <img
-                        src={image}
-                        alt={label}
-                        className="w-full h-32 object-cover bg-gray-100 rounded-lg border-2 border-green-500"
-                    />
-                    <button
-                        type="button"
-                        onClick={onCapture}
-                        className="absolute top-2 right-2 bg-white hover:bg-gray-100 p-2 rounded-full shadow-lg"
-                    >
-                        <Camera className="w-4 h-4" />
-                    </button>
-                    <div className="absolute bottom-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-                        ✓ Cargada
+                        <TermPoint number="6" title="Identificación profesional">
+                            Todo tu contenido debe identificarte claramente como profesional sanitario
+                            colegiado, con tu nombre, especialidad y número de colegiado.
+                        </TermPoint>
+
+                        <TermPoint number="7" title="Moderación y cumplimiento">
+                            NexusSalud se reserva el derecho de eliminar contenido que incumpla estos términos,
+                            suspender cuentas temporalmente o cancelarlas en caso de infracciones graves.
+                        </TermPoint>
+
+                        <TermPoint number="8" title="Indemnización y responsabilidad">
+                            Te comprometes a indemnizar y eximir de responsabilidad a NexusSalud ante
+                            cualquier reclamación derivada de tu contenido publicado.
+                        </TermPoint>
+
+                        <TermPoint number="9" title="Modificación de términos">
+                            NexusSalud puede modificar estos términos. Los cambios sustanciales se notificarán
+                            por email y deberás aceptar la nueva versión para continuar publicando.
+                        </TermPoint>
+
+                        <TermPoint number="10" title="Resolución de conflictos">
+                            Las controversias se resolverán mediante los tribunales competentes según
+                            la legislación española vigente.
+                        </TermPoint>
+                    </div>
+
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+                        <p className="text-red-900 font-semibold text-sm mb-1 flex items-center gap-2">
+                            <Alert className="w-4 h-4" />
+                            Advertencia Legal
+                        </p>
+                        <p className="text-red-800 text-xs leading-relaxed mb-2">
+                            El incumplimiento puede resultar en:
+                        </p>
+                        <ul className="text-red-800 text-xs list-disc ml-4 space-y-1">
+                            <li>Suspensión inmediata de tu cuenta</li>
+                            <li>Eliminación permanente de tu perfil</li>
+                            <li>Notificación a tu colegio profesional</li>
+                            <li>Responsabilidades legales según corresponda</li>
+                        </ul>
+                    </div>
+
+                    <div className="text-center pt-3 border-t border-gray-200">
+                        <p className="text-xs text-gray-500">
+                            Versión v1.0 - Última actualización: Abril 2026
+                        </p>
                     </div>
                 </div>
+
+                {!hasRead && (
+                    <div className="sticky bottom-0 bg-gradient-to-t from-white to-transparent pt-6 text-center">
+                        <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-full inline-flex items-center gap-2 text-xs font-semibold">
+                            Desplázate para leer todos los términos
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Checkbox de aceptación */}
+            <label className={`
+                flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all
+                ${formData.acceptContentTerms
+                    ? 'border-green-500 bg-green-50'
+                    : hasRead
+                        ? 'border-blue-500 bg-blue-50 hover:bg-blue-100'
+                        : 'border-gray-300 bg-gray-50 cursor-not-allowed'
+                }
+            `}>
+                <input
+                    type="checkbox"
+                    checked={formData.acceptContentTerms}
+                    onChange={(e) => setFormData({
+                        ...formData,
+                        acceptContentTerms: e.target.checked
+                    })}
+                    disabled={!hasRead}
+                    className="mt-1 w-5 h-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed"
+                />
+                <span className="text-sm text-gray-700 leading-relaxed">
+                    <strong className="text-gray-900">
+                        He leído completamente y acepto los términos de publicación de contenido.
+                    </strong>
+                    {' '}Entiendo que soy el único responsable del contenido que publique.
+                </span>
+            </label>
+
+            {errors.acceptContentTerms && (
+                <p className="text-red-600 text-sm">{errors.acceptContentTerms}</p>
             )}
 
-            {error && (
-                <p className="text-red-600 text-xs mt-1">{error}</p>
+            {!formData.acceptContentTerms && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-yellow-800 text-sm">
+                        {hasRead
+                            ? '⚠️ Debes aceptar los términos para completar el registro'
+                            : '⚠️ Lee todos los términos hasta el final para poder aceptarlos'
+                        }
+                    </p>
+                </div>
+            )}
+
+            {formData.acceptContentTerms && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <p className="text-green-800 text-sm font-semibold">
+                        Términos aceptados correctamente
+                    </p>
+                </div>
             )}
         </div>
     );
 };
 
-// ════════════════════════════════════════════════════════════════
-// HELPER: Título de cámara según tipo
-// ════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// ✅ NUEVO: COMPONENTE AUXILIAR - Punto de términos
+// ═══════════════════════════════════════════════════════════════
 
-const getCameraTitle = (type) => {
-    const titles = {
-        professionalLicenseFront: 'Carnet de Colegiado (Delante)',
-        professionalLicenseBack: 'Carnet de Colegiado (Atrás)',
-        idDocumentFront: 'DNI/Pasaporte (Delante)',
-        idDocumentBack: 'DNI/Pasaporte (Atrás)',
-        specialtyDegree: 'Título de Especialidad',
-        universityDegree: 'Título Universitario',
-        profilePicture: 'Foto de Perfil'
-    };
-    return titles[type] || 'Documento';
-};
+const TermPoint = ({ number, title, children }) => (
+    <div className="flex gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+            <span className="text-blue-600 font-bold text-xs">{number}</span>
+        </div>
+        <div className="flex-1">
+            <h4 className="font-semibold text-gray-900 text-sm mb-1">{title}</h4>
+            <p className="text-gray-700 text-xs leading-relaxed">{children}</p>
+        </div>
+    </div>
+);
 
 export default DoctorRegisterPage;
