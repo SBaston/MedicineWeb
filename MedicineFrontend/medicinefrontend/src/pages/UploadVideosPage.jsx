@@ -153,7 +153,7 @@ const UploadVideosPage = () => {
         );
     }
 
-    const verifiedCount = videos.filter(v => v.isVerified && v.isActive).length;
+    
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50 to-orange-50">
@@ -193,21 +193,17 @@ const UploadVideosPage = () => {
                             <Video className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-lg mb-2">⚠️ Requisito obligatorio para publicarte</h3>
+                            
                             <p className="text-white/90 mb-3">
-                                Debes tener al menos <strong>3 vídeos verificados</strong> para que tu perfil sea visible a los pacientes.
-                                Los vídeos ayudan a generar confianza y mostrar tu expertise.
+                                Comparte contenido educativo de salud desde tus redes sociales.
+                                Los videos se publican automáticamente y aparecerán en tu perfil.
                             </p>
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2 text-sm">
-                                    <CheckCircle className="w-4 h-4" />
-                                    <span>Verificados: {verifiedCount}/3</span>
+                                    <Video className="w-4 h-4" />
+                                    <span>Videos publicados: {videos.length}</span>
                                 </div>
-                                {verifiedCount >= 3 && (
-                                    <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">
-                                        ✅ Requisito cumplido
-                                    </span>
-                                )}
+                                
                             </div>
                         </div>
                     </div>

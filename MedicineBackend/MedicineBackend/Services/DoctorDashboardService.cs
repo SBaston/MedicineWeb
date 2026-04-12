@@ -112,16 +112,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             });
         }
 
-        var verifiedVideos = doctor.SocialMediaVideos.Count(v =>  v.IsActive);
-        if (verifiedVideos < 3)
-        {
-            pendingTasks.Add(new PendingTaskDto
-            {
-                Id = 3,
-                Task = $"Subir vídeo de presentación ({verifiedVideos}/3 vídeos verificados)",
-                Priority = "medium"
-            });
-        }
+        
 
         //SOLO 4 CAMPOS BÁSICOS EDITABLES
         int profileCompletion = 0;

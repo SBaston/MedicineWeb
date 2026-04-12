@@ -37,8 +37,8 @@ const adminService = {
     // ══════════════════════════════════════════════════════════════
     // GESTIÓN DE VÍDEOS - Verificación por admin
     // ══════════════════════════════════════════════════════════════
-    getVideos: (filter = 'pending') => api.get(`/admin/videos?filter=${filter}`).then(r => r.data),
-    verifyVideo: (id, isVerified) => api.patch(`/admin/videos/${id}/verify`, { isVerified }).then(r => r.data),
+    //getVideos: (filter = 'pending') => api.get(`/admin/videos?filter=${filter}`).then(r => r.data),
+    //verifyVideo: (id, isVerified) => api.patch(`/admin/videos/${id}/verify`, { isVerified }).then(r => r.data),
 };
 
 export default adminService;

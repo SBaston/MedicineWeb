@@ -173,7 +173,7 @@ function App() {
 
                         {/* Configurar disponibilidad */}
                         <Route
-                            path="/doctor/availability"
+                            path="/doctor/appointments"
                             element={
                                 <ProtectedRoute allowedRoles={['Doctor']}>
                                     <AvailabilityPage />
@@ -212,7 +212,7 @@ function App() {
 
                         {/* Crear curso */}
                         <Route
-                            path="/doctor/courses/new"
+                            path="/doctor/courses"
                             element={
                                 <ProtectedRoute allowedRoles={['Doctor']}>
                                     <CreateCoursePage />
