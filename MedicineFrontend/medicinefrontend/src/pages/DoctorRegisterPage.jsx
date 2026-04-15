@@ -18,9 +18,12 @@ import {
 } from 'lucide-react';
 import doctorService from '../services/doctorService';
 import DarkModeToggle from '../components/DarkModeToggle';
+import { useLanguage } from '../context/LanguageContext';
+import { translateError } from '../utils/translateError';
 
 const DoctorRegisterPage = () => {
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [currentStep, setCurrentStep] = useState(1);
     const [showCamera, setShowCamera] = useState(null);
 
@@ -237,9 +240,11 @@ const DoctorRegisterPage = () => {
             console.error('❌ Error:', error);
             console.error('❌ Detalles:', error.response?.data);
             setErrors({
-                submit: error.response?.data?.errors?.SpecialtyIds?.[0] ||
-                    error.response?.data?.message ||
-                    'Error al procesar el registro'
+                submit: translateError(
+                    error.response?.data?.errors?.SpecialtyIds?.[0] ||
+                    error.response?.data?.message,
+                    t
+                ) || t('doctorRegister.genericError')
             });
         }
     };
@@ -252,14 +257,12 @@ const DoctorRegisterPage = () => {
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm mb-4">
                         <Stethoscope className="w-6 h-6 text-primary-600" />
-                        <span className="font-bold text-lg text-gray-900">Registro de Profesional</span>
+                        <span className="font-bold text-lg text-gray-900">{t('doctorRegister.headerTag')}</span>
                     </div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        Únete a NexusSalud
+                        {t('doctorRegister.headerTitle')}
                     </h1>
-                    <p className="text-gray-600">
-                        Completa tu registro para empezar a atender pacientes
-                    </p>
+                    <p className="text-gray-600">{t('doctorRegister.headerDesc')}</p>
                 </div>
 
                 {/* Indicador de pasos - ✅ ACTUALIZADO a 4 pasos */}
@@ -295,13 +298,13 @@ const DoctorRegisterPage = () => {
                             <div className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                                     <User className="w-5 h-5 text-primary-600" />
-                                    Datos Personales
+                                    {t('doctorRegister.step1')}
                                 </h2>
 
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Nombre *
+                                            {t('doctorRegister.firstName')}
                                         </label>
                                         <input
                                             type="text"
@@ -318,7 +321,7 @@ const DoctorRegisterPage = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Apellidos *
+                                            {t('doctorRegister.lastName')}
                                         </label>
                                         <input
                                             type="text"
@@ -337,7 +340,7 @@ const DoctorRegisterPage = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         <Mail className="w-4 h-4 inline mr-1" />
-                                        Email *
+                                        {t('doctorRegister.email')}
                                     </label>
                                     <input
                                         type="email"
