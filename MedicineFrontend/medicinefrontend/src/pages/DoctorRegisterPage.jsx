@@ -358,7 +358,7 @@ const DoctorRegisterPage = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         <Phone className="w-4 h-4 inline mr-1" />
-                                        Teléfono (opcional)
+                                        {t('doctorRegister.phone')}
                                     </label>
                                     <input
                                         type="tel"
@@ -374,7 +374,7 @@ const DoctorRegisterPage = () => {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <Lock className="w-4 h-4 inline mr-1" />
-                                            Contraseña *
+                                            {t('doctorRegister.password')}
                                         </label>
                                         <input
                                             type="password"
@@ -392,7 +392,7 @@ const DoctorRegisterPage = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Confirmar contraseña *
+                                            {t('doctorRegister.confirmPassword')}
                                         </label>
                                         <input
                                             type="password"
@@ -415,13 +415,13 @@ const DoctorRegisterPage = () => {
                             <div className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                                     <Briefcase className="w-5 h-5 text-primary-600" />
-                                    Datos Profesionales
+                                    {t('doctorRegister.step2')}
                                 </h2>
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         <Shield className="w-4 h-4 inline mr-1" />
-                                        Número de Colegiado *
+                                        {t('doctorRegister.license')}
                                     </label>
                                     <input
                                         type="text"
@@ -445,7 +445,7 @@ const DoctorRegisterPage = () => {
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Años de Experiencia
+                                            {t('doctorRegister.experience')}
                                         </label>
                                         <input
                                             type="number"
@@ -461,7 +461,7 @@ const DoctorRegisterPage = () => {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <DollarSign className="w-4 h-4 inline mr-1" />
-                                            Precio por Sesión (€) *
+                                            {t('doctorRegister.price')}
                                         </label>
                                         <input
                                             type="number"
@@ -480,7 +480,7 @@ const DoctorRegisterPage = () => {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Descripción Profesional (opcional)
+                                        {t('doctorRegister.description')}
                                     </label>
                                     <textarea
                                         name="description"
@@ -488,7 +488,7 @@ const DoctorRegisterPage = () => {
                                         onChange={handleChange}
                                         rows={4}
                                         className="input-field"
-                                        placeholder="Cuéntanos sobre tu experiencia y enfoque profesional..."
+                                        placeholder={t('doctorRegister.descriptionPlaceholder')}
                                     />
                                 </div>
                             </div>
@@ -499,13 +499,12 @@ const DoctorRegisterPage = () => {
                             <div className="space-y-6">
                                 <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                                     <FileCheck className="w-5 h-5 text-primary-600" />
-                                    Documentación (6 imágenes obligatorias)
+                                    {t('doctorRegister.docsTitle')}
                                 </h2>
 
                                 <div className="grid md:grid-cols-2 gap-6">
-                                    {/* Carnet de Colegiado - Delante */}
                                     <DocumentUpload
-                                        title="Carnet de Colegiado (Delante)"
+                                        title={t('doctorRegister.licenseFront')}
                                         required
                                         image={formData.professionalLicenseFront}
                                         onCapture={() => setShowCamera('professionalLicenseFront')}
@@ -513,9 +512,8 @@ const DoctorRegisterPage = () => {
                                         error={errors.professionalLicenseFront}
                                     />
 
-                                    {/* Carnet de Colegiado - Atrás */}
                                     <DocumentUpload
-                                        title="Carnet de Colegiado (Atrás)"
+                                        title={t('doctorRegister.licenseBack')}
                                         required
                                         image={formData.professionalLicenseBack}
                                         onCapture={() => setShowCamera('professionalLicenseBack')}
@@ -523,9 +521,8 @@ const DoctorRegisterPage = () => {
                                         error={errors.professionalLicenseBack}
                                     />
 
-                                    {/* DNI - Delante */}
                                     <DocumentUpload
-                                        title="DNI/Pasaporte (Delante)"
+                                        title={t('doctorRegister.idFront')}
                                         required
                                         image={formData.idDocumentFront}
                                         onCapture={() => setShowCamera('idDocumentFront')}
@@ -533,9 +530,8 @@ const DoctorRegisterPage = () => {
                                         error={errors.idDocumentFront}
                                     />
 
-                                    {/* DNI - Atrás */}
                                     <DocumentUpload
-                                        title="DNI/Pasaporte (Atrás)"
+                                        title={t('doctorRegister.idBack')}
                                         required
                                         image={formData.idDocumentBack}
                                         onCapture={() => setShowCamera('idDocumentBack')}
@@ -543,9 +539,8 @@ const DoctorRegisterPage = () => {
                                         error={errors.idDocumentBack}
                                     />
 
-                                    {/* Título de Especialidad */}
                                     <DocumentUpload
-                                        title="Título de Especialidad"
+                                        title={t('doctorRegister.specialtyDegree')}
                                         required
                                         allowPdf
                                         image={formData.specialtyDegree}
@@ -555,9 +550,8 @@ const DoctorRegisterPage = () => {
                                         error={errors.specialtyDegree}
                                     />
 
-                                    {/* Título Universitario */}
                                     <DocumentUpload
-                                        title="Título Universitario"
+                                        title={t('doctorRegister.universityDegree')}
                                         required
                                         allowPdf
                                         image={formData.universityDegree}
@@ -567,9 +561,8 @@ const DoctorRegisterPage = () => {
                                         error={errors.universityDegree}
                                     />
 
-                                    {/* Foto de Perfil (Opcional) */}
                                     <DocumentUpload
-                                        title="Foto de Perfil (Opcional)"
+                                        title={t('doctorRegister.profilePicture')}
                                         required={false}
                                         image={formData.profilePicture}
                                         onCapture={() => setShowCamera('profilePicture')}
@@ -606,7 +599,7 @@ const DoctorRegisterPage = () => {
                                     onClick={() => setCurrentStep(currentStep - 1)}
                                     className="flex-1 btn-secondary"
                                 >
-                                    Anterior
+                                    {t('doctorRegister.previous')}
                                 </button>
                             )}
 
