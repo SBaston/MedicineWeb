@@ -23,6 +23,8 @@ import EarningsPage from './pages/EarningsPage';
 import CreateCoursePage from './pages/CreateCoursePage';
 import DoctorProfilePage from './pages/DoctorProfilePage';
 import PricingPage from './pages/PricingPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -310,6 +312,10 @@ function App() {
                                 </Layout>
                             }
                         />
+
+                        {/* Términos y Privacidad */}
+                        <Route path="/terms" element={<Layout><TermsPage /></Layout>} />
+                        <Route path="/privacy" element={<Layout><PrivacyPage /></Layout>} />
 
                         {/* 404 */}
                         <Route
