@@ -5,6 +5,7 @@ import logo from '../assets/nexussalud-logo1.jpg';
 import { Mail, Lock, AlertCircle, Heart, CheckCircle } from 'lucide-react';
 import DarkModeToggle from '../components/DarkModeToggle';
 import { useLanguage } from '../context/LanguageContext';
+import { translateError } from '../utils/translateError';
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
@@ -40,7 +41,7 @@ const LoginPage = () => {
                 navigate('/');
             }
         } catch (err) {
-            setError(err.response?.data?.message || t('login.errorDefault'));
+            setError(translateError(err.response?.data?.message, t) || t('login.errorDefault'));
         } finally {
             setLoading(false);
         }

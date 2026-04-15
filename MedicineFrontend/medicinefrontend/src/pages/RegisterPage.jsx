@@ -7,6 +7,7 @@ import ErrorAlert from '../components/ErrorAlert';
 import logo from '../assets/nexussalud-logo1.jpg';
 import DarkModeToggle from '../components/DarkModeToggle';
 import { useLanguage } from '../context/LanguageContext';
+import { translateError } from '../utils/translateError';
 
 const RegisterPage = () => {
     const [searchParams] = useSearchParams();
@@ -91,11 +92,11 @@ const RegisterPage = () => {
             if (err.response?.data?.errors) {
                 const backendErrors = err.response.data.errors;
                 const firstError = Object.values(backendErrors)[0][0];
-                setError(firstError);
+                setError(translateError(firstError, t));
             } else if (err.response?.data?.message) {
-                setError(err.response.data.message);
+                setError(translateError(err.response.data.message, t));
             } else {
-                setError('Error al registrar usuario. Intenta de nuevo.');
+                setError(t('errors.serverError'));
             }
         } finally {
             setLoading(false);

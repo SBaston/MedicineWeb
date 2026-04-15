@@ -609,7 +609,7 @@ const DoctorRegisterPage = () => {
                                     onClick={handleNext}
                                     className="flex-1 btn-primary"
                                 >
-                                    Siguiente
+                                    {t('doctorRegister.next')}
                                 </button>
                             ) : (
                                 <button
@@ -620,10 +620,10 @@ const DoctorRegisterPage = () => {
                                     {registerMutation.isPending ? (
                                         <>
                                             <Loader className="w-5 h-5 animate-spin inline mr-2" />
-                                            Registrando...
+                                            {t('doctorRegister.submitting')}
                                         </>
                                     ) : (
-                                        'Completar Registro'
+                                        t('doctorRegister.submit')
                                     )}
                                 </button>
                             )}
@@ -632,9 +632,9 @@ const DoctorRegisterPage = () => {
                         {/* Link a login */}
                         <div className="text-center mt-6">
                             <p className="text-gray-600">
-                                ¿Ya tienes cuenta?{' '}
+                                {t('doctorRegister.alreadyAccount')}{' '}
                                 <Link to="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
-                                    Iniciar sesión
+                                    {t('doctorRegister.loginHere')}
                                 </Link>
                             </p>
                         </div>
@@ -659,6 +659,7 @@ const DoctorRegisterPage = () => {
 
 const DocumentUpload = ({ title, required, image, onCapture, onUpload, onRemove, error, allowPdf = false }) => {
     const fileInputRef = useRef(null);
+    const { t } = useLanguage();
     const isPdf = image && image.startsWith('data:application/pdf');
 
     const handleFileChange = (e) => {
@@ -681,8 +682,8 @@ const DocumentUpload = ({ title, required, image, onCapture, onUpload, onRemove,
                     {isPdf ? (
                         <div className="w-full h-48 bg-red-50 flex flex-col items-center justify-center gap-2">
                             <FileText className="w-12 h-12 text-red-400" />
-                            <span className="text-sm font-semibold text-red-700">Documento PDF</span>
-                            <span className="text-xs text-gray-500">subido correctamente</span>
+                            <span className="text-sm font-semibold text-red-700">PDF</span>
+                            <span className="text-xs text-gray-500">✓</span>
                         </div>
                     ) : (
                         <img src={image} alt={title} className="w-full h-48 object-cover" />
@@ -696,7 +697,7 @@ const DocumentUpload = ({ title, required, image, onCapture, onUpload, onRemove,
                     </button>
                     <div className="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-xs py-1 px-2 flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" />
-                        {isPdf ? 'PDF subido' : 'Capturado'}
+                        {isPdf ? t('doctorRegister.pdfUploaded') : t('doctorRegister.captured')}
                     </div>
                 </div>
             </div>
@@ -716,7 +717,7 @@ const DocumentUpload = ({ title, required, image, onCapture, onUpload, onRemove,
                 >
                     <Camera className={`w-8 h-8 ${error ? 'text-red-400' : 'text-gray-400'}`} />
                     <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-gray-600'}`}>
-                        Capturar con cámara
+                        {t('doctorRegister.capture')}
                     </span>
                 </button>
                 {allowPdf && (
@@ -731,7 +732,7 @@ const DocumentUpload = ({ title, required, image, onCapture, onUpload, onRemove,
                         >
                             <Upload className={`w-7 h-7 ${error ? 'text-red-400' : 'text-gray-400'}`} />
                             <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-gray-600'}`}>
-                                Subir imagen o PDF
+                                {t('doctorRegister.uploadFile')}
                             </span>
                         </button>
                         <input
