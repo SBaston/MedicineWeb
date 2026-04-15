@@ -4,7 +4,7 @@
 // ✅ ACTUALIZADO: Con redes sociales opcionales
 // ═══════════════════════════════════════════════════════════════
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import CameraCapture from '../components/CameraCapture';
@@ -542,8 +542,10 @@ const DoctorRegisterPage = () => {
                                     <DocumentUpload
                                         title="Título de Especialidad"
                                         required
+                                        allowPdf
                                         image={formData.specialtyDegree}
                                         onCapture={() => setShowCamera('specialtyDegree')}
+                                        onUpload={(data) => setFormData(prev => ({ ...prev, specialtyDegree: data }))}
                                         onRemove={() => setFormData(prev => ({ ...prev, specialtyDegree: '' }))}
                                         error={errors.specialtyDegree}
                                     />
@@ -552,8 +554,10 @@ const DoctorRegisterPage = () => {
                                     <DocumentUpload
                                         title="Título Universitario"
                                         required
+                                        allowPdf
                                         image={formData.universityDegree}
                                         onCapture={() => setShowCamera('universityDegree')}
+                                        onUpload={(data) => setFormData(prev => ({ ...prev, universityDegree: data }))}
                                         onRemove={() => setFormData(prev => ({ ...prev, universityDegree: '' }))}
                                         error={errors.universityDegree}
                                     />
@@ -655,7 +659,20 @@ const DoctorRegisterPage = () => {
 // COMPONENTE: Upload de documentos
 // ═══════════════════════════════════════════════════════════════
 
-const DocumentUpload = ({ title, required, image, onCapture, onRemove, error }) => {
+const DocumentUpload = ({ title, required, image, onCapture, onUpload, onRemove, error, allowPdf = false }) => {
+    const fileInputRef = useRef(null);
+    const isPdf = image && image.startsWith('data:application/pdf');
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => onUpload && onUpload(ev.target.result);
+        reader.readAsDataURL(file);
+        // Reset input so el mismo archivo se puede volver a seleccionar
+        e.target.value = '';
+    };
+
     if (image) {
         return (
             <div className="relative">
@@ -663,7 +680,15 @@ const DocumentUpload = ({ title, required, image, onCapture, onRemove, error }) 
                     {title} {required && <span className="text-red-500">*</span>}
                 </p>
                 <div className="relative border-2 border-green-300 rounded-lg overflow-hidden">
-                    <img src={image} alt={title} className="w-full h-48 object-cover" />
+                    {isPdf ? (
+                        <div className="w-full h-48 bg-red-50 flex flex-col items-center justify-center gap-2">
+                            <FileText className="w-12 h-12 text-red-400" />
+                            <span className="text-sm font-semibold text-red-700">Documento PDF</span>
+                            <span className="text-xs text-gray-500">subido correctamente</span>
+                        </div>
+                    ) : (
+                        <img src={image} alt={title} className="w-full h-48 object-cover" />
+                    )}
                     <button
                         type="button"
                         onClick={onRemove}
@@ -673,7 +698,7 @@ const DocumentUpload = ({ title, required, image, onCapture, onRemove, error }) 
                     </button>
                     <div className="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-xs py-1 px-2 flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" />
-                        Capturado
+                        {isPdf ? 'PDF subido' : 'Capturado'}
                     </div>
                 </div>
             </div>
@@ -685,17 +710,42 @@ const DocumentUpload = ({ title, required, image, onCapture, onRemove, error }) 
             <p className="text-sm font-medium text-gray-700 mb-2">
                 {title} {required && <span className="text-red-500">*</span>}
             </p>
-            <button
-                type="button"
-                onClick={onCapture}
-                className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center gap-2 hover:border-primary-500 hover:bg-primary-50 transition-colors ${error ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                    }`}
-            >
-                <Camera className={`w-8 h-8 ${error ? 'text-red-400' : 'text-gray-400'}`} />
-                <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-gray-600'}`}>
-                    Capturar con cámara
-                </span>
-            </button>
+            <div className={`border-2 border-dashed rounded-lg overflow-hidden ${error ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}>
+                <button
+                    type="button"
+                    onClick={onCapture}
+                    className="w-full p-5 flex flex-col items-center gap-2 hover:bg-primary-50 transition-colors"
+                >
+                    <Camera className={`w-8 h-8 ${error ? 'text-red-400' : 'text-gray-400'}`} />
+                    <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-gray-600'}`}>
+                        Capturar con cámara
+                    </span>
+                </button>
+                {allowPdf && (
+                    <>
+                        <div className="border-t border-dashed border-gray-300 flex items-center justify-center py-1">
+                            <span className="text-xs text-gray-400">o</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full p-4 flex flex-col items-center gap-2 hover:bg-gray-50 transition-colors"
+                        >
+                            <Upload className={`w-7 h-7 ${error ? 'text-red-400' : 'text-gray-400'}`} />
+                            <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-gray-600'}`}>
+                                Subir imagen o PDF
+                            </span>
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*,application/pdf"
+                            className="hidden"
+                            onChange={handleFileChange}
+                        />
+                    </>
+                )}
+            </div>
             {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
         </div>
     );

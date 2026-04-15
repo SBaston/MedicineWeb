@@ -37,12 +37,15 @@ namespace MedicineBackend.Services
         {
             try
             {
-                // Eliminar prefijo "data:image/...;base64," si existe
+                // Detectar si el archivo es un PDF por su prefijo data URI
+                var isPdf = base64Image.StartsWith("data:application/pdf");
+
+                // Eliminar prefijo "data:...;base64," si existe
                 var base64Data = base64Image.Contains(",")
                     ? base64Image.Split(',')[1]
                     : base64Image;
 
-                var imageBytes = Convert.FromBase64String(base64Data);
+                var fileBytes = Convert.FromBase64String(base64Data);
 
                 // Crear carpeta si no existe
                 var folderPath = Path.Combine(_basePath, folder);
@@ -51,35 +54,49 @@ namespace MedicineBackend.Services
                     Directory.CreateDirectory(folderPath);
                 }
 
-                // Generar nombre de archivo único
-                var extension = ".jpg";
-                var fullFilename = $"{filename}{extension}";
-                var filePath = Path.Combine(folderPath, fullFilename);
+                string fullFilename;
+                string filePath;
+                string relativeUrl;
 
-                // Optimizar imagen antes de guardar
-                using (var ms = new MemoryStream(imageBytes))
-                using (var image = await Image.LoadAsync(ms))
+                if (isPdf)
                 {
-                    // Redimensionar si es muy grande (max 1920px)
-                    if (image.Width > 1920 || image.Height > 1920)
+                    // PDF: guardar directamente sin pasar por ImageSharp
+                    fullFilename = $"{filename}.pdf";
+                    filePath = Path.Combine(folderPath, fullFilename);
+                    await File.WriteAllBytesAsync(filePath, fileBytes);
+                    relativeUrl = $"/uploads/{folder}/{fullFilename}";
+                    _logger.LogInformation($"✅ PDF guardado: {relativeUrl} ({fileBytes.Length} bytes)");
+                }
+                else
+                {
+                    // Imagen: optimizar con ImageSharp antes de guardar
+                    fullFilename = $"{filename}.jpg";
+                    filePath = Path.Combine(folderPath, fullFilename);
+
+                    using (var ms = new MemoryStream(fileBytes))
+                    using (var image = await Image.LoadAsync(ms))
                     {
-                        image.Mutate(x => x.Resize(new ResizeOptions
+                        // Redimensionar si es muy grande (max 1920px)
+                        if (image.Width > 1920 || image.Height > 1920)
                         {
-                            Mode = ResizeMode.Max,
-                            Size = new Size(1920, 1920)
-                        }));
+                            image.Mutate(x => x.Resize(new ResizeOptions
+                            {
+                                Mode = ResizeMode.Max,
+                                Size = new Size(1920, 1920)
+                            }));
+                        }
+
+                        // Guardar como JPEG con calidad 85%
+                        await image.SaveAsJpegAsync(filePath, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder
+                        {
+                            Quality = 85
+                        });
                     }
 
-                    // Guardar como JPEG con calidad 85%
-                    await image.SaveAsJpegAsync(filePath, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder
-                    {
-                        Quality = 85
-                    });
+                    relativeUrl = $"/uploads/{folder}/{fullFilename}";
+                    _logger.LogInformation($"✅ Imagen guardada: {relativeUrl}");
                 }
 
-                // Retornar URL relativa
-                var relativeUrl = $"/uploads/{folder}/{fullFilename}";
-                _logger.LogInformation($"✅ Imagen guardada: {relativeUrl}");
                 return relativeUrl;
             }
             catch (Exception ex)

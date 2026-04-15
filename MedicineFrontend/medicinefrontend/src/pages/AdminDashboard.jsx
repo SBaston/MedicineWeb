@@ -72,6 +72,8 @@ const ConfirmModal = ({ title, description, requireReason, reasonLabel, danger, 
 // ════════════════════════════════════════════════════════════════
 
 const ImageCard = ({ url, title, required = false, icon: IconComponent = FileText, onView }) => {
+    const isPdf = url && url.toLowerCase().includes('.pdf');
+
     if (!url) {
         return (
             <div className={`${required ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'} rounded-lg border-2 border-dashed p-4 flex flex-col items-center justify-center h-64`}>
@@ -96,15 +98,26 @@ const ImageCard = ({ url, title, required = false, icon: IconComponent = FileTex
                 </p>
             </div>
             <div className="p-2">
-                <img
-                    src={url}
-                    alt={title}
-                    className="w-full h-48 object-contain bg-gray-100 rounded cursor-pointer hover:opacity-80 transition"
-                    onClick={() => onView({ url, title })}
-                />
+                {isPdf ? (
+                    <div
+                        className="w-full h-48 bg-red-50 rounded flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-red-100 transition border border-red-200"
+                        onClick={() => onView({ url, title, isPdf: true })}
+                    >
+                        <FileText className="w-12 h-12 text-red-400" />
+                        <span className="text-sm font-semibold text-red-700">Documento PDF</span>
+                        <span className="text-xs text-blue-600 underline">Clic para previsualizar</span>
+                    </div>
+                ) : (
+                    <img
+                        src={url}
+                        alt={title}
+                        className="w-full h-48 object-contain bg-gray-100 rounded cursor-pointer hover:opacity-80 transition"
+                        onClick={() => onView({ url, title, isPdf: false })}
+                    />
+                )}
                 <div className="flex gap-2 mt-2">
                     <button
-                        onClick={() => onView({ url, title })}
+                        onClick={() => onView({ url, title, isPdf })}
                         className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1"
                     >
                         <Eye className="w-3 h-3" />
@@ -298,11 +311,20 @@ const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
                             </button>
                         </div>
                         <div className="p-4">
-                            <img
-                                src={showImageModal.url}
-                                alt={showImageModal.title}
-                                className="w-full h-auto"
-                            />
+                            {showImageModal.isPdf ? (
+                                <iframe
+                                    src={showImageModal.url}
+                                    title={showImageModal.title}
+                                    className="w-full rounded"
+                                    style={{ height: '70vh' }}
+                                />
+                            ) : (
+                                <img
+                                    src={showImageModal.url}
+                                    alt={showImageModal.title}
+                                    className="w-full h-auto"
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

@@ -77,14 +77,16 @@ const doctorService = {
             if (blob4) formData.append('idDocumentBack', blob4, 'id_back.jpg');
         }
 
-        // OBLIGATORIAS (Títulos)
+        // OBLIGATORIAS (Títulos) — extensión dinámica según tipo de archivo
         if (data.specialtyDegree) {
             const blob5 = dataURLtoBlob(data.specialtyDegree);
-            if (blob5) formData.append('specialtyDegree', blob5, 'specialty_degree.jpg');
+            const ext5 = data.specialtyDegree.startsWith('data:application/pdf') ? 'pdf' : 'jpg';
+            if (blob5) formData.append('specialtyDegree', blob5, `specialty_degree.${ext5}`);
         }
         if (data.universityDegree) {
             const blob6 = dataURLtoBlob(data.universityDegree);
-            if (blob6) formData.append('universityDegree', blob6, 'university_degree.jpg');
+            const ext6 = data.universityDegree.startsWith('data:application/pdf') ? 'pdf' : 'jpg';
+            if (blob6) formData.append('universityDegree', blob6, `university_degree.${ext6}`);
         }
 
         // OPCIONAL (Foto de perfil)
