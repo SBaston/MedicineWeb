@@ -5,6 +5,8 @@ import { Mail, Lock, User, Calendar, FileText, Heart, Stethoscope, Users } from 
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import ErrorAlert from '../components/ErrorAlert';
 import logo from '../assets/nexussalud-logo1.jpg';
+import DarkModeToggle from '../components/DarkModeToggle';
+import { useLanguage } from '../context/LanguageContext';
 
 const RegisterPage = () => {
     const [searchParams] = useSearchParams();
@@ -24,6 +26,7 @@ const RegisterPage = () => {
     const [loading, setLoading] = useState(false);
 
     const { register } = useAuth();
+    const { t } = useLanguage();
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -101,6 +104,7 @@ const RegisterPage = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4">
+            <DarkModeToggle />
             <div className="max-w-2xl mx-auto">
                 {/* Logo */}
                 <div className="text-center mb-8">
@@ -115,7 +119,7 @@ const RegisterPage = () => {
                             <span className="text-4xl font-bold text-primary-600">NexusSalud</span>
                         </Link>
                     </div>
-                    <p className="text-gray-600">Crea tu cuenta</p>
+                    <p className="text-gray-600">{t('register.subtitle')}</p>
                 </div>
 
                 {/* Formulario */}
@@ -127,7 +131,7 @@ const RegisterPage = () => {
                         {/* Selector de rol */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-3">
-                                ¿Cómo quieres registrarte?
+                                {t('register.howRegister')}
                             </label>
                             <div className="grid grid-cols-2 gap-4">
                                 <button
@@ -140,8 +144,8 @@ const RegisterPage = () => {
                                 >
                                     <div className="text-center">
                                         <Users className="w-12 h-12 mx-auto mb-2 text-blue-600" />
-                                        <div className="font-semibold">Paciente</div>
-                                        <div className="text-xs text-gray-500 mt-1">Buscar doctores y reservar citas</div>
+                                        <div className="font-semibold">{t('register.asPatient')}</div>
+                                        <div className="text-xs text-gray-500 mt-1">{t('register.asPatientDesc')}</div>
                                     </div>
                                 </button>
                                 <button
@@ -154,8 +158,8 @@ const RegisterPage = () => {
                                 >
                                     <div className="text-center">
                                         <Stethoscope className="w-12 h-12 mx-auto mb-2 text-green-600" />
-                                        <div className="font-semibold">Doctor</div>
-                                        <div className="text-xs text-gray-500 mt-1">Ofrecer consultas médicas</div>
+                                        <div className="font-semibold">{t('register.asDoctor')}</div>
+                                        <div className="text-xs text-gray-500 mt-1">{t('register.asDoctorDesc')}</div>
                                     </div>
                                 </button>
                             </div>
@@ -167,7 +171,7 @@ const RegisterPage = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Nombre
+                                            {t('register.firstName')}
                                         </label>
                                         <div className="relative">
                                             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -185,7 +189,7 @@ const RegisterPage = () => {
                                     </div>
                                     <div>
                                         <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Apellido
+                                            {t('register.lastName')}
                                         </label>
                                         <input
                                             id="lastName"
@@ -203,7 +207,7 @@ const RegisterPage = () => {
                                 {/* Email */}
                                 <div>
                                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Email
+                                        {t('register.email')}
                                     </label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -223,7 +227,7 @@ const RegisterPage = () => {
                                 {/* Fecha de nacimiento */}
                                 <div>
                                     <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Fecha de Nacimiento *
+                                        {t('register.birthDate')}
                                     </label>
                                     <div className="relative">
                                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -243,7 +247,7 @@ const RegisterPage = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Contraseña
+                                            {t('register.password')}
                                         </label>
                                         <div className="relative">
                                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -262,7 +266,7 @@ const RegisterPage = () => {
                                     </div>
                                     <div>
                                         <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Confirmar Contraseña
+                                            {t('register.confirmPassword')}
                                         </label>
                                         <input
                                             id="confirmPassword"
@@ -286,13 +290,13 @@ const RegisterPage = () => {
                                         className="mt-1 mr-3 rounded border-gray-300"
                                     />
                                     <label htmlFor="terms" className="text-sm text-gray-600">
-                                        Acepto los{' '}
+                                        {t('register.terms')}{' '}
                                         <Link to="/terms" className="text-primary-600 hover:text-primary-700">
-                                            términos y condiciones
+                                            {t('register.termsLink')}
                                         </Link>{' '}
-                                        y la{' '}
+                                        {t('register.and')}{' '}
                                         <Link to="/privacy" className="text-primary-600 hover:text-primary-700">
-                                            política de privacidad
+                                            {t('register.privacyLink')}
                                         </Link>
                                     </label>
                                 </div>
@@ -303,7 +307,7 @@ const RegisterPage = () => {
                                     disabled={loading}
                                     className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {loading ? 'Registrando...' : 'Crear Cuenta'}
+                                    {loading ? t('register.loading') : t('register.submit')}
                                 </button>
                             </>
                         ) : (
@@ -312,34 +316,24 @@ const RegisterPage = () => {
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
                                     <Stethoscope className="w-16 h-16 mx-auto mb-4 text-green-600" />
                                     <h3 className="text-lg font-bold text-gray-900 mb-2">
-                                        Registro de Profesional Médico
+                                        {t('register.doctorTitle')}
                                     </h3>
                                     <p className="text-gray-600 mb-4">
-                                        El registro para doctores requiere información adicional y validación de documentos.
+                                        {t('register.doctorDesc')}
                                     </p>
                                     <ul className="text-sm text-gray-600 text-left space-y-2 mb-6 max-w-md mx-auto">
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-green-600 mt-0.5">✓</span>
-                                            <span>Datos personales y profesionales</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-green-600 mt-0.5">✓</span>
-                                            <span>Escaneo del carnet de colegiado con validación OCR</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-green-600 mt-0.5">✓</span>
-                                            <span>Selección de especialidades</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-green-600 mt-0.5">✓</span>
-                                            <span>Revisión por administrador (24-48h)</span>
-                                        </li>
+                                        {['doctorItem1','doctorItem2','doctorItem3','doctorItem4'].map(key => (
+                                            <li key={key} className="flex items-start gap-2">
+                                                <span className="text-green-600 mt-0.5">✓</span>
+                                                <span>{t(`register.${key}`)}</span>
+                                            </li>
+                                        ))}
                                     </ul>
                                     <button
                                         type="submit"
                                         className="btn-primary w-full max-w-md mx-auto"
                                     >
-                                        Continuar con Registro Profesional
+                                        {t('register.doctorBtn')}
                                     </button>
                                 </div>
                             </>
@@ -349,9 +343,9 @@ const RegisterPage = () => {
                     {/* Login */}
                     <div className="mt-6 text-center">
                         <p className="text-gray-600 text-sm">
-                            ¿Ya tienes cuenta?{' '}
+                            {t('register.alreadyAccount')}{' '}
                             <Link to="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
-                                Inicia sesión aquí
+                                {t('register.loginHere')}
                             </Link>
                         </p>
                     </div>

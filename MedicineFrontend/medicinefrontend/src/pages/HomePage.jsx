@@ -3,8 +3,11 @@ import { Search, Star, Award, Clock, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import doctorService from '../services/doctorService';
 import specialtyService from '../services/specialtyService';
+import { useLanguage } from '../context/LanguageContext';
 
 const HomePage = () => {
+    const { t } = useLanguage();
+
     // Obtener especialidades ACTIVAS (público)
     const { data: specialties } = useQuery({
         queryKey: ['specialties'],
@@ -24,19 +27,18 @@ const HomePage = () => {
                 <div className="container-custom">
                     <div className="max-w-3xl">
                         <h1 className="text-5xl font-bold mb-6 animate-fade-in">
-                            Consultas Médicas Online con Especialistas Certificados
+                            {t('home.hero.title')}
                         </h1>
                         <p className="text-xl mb-8 text-primary-100">
-                            Reserva citas con los mejores profesionales de la salud desde la comodidad de tu hogar.
-                            Accede a cursos especializados y mejora tu bienestar.
+                            {t('home.hero.subtitle')}
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4">
                             <Link to="/doctors" className="bg-white text-primary-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 transition-all shadow-lg">
                                 <Search className="w-5 h-5" />
-                                Buscar Doctores
+                                {t('home.hero.searchBtn')}
                             </Link>
                             <Link to="/register" className="border-2 border-white hover:bg-white hover:text-primary-600 px-8 py-4 rounded-lg font-semibold text-lg text-center transition-all">
-                                Registrarse Gratis
+                                {t('home.hero.registerBtn')}
                             </Link>
                         </div>
                     </div>
@@ -51,30 +53,24 @@ const HomePage = () => {
                             <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Star className="w-8 h-8 text-primary-600" />
                             </div>
-                            <h3 className="text-xl font-bold mb-2">Doctores Certificados</h3>
-                            <p className="text-gray-600">
-                                Todos nuestros profesionales están verificados y cuentan con amplia experiencia.
-                            </p>
+                            <h3 className="text-xl font-bold mb-2">{t('home.features.certified.title')}</h3>
+                            <p className="text-gray-600">{t('home.features.certified.desc')}</p>
                         </div>
 
                         <div className="text-center p-8 bg-white rounded-xl shadow-md">
                             <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Clock className="w-8 h-8 text-primary-600" />
                             </div>
-                            <h3 className="text-xl font-bold mb-2">Disponibilidad 24/7</h3>
-                            <p className="text-gray-600">
-                                Encuentra especialistas disponibles en cualquier momento que necesites.
-                            </p>
+                            <h3 className="text-xl font-bold mb-2">{t('home.features.availability.title')}</h3>
+                            <p className="text-gray-600">{t('home.features.availability.desc')}</p>
                         </div>
 
                         <div className="text-center p-8 bg-white rounded-xl shadow-md">
                             <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Award className="w-8 h-8 text-primary-600" />
                             </div>
-                            <h3 className="text-xl font-bold mb-2">Cursos Especializados</h3>
-                            <p className="text-gray-600">
-                                Accede a formación de calidad creada por profesionales de la salud.
-                            </p>
+                            <h3 className="text-xl font-bold mb-2">{t('home.features.courses.title')}</h3>
+                            <p className="text-gray-600">{t('home.features.courses.desc')}</p>
                         </div>
                     </div>
                 </div>
@@ -83,7 +79,7 @@ const HomePage = () => {
             {/* Especialidades */}
             <section className="py-16">
                 <div className="container-custom">
-                    <h2 className="text-4xl font-bold text-center mb-12">Nuestras Especialidades</h2>
+                    <h2 className="text-4xl font-bold text-center mb-12">{t('home.specialties.title')}</h2>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                         {specialties?.slice(0, 6).map((specialty) => (
                             <Link
@@ -100,7 +96,7 @@ const HomePage = () => {
                     </div>
                     <div className="text-center mt-8">
                         <Link to="/specialties" className="text-primary-600 hover:text-primary-700 font-semibold flex items-center justify-center gap-2">
-                            Ver todas las especialidades
+                            {t('home.specialties.viewAll')}
                             <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>
@@ -141,15 +137,13 @@ const HomePage = () => {
             {/* CTA Section */}
             <section className="py-16 bg-primary-600 text-white">
                 <div className="container-custom text-center">
-                    <h2 className="text-4xl font-bold mb-6">¿Eres un profesional de la salud?</h2>
-                    <p className="text-xl mb-8 text-primary-100">
-                        Únete a nuestra plataforma y conecta con miles de pacientes. Crea cursos y monetiza tu conocimiento.
-                    </p>
+                    <h2 className="text-4xl font-bold mb-6">{t('home.cta.title')}</h2>
+                    <p className="text-xl mb-8 text-primary-100">{t('home.cta.subtitle')}</p>
                     <Link
                         to="/register?role=doctor"
                         className="bg-white text-primary-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg inline-block transition-all shadow-lg"
                     >
-                        Registrarme como Doctor
+                        {t('home.cta.btn')}
                     </Link>
                 </div>
             </section>

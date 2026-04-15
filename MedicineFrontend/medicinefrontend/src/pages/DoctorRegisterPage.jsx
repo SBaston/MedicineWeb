@@ -17,6 +17,7 @@ import {
     Scale, AlertCircle as Alert
 } from 'lucide-react';
 import doctorService from '../services/doctorService';
+import DarkModeToggle from '../components/DarkModeToggle';
 
 const DoctorRegisterPage = () => {
     const navigate = useNavigate();
@@ -245,6 +246,7 @@ const DoctorRegisterPage = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+            <DarkModeToggle />
             <div className="container max-w-4xl mx-auto px-4">
                 {/* Cabecera */}
                 <div className="text-center mb-8">
