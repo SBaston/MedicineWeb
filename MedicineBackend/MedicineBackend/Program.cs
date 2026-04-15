@@ -75,6 +75,7 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IDoctorManagementService, DoctorManagementService>();
 builder.Services.AddScoped<ISpecialtyService, SpecialtyService>();
+builder.Services.AddScoped<IProfessionalService, ProfessionalService>();
 //builder.Services.AddScoped<IOcrService, OcrService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtHelper>();
@@ -194,6 +195,11 @@ app.UseCors("AllowFrontend");  // ← SEGUNDO: CORS
 app.UseAuthentication();  // ← TERCERO: Autenticación
 app.UseAuthorization();   // ← CUARTO: Autorización
 app.MapControllers();     // ← ÚLTIMO: Controladores
+
+// ✅ Health check endpoint para Docker
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
+   .AllowAnonymous()
+   .ExcludeFromDescription();
 
 // ============================================
 // INICIALIZACIÓN DE BASE DE DATOS

@@ -1,5 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
-// Frontend/src/services/professionalsService.js - CORREGIDO
+// services/professionalsService.js
+// ✅ Servicio completo para buscar profesionales y ver sus perfiles
+// ✅ Incluye obtención de videos publicados
 // ═══════════════════════════════════════════════════════════════
 
 import api from './api';
@@ -17,24 +19,47 @@ const professionalsService = {
         if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
         if (filters.sortBy) params.append('sortBy', filters.sortBy);
 
-        const response = await api.get(`/professionals?${params.toString()}`);
+        const response = await api.get(`/professionals/search?${params.toString()}`);
         return response.data;
     },
 
     /**
-     * Obtener especialidades ACTIVAS (público)
-     * Usado en ProfessionalsPage para el filtro de especialidades
-     */
-    getSpecialties: async () => {
-        const response = await api.get('/specialties/active');  // ✅ CAMBIADO: de /specialties a /specialties/active
-        return response.data;
-    },
-
-    /**
-     * Obtener detalle de un profesional
+     * Obtener detalles completos de un profesional por ID
      */
     getById: async (id) => {
         const response = await api.get(`/professionals/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Obtener videos de un profesional
+     */
+    getVideos: async (doctorId) => {
+        const response = await api.get(`/professionals/${doctorId}/videos`);
+        return response.data;
+    },
+
+    /**
+     * Obtener especialidades disponibles
+     */
+    getSpecialties: async () => {
+        const response = await api.get('/specialties');
+        return response.data;
+    },
+
+    /**
+     * Obtener reviews de un profesional
+     */
+    getReviews: async (doctorId) => {
+        const response = await api.get(`/professionals/${doctorId}/reviews`);
+        return response.data;
+    },
+
+    /**
+     * Obtener disponibilidad de un profesional
+     */
+    getAvailability: async (doctorId) => {
+        const response = await api.get(`/professionals/${doctorId}/availability`);
         return response.data;
     }
 };

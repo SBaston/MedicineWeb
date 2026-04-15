@@ -1,3 +1,9 @@
+# ═══════════════════════════════════════════════════════════════
+# docker-compose.yml - NexusSalud
+# ✅ Persistencia de datos configurable
+# ✅ Variables de entorno desde .env
+# ═══════════════════════════════════════════════════════════════
+
 version: '3.9'
 
 services:
@@ -5,24 +11,32 @@ services:
   # POSTGRESQL DATABASE
   # ═══════════════════════════════════════════════════════════════
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
     container_name: nexussalud-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: NexusSaludDB
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-NexusSaludDB}
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
+      # ✅ Volumen persistente - Los datos sobreviven a reinicios
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-NexusSaludDB}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     networks:
       - nexussalud-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ═══════════════════════════════════════════════════════════════
   # REDIS CACHE
@@ -30,56 +44,77 @@ services:
   redis:
     image: redis:7-alpine
     container_name: nexussalud-redis
+    command: redis-server --appendonly yes --appendfsync everysec
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
+      # ✅ Volumen persistente para caché Redis
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
     networks:
       - nexussalud-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ═══════════════════════════════════════════════════════════════
   # BACKEND (.NET 10)
-  # ✅ SIN TESSERACT OCR
   # ═══════════════════════════════════════════════════════════════
   backend:
     build:
       context: ./MedicineBackend/MedicineBackend
       dockerfile: Dockerfile
+      args:
+        BUILD_CONFIGURATION: ${BUILD_CONFIGURATION:-Release}
     container_name: nexussalud-backend
     environment:
       # Database
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=NexusSaludDB;Username=postgres;Password=postgres"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-NexusSaludDB};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres};Include Error Detail=true"
       ConnectionStrings__Redis: "redis:6379"
       
       # ASP.NET Core
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_HTTP_PORTS: "5000"
       
       # JWT Configuration
-      JwtSettings__Issuer: "http://localhost:5000"
-      JwtSettings__Audience: "http://localhost:5173"
-      JwtSettings__SecretKey: "TuClaveSecretaMuySeguraDeAlMenos32CaracteresParaJWT2024!"
-      JwtSettings__ExpirationMinutes: "60"
+      JwtSettings__Issuer: ${JWT_ISSUER:-http://localhost:5000}
+      JwtSettings__Audience: ${JWT_AUDIENCE:-http://localhost:5173}
+      JwtSettings__SecretKey: ${JWT_SECRET:-TuClaveSecretaMuySeguraDeAlMenos32CaracteresParaJWT2024!}
+      JwtSettings__ExpirationMinutes: ${JWT_EXPIRATION:-60}
       
-      # File Storage (sin Tesseract)
+      # CORS
+      CorsSettings__AllowedOrigins: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      
+      # File Storage
       FileStorage__BasePath: "/app/uploads"
-      FileStorage__MaxFileSizeMB: "10"
+      FileStorage__MaxFileSizeMB: ${MAX_FILE_SIZE_MB:-10}
       
-      # Initial Admin (SuperAdmin por defecto)
-      InitialAdminSettings__Email: "admin@nexussalud.com"
-      InitialAdminSettings__Password: "Admin123!"
-      InitialAdminSettings__FullName: "Administrador Principal"
+      # Initial Admin
+      InitialAdminSettings__Email: ${ADMIN_EMAIL:-admin@nexussalud.com}
+      InitialAdminSettings__Password: ${ADMIN_PASSWORD:-Admin123!}
+      InitialAdminSettings__FullName: ${ADMIN_FULLNAME:-Administrador Principal}
+      
+      # Logging
+      Logging__LogLevel__Default: ${LOG_LEVEL:-Information}
+      Logging__LogLevel__Microsoft: Warning
+      Logging__LogLevel__Microsoft.Hosting.Lifetime: Information
       
     ports:
-      - "5000:5000"
+      - "${BACKEND_PORT:-5000}:5000"
     volumes:
+      # ✅ Volumen persistente para archivos subidos (imágenes, documentos)
       - uploads_data:/app/uploads
+      # ✅ Volumen persistente para logs (evita problemas de permisos con usuario no-root)
+      - backend_logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,45 +124,106 @@ services:
       - nexussalud-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ═══════════════════════════════════════════════════════════════
   # FRONTEND (React + Vite)
-  # ✅ ACTUALIZADO: Variables para API e imágenes
   # ═══════════════════════════════════════════════════════════════
   frontend:
     build:
       context: ./MedicineFrontend/medicinefrontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: "http://localhost:5000/api"      # Para llamadas API
-        VITE_BACKEND_URL: "http://localhost:5000"       # Para imágenes/uploads
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:5000}
     container_name: nexussalud-frontend
+    environment:
+      NODE_ENV: production
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - nexussalud-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5173 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ═══════════════════════════════════════════════════════════════
+  # PGADMIN (OPCIONAL - Para gestión visual de BD)
+  # Descomentar si necesitas interfaz gráfica para PostgreSQL
+  # ═══════════════════════════════════════════════════════════════
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: nexussalud-pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@nexussalud.com}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
+  #   ports:
+  #     - "${PGADMIN_PORT:-5050}:80"
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - nexussalud-network
+  #   restart: unless-stopped
 
 # ═══════════════════════════════════════════════════════════════
-# VOLUMES
+# VOLUMES PERSISTENTES
+# 
+# Para MANTENER datos después de docker-compose down:
+#   → docker-compose down  (solo para contenedores)
+#
+# Para ELIMINAR todos los datos:
+#   → docker-compose down -v  (elimina volúmenes)
+#   → O usa el script: ./reset-data.sh
 # ═══════════════════════════════════════════════════════════════
 volumes:
+  # Base de datos PostgreSQL
   postgres_data:
     driver: local
     name: nexussalud-postgres-data
+  
+  # Caché Redis
   redis_data:
     driver: local
     name: nexussalud-redis-data
+  
+  # Archivos subidos (imágenes de perfil, documentos médicos, etc.)
   uploads_data:
     driver: local
     name: nexussalud-uploads
+
+  # Logs del backend
+  backend_logs:
+    driver: local
+    name: nexussalud-backend-logs
+  
+  # PgAdmin (solo si está descomentado)
+  # pgadmin_data:
+  #   driver: local
+  #   name: nexussalud-pgadmin-data
 
 # ═══════════════════════════════════════════════════════════════
 # NETWORKS

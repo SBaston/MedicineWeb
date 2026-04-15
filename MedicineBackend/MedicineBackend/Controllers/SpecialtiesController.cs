@@ -1,5 +1,6 @@
 ﻿// ═══════════════════════════════════════════════════════════════
 // Backend/Controllers/SpecialtiesController.cs - CON SOFT DELETE
+// ✅ ACTUALIZADO: Endpoint público GET /api/specialties
 // ═══════════════════════════════════════════════════════════════
 
 using MedicineBackend.DTOs;
@@ -46,6 +47,19 @@ namespace MedicineBackend.Controllers
 
         // ═══════════════════════════════════════════════════════════
         // GET /api/specialties
+        // ✅ ENDPOINT PÚBLICO para buscador de profesionales
+        // Obtener especialidades ACTIVAS (sin autenticación)
+        // ═══════════════════════════════════════════════════════════
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublic()
+        {
+            var specialties = await _specialtyService.GetActiveAsync();
+            return Ok(specialties);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // GET /api/specialties/active
         // Obtener especialidades ACTIVAS (público - para dropdown doctores)
         // ═══════════════════════════════════════════════════════════
         [HttpGet("active")]

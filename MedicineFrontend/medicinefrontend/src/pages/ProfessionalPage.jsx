@@ -1,18 +1,30 @@
+// ═══════════════════════════════════════════════════════════════
+// ProfessionalsPage.jsx - Buscador de profesionales con videos
+// ✅ Muestra profesionales activos
+// ✅ Muestra videos publicados de cada profesional
+// ✅ Filtros avanzados
+// ═══════════════════════════════════════════════════════════════
+
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import professionalsService from '../services/professionalsService';
 import {
     Search, Star, Clock, Stethoscope,
-    SlidersHorizontal, X, ChevronDown
+    SlidersHorizontal, X, ChevronDown, Play,
+    TrendingUp, Users, Video as VideoIcon
 } from 'lucide-react';
 
-// ─── Opciones estáticas de filtros ───────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// OPCIONES DE FILTROS
+// ═══════════════════════════════════════════════════════════════
+
 const SORT_OPTIONS = [
     { value: 'rating', label: 'Mejor valorados' },
     { value: 'price_asc', label: 'Precio: menor a mayor' },
     { value: 'price_desc', label: 'Precio: mayor a menor' },
     { value: 'experience', label: 'Más experiencia' },
+    { value: 'content', label: 'Más contenido' }, // ✅ NUEVO: ordenar por videos
 ];
 
 const RATING_OPTIONS = [
@@ -28,115 +40,226 @@ const MAX_PRICE_OPTIONS = [
     { value: '100', label: 'Hasta 100 €' },
 ];
 
-// ─── Tarjeta de profesional ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// COMPONENTE: Tarjeta de Profesional con Videos
+// ═══════════════════════════════════════════════════════════════
+
 const ProfessionalCard = ({ professional }) => {
     const fullName = `${professional.firstName} ${professional.lastName}`;
     const avatarUrl = professional.profilePictureUrl
         || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=3b82f6&color=fff&size=200&bold=true`;
 
+    // ✅ NUEVO: Obtener videos del profesional
+    const { data: videos = [] } = useQuery({
+        queryKey: ['professional-videos', professional.id],
+        queryFn: () => professionalsService.getVideos(professional.id),
+        enabled: !!professional.id,
+    });
+
     return (
-        <Link
-            to={`/professionals/${professional.id}`}
-            className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex gap-5 hover:shadow-md hover:border-primary-200 transition-all group"
-        >
-            {/* Avatar */}
-            <img
-                src={avatarUrl}
-                alt={fullName}
-                className="w-20 h-20 rounded-full object-cover border-2 border-gray-100 flex-shrink-0 group-hover:border-primary-300 transition-colors"
-                onError={(e) => {
-                    const initials = `${professional.firstName?.charAt(0)}${professional.lastName?.charAt(0)}`;
-                    e.target.src = `https://ui-avatars.com/api/?name=${initials}&background=3b82f6&color=fff&size=200&bold=true`;
-                }}
-            />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-all">
+            {/* Header con info básica */}
+            <div className="p-6">
+                <Link
+                    to={`/professionals/${professional.id}`}
+                    className="flex gap-5 group"
+                >
+                    {/* Avatar */}
+                    <img
+                        src={avatarUrl}
+                        alt={fullName}
+                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-100 flex-shrink-0 group-hover:border-primary-300 transition-colors"
+                        onError={(e) => {
+                            const initials = `${professional.firstName?.charAt(0)}${professional.lastName?.charAt(0)}`;
+                            e.target.src = `https://ui-avatars.com/api/?name=${initials}&background=3b82f6&color=fff&size=200&bold=true`;
+                        }}
+                    />
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                        {/* Nombre */}
-                        <h3 className="font-semibold text-gray-900 text-lg group-hover:text-primary-600 transition-colors truncate">
-                            {fullName}
-                        </h3>
+                    {/* Info principal */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                                {/* Nombre */}
+                                <h3 className="font-semibold text-gray-900 text-lg group-hover:text-primary-600 transition-colors truncate">
+                                    {fullName}
+                                </h3>
 
-                        {/* Especialidades como chips */}
-                        <div className="flex flex-wrap gap-1 mt-1">
-                            {professional.specialties?.slice(0, 3).map((s) => (
-                                <span
-                                    key={s.id}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-50 text-primary-700 text-xs font-medium rounded-full"
-                                >
-                                    <Stethoscope className="w-3 h-3" />
-                                    {s.name}
+                                {/* Especialidades */}
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {professional.specialties?.slice(0, 3).map((s) => (
+                                        <span
+                                            key={s.id}
+                                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-50 text-primary-700 text-xs font-medium rounded-full"
+                                        >
+                                            <Stethoscope className="w-3 h-3" />
+                                            {s.name}
+                                        </span>
+                                    ))}
+                                    {professional.specialties?.length > 3 && (
+                                        <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">
+                                            +{professional.specialties.length - 3} más
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Precio */}
+                            <div className="text-right flex-shrink-0">
+                                <p className="font-bold text-primary-600 text-xl">
+                                    {professional.pricePerSession}€
+                                </p>
+                                <p className="text-xs text-gray-400">por sesión</p>
+                            </div>
+                        </div>
+
+                        {/* Descripción */}
+                        {professional.description && (
+                            <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+                                {professional.description}
+                            </p>
+                        )}
+
+                        {/* Metadatos */}
+                        <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
+                            <span className="flex items-center gap-1 text-gray-600">
+                                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                <span className="font-semibold text-gray-800">
+                                    {professional.averageRating?.toFixed(1) ?? '—'}
                                 </span>
-                            ))}
-                            {professional.specialties?.length > 3 && (
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">
-                                    +{professional.specialties.length - 3} más
+                                <span className="text-gray-400">
+                                    ({professional.totalReviews ?? 0})
+                                </span>
+                            </span>
+                            {professional.yearsOfExperience > 0 && (
+                                <span className="flex items-center gap-1 text-gray-500">
+                                    <Clock className="w-4 h-4" />
+                                    {professional.yearsOfExperience} años exp.
+                                </span>
+                            )}
+                            {professional.isAcceptingPatients && (
+                                <span className="flex items-center gap-1 text-green-600 font-medium">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                                    Acepta pacientes
+                                </span>
+                            )}
+                            {/* ✅ NUEVO: Contador de videos */}
+                            {videos.length > 0 && (
+                                <span className="flex items-center gap-1 text-purple-600 font-medium">
+                                    <VideoIcon className="w-4 h-4" />
+                                    {videos.length} {videos.length === 1 ? 'video' : 'videos'}
                                 </span>
                             )}
                         </div>
                     </div>
+                </Link>
+            </div>
 
-                    {/* Precio */}
-                    <div className="text-right flex-shrink-0">
-                        <p className="font-bold text-primary-600 text-xl">
-                            {professional.pricePerSession}€
-                        </p>
-                        <p className="text-xs text-gray-400">por sesión</p>
+            {/* ✅ NUEVA SECCIÓN: Videos del profesional */}
+            {videos.length > 0 && (
+                <div className="border-t border-gray-100 bg-gray-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <VideoIcon className="w-4 h-4 text-gray-600" />
+                        <h4 className="font-semibold text-gray-900 text-sm">Contenido educativo</h4>
                     </div>
-                </div>
 
-                {/* Descripción breve */}
-                {professional.description && (
-                    <p className="text-sm text-gray-500 mt-2 line-clamp-2">
-                        {professional.description}
-                    </p>
-                )}
+                    <div className="grid grid-cols-3 gap-2">
+                        {videos.slice(0, 3).map((video) => (
+                            <VideoThumbnail key={video.id} video={video} professionalId={professional.id} />
+                        ))}
+                    </div>
 
-                {/* Metadatos */}
-                <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
-                    <span className="flex items-center gap-1 text-gray-600">
-                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                        <span className="font-semibold text-gray-800">
-                            {professional.averageRating?.toFixed(1) ?? '—'}
-                        </span>
-                        <span className="text-gray-400">
-                            ({professional.totalReviews ?? 0})
-                        </span>
-                    </span>
-                    {professional.yearsOfExperience > 0 && (
-                        <span className="flex items-center gap-1 text-gray-500">
-                            <Clock className="w-4 h-4" />
-                            {professional.yearsOfExperience} años exp.
-                        </span>
-                    )}
-                    {professional.isAcceptingPatients && (
-                        <span className="flex items-center gap-1 text-green-600 font-medium">
-                            <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                            Acepta pacientes
-                        </span>
+                    {videos.length > 3 && (
+                        <Link
+                            to={`/professionals/${professional.id}#videos`}
+                            className="block text-center mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium"
+                        >
+                            Ver todos los videos ({videos.length})
+                        </Link>
                     )}
                 </div>
+            )}
+        </div>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// COMPONENTE: Miniatura de Video
+// ═══════════════════════════════════════════════════════════════
+
+const VideoThumbnail = ({ video, professionalId }) => {
+    const getThumbnail = (url) => {
+        // YouTube
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            const videoId = url.includes('youtu.be')
+                ? url.split('/').pop()
+                : new URLSearchParams(new URL(url).search).get('v');
+            return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+        }
+
+        // TikTok (placeholder)
+        if (url.includes('tiktok.com')) {
+            return 'https://placehold.co/300x400/e91e63/white?text=TikTok';
+        }
+
+        // Instagram (placeholder)
+        if (url.includes('instagram.com')) {
+            return 'https://placehold.co/300x400/e4405f/white?text=Instagram';
+        }
+
+        // Default
+        return 'https://placehold.co/300x400/3b82f6/white?text=Video';
+    };
+
+    return (
+        <Link
+            to={`/professionals/${professionalId}#video-${video.id}`}
+            className="relative group block aspect-video bg-gray-200 rounded-lg overflow-hidden"
+        >
+            <img
+                src={getThumbnail(video.videoUrl)}
+                alt={video.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+            />
+
+            {/* Overlay con botón play */}
+            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center transition-colors">
+                    <Play className="w-5 h-5 text-gray-900 ml-0.5" />
+                </div>
+            </div>
+
+            {/* Título del video */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                <p className="text-white text-xs font-medium line-clamp-2">
+                    {video.title}
+                </p>
             </div>
         </Link>
     );
 };
 
-// ─── Skeleton de carga ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// COMPONENTE: Skeleton de carga
+// ═══════════════════════════════════════════════════════════════
+
 const SkeletonCard = () => (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 flex gap-5 animate-pulse">
-        <div className="w-20 h-20 rounded-full bg-gray-200 flex-shrink-0" />
-        <div className="flex-1 space-y-3 pt-1">
-            <div className="h-5 bg-gray-200 rounded w-48" />
-            <div className="h-4 bg-gray-200 rounded w-32" />
-            <div className="h-4 bg-gray-200 rounded w-full" />
-            <div className="h-4 bg-gray-200 rounded w-2/3" />
+    <div className="bg-white rounded-xl border border-gray-100 p-6 animate-pulse">
+        <div className="flex gap-5">
+            <div className="w-20 h-20 rounded-full bg-gray-200 flex-shrink-0" />
+            <div className="flex-1 space-y-3">
+                <div className="h-5 bg-gray-200 rounded w-48" />
+                <div className="h-4 bg-gray-200 rounded w-32" />
+                <div className="h-4 bg-gray-200 rounded w-full" />
+                <div className="h-4 bg-gray-200 rounded w-2/3" />
+            </div>
         </div>
     </div>
 );
 
-// ─── Select reutilizable con chevron ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// COMPONENTE: Select con chevron
+// ═══════════════════════════════════════════════════════════════
+
 const FilterSelect = ({ label, value, onChange, options }) => (
     <div className="relative">
         <select
@@ -152,12 +275,15 @@ const FilterSelect = ({ label, value, onChange, options }) => (
     </div>
 );
 
-// ─── Página principal ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// PÁGINA PRINCIPAL
+// ═══════════════════════════════════════════════════════════════
+
 const ProfessionalsPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [showFilters, setShowFilters] = useState(false);
 
-    // Estado de filtros sincronizado con la URL
+    // Estado de filtros
     const [filters, setFilters] = useState({
         search: searchParams.get('search') || '',
         specialty: searchParams.get('specialty') || '',
@@ -166,21 +292,19 @@ const ProfessionalsPage = () => {
         sortBy: searchParams.get('sortBy') || 'rating',
     });
 
-    // Texto del buscador (lo que escribe el usuario en tiempo real)
     const [searchInput, setSearchInput] = useState(filters.search);
 
-    // Actualizar un filtro y sincronizar URL
+    // Actualizar filtro
     const updateFilter = useCallback((key, value) => {
         const next = { ...filters, [key]: value };
         setFilters(next);
 
-        // Reflejar en la URL para que sea compartible
         const params = {};
         Object.entries(next).forEach(([k, v]) => { if (v) params[k] = v; });
         setSearchParams(params, { replace: true });
     }, [filters, setSearchParams]);
 
-    // Limpiar todos los filtros
+    // Limpiar filtros
     const clearFilters = () => {
         const reset = { search: '', specialty: '', minRating: '', maxPrice: '', sortBy: 'rating' };
         setFilters(reset);
@@ -188,24 +312,22 @@ const ProfessionalsPage = () => {
         setSearchParams({}, { replace: true });
     };
 
-    // Hay algún filtro activo (aparte del orden por defecto)
     const hasActiveFilters = filters.search || filters.specialty || filters.minRating || filters.maxPrice;
 
-    // Query de especialidades (para el select de filtro)
+    // Query de especialidades
     const { data: specialties = [] } = useQuery({
         queryKey: ['specialties'],
         queryFn: professionalsService.getSpecialties,
-        staleTime: 10 * 60 * 1000, // 10 min – raramente cambian
+        staleTime: 10 * 60 * 1000,
     });
 
-    // Query de profesionales (se re-ejecuta al cambiar filtros)
+    // Query de profesionales
     const { data: professionals = [], isLoading, isError } = useQuery({
         queryKey: ['professionals', filters],
         queryFn: () => professionalsService.search(filters),
         keepPreviousData: true,
     });
 
-    // Opciones de especialidades para el select
     const specialtyOptions = [
         { value: '', label: 'Todas las especialidades' },
         ...specialties.map((s) => ({ value: s.name, label: s.name })),
@@ -213,18 +335,16 @@ const ProfessionalsPage = () => {
 
     return (
         <div className="container-custom py-8">
-
-            {/* ── Cabecera ── */}
+            {/* Cabecera */}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Profesionales</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Profesionales de Salud</h1>
                 <p className="text-gray-500">
-                    Encuentra al profesional de salud que mejor se adapte a tus necesidades.
+                    Encuentra profesionales verificados con contenido educativo de calidad.
                 </p>
             </div>
 
-            {/* ── Barra de búsqueda principal ── */}
+            {/* Barra de búsqueda */}
             <div className="flex gap-3 mb-4">
-                {/* Input de texto */}
                 <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -247,40 +367,27 @@ const ProfessionalsPage = () => {
                     )}
                 </div>
 
-                {/* Botón Buscar */}
                 <button
                     onClick={() => updateFilter('search', searchInput.trim())}
-                    className="btn-primary px-6 rounded-xl"
+                    className="btn-primary px-8"
                 >
                     Buscar
                 </button>
 
-                {/* Toggle de filtros avanzados */}
                 <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-2 px-4 py-3 border rounded-xl text-sm font-medium transition-colors ${showFilters || hasActiveFilters
-                            ? 'border-primary-500 text-primary-600 bg-primary-50'
-                            : 'border-gray-200 text-gray-600 bg-white hover:bg-gray-50'
-                        }`}
+                    className={`btn-secondary px-4 ${showFilters ? 'bg-primary-50 border-primary-300 text-primary-700' : ''}`}
                 >
-                    <SlidersHorizontal className="w-4 h-4" />
-                    Filtros
-                    {hasActiveFilters && (
-                        <span className="w-5 h-5 rounded-full bg-primary-600 text-white text-xs flex items-center justify-center">
-                            {[filters.specialty, filters.minRating, filters.maxPrice].filter(Boolean).length}
-                        </span>
-                    )}
+                    <SlidersHorizontal className="w-5 h-5" />
                 </button>
             </div>
 
-            {/* ── Panel de filtros avanzados ── */}
+            {/* Panel de filtros */}
             {showFilters && (
-                <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-sm">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                        {/* Filtro: Especialidad */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Especialidad
                             </label>
                             <FilterSelect
@@ -290,9 +397,8 @@ const ProfessionalsPage = () => {
                             />
                         </div>
 
-                        {/* Filtro: Valoración mínima */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Valoración mínima
                             </label>
                             <FilterSelect
@@ -302,9 +408,8 @@ const ProfessionalsPage = () => {
                             />
                         </div>
 
-                        {/* Filtro: Precio máximo */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Precio máximo
                             </label>
                             <FilterSelect
@@ -314,9 +419,8 @@ const ProfessionalsPage = () => {
                             />
                         </div>
 
-                        {/* Filtro: Ordenar por */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Ordenar por
                             </label>
                             <FilterSelect
@@ -327,12 +431,11 @@ const ProfessionalsPage = () => {
                         </div>
                     </div>
 
-                    {/* Botón limpiar filtros */}
                     {hasActiveFilters && (
-                        <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+                        <div className="mt-4 pt-4 border-t border-gray-200">
                             <button
                                 onClick={clearFilters}
-                                className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+                                className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
                             >
                                 <X className="w-4 h-4" />
                                 Limpiar filtros
@@ -342,90 +445,34 @@ const ProfessionalsPage = () => {
                 </div>
             )}
 
-            {/* ── Filtros activos como chips (resumen rápido) ── */}
-            {hasActiveFilters && (
-                <div className="flex flex-wrap gap-2 mb-5">
-                    {filters.search && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 text-sm rounded-full border border-primary-200">
-                            "{filters.search}"
-                            <button onClick={() => { setSearchInput(''); updateFilter('search', ''); }}>
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                        </span>
-                    )}
-                    {filters.specialty && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 text-sm rounded-full border border-primary-200">
-                            <Stethoscope className="w-3.5 h-3.5" />
-                            {filters.specialty}
-                            <button onClick={() => updateFilter('specialty', '')}>
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                        </span>
-                    )}
-                    {filters.minRating && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 text-sm rounded-full border border-primary-200">
-                            <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                            {filters.minRating}★ o más
-                            <button onClick={() => updateFilter('minRating', '')}>
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                        </span>
-                    )}
-                    {filters.maxPrice && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 text-sm rounded-full border border-primary-200">
-                            Hasta {filters.maxPrice}€
-                            <button onClick={() => updateFilter('maxPrice', '')}>
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                        </span>
-                    )}
-                </div>
-            )}
+            {/* Resultados */}
+            <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
+                <p>
+                    {isLoading ? 'Buscando...' : `${professionals.length} profesionales encontrados`}
+                </p>
+            </div>
 
-            {/* ── Resultado y listado ── */}
-            {isError ? (
-                <div className="text-center py-16">
-                    <p className="text-red-500 font-medium">Error al cargar los profesionales.</p>
-                    <p className="text-gray-400 text-sm mt-1">Inténtalo de nuevo más tarde.</p>
+            {/* Grid de profesionales */}
+            {isLoading ? (
+                <div className="grid grid-cols-1 gap-6">
+                    {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+                </div>
+            ) : isError ? (
+                <div className="text-center py-12">
+                    <p className="text-red-600">Error al cargar profesionales</p>
+                </div>
+            ) : professionals.length === 0 ? (
+                <div className="text-center py-12">
+                    <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 font-medium mb-2">No se encontraron profesionales</p>
+                    <p className="text-gray-500 text-sm">Intenta ajustar los filtros de búsqueda</p>
                 </div>
             ) : (
-                <>
-                    {/* Contador de resultados */}
-                    {!isLoading && (
-                        <p className="text-sm text-gray-500 mb-4">
-                            {professionals.length === 0
-                                ? 'No se encontraron profesionales con esos criterios.'
-                                : `${professionals.length} profesional${professionals.length !== 1 ? 'es' : ''} encontrado${professionals.length !== 1 ? 's' : ''}`
-                            }
-                        </p>
-                    )}
-
-                    {/* Lista */}
-                    <div className="space-y-4">
-                        {isLoading
-                            ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-                            : professionals.length === 0
-                                ? (
-                                    <div className="text-center py-20 bg-white rounded-xl border border-gray-100">
-                                        <Stethoscope className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                        <p className="font-medium text-gray-500">No hay profesionales que coincidan</p>
-                                        <p className="text-sm text-gray-400 mt-1 mb-4">
-                                            Prueba con otros filtros o amplía tu búsqueda.
-                                        </p>
-                                        <button
-                                            onClick={clearFilters}
-                                            className="btn-outline text-sm"
-                                        >
-                                            Ver todos los profesionales
-                                        </button>
-                                    </div>
-                                )
-                                : professionals.map((p) => (
-                                    <ProfessionalCard key={p.id} professional={p} />
-                                ))
-                        }
-                    </div>
-                </>
+                <div className="grid grid-cols-1 gap-6">
+                    {professionals.map((prof) => (
+                        <ProfessionalCard key={prof.id} professional={prof} />
+                    ))}
+                </div>
             )}
         </div>
     );

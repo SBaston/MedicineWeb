@@ -1,51 +1,66 @@
 # ═══════════════════════════════════════════════════════════════
 # Backend Dockerfile - .NET 10.0
-# ✅ SIN TESSERACT OCR
+# Solución completa para error de NuGet en Windows → Linux
 # ═══════════════════════════════════════════════════════════════
 
-# ═══════════════════════════════════════════════════════════════
-# ETAPA 1: BUILD
-# ═══════════════════════════════════════════════════════════════
-FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS restore
 WORKDIR /src
 
-# Copiar archivos de proyecto
-COPY ["MedicineBackend.csproj", "./"]
+# Configurar NuGet para Linux
+ENV NUGET_PACKAGES=/root/.nuget/packages
+RUN dotnet nuget locals all --clear
+
+# Copiar proyecto
+COPY ["*.csproj", "./"]
 
 # Restaurar dependencias
-RUN dotnet restore "MedicineBackend.csproj"
+RUN dotnet restore --disable-parallel
 
-# Copiar código fuente
+# ═══════════════════════════════════════════════════════════════
+FROM restore AS build
+WORKDIR /src
+
+# Copiar todo el código
 COPY . .
 
-# Compilar en modo Release
-RUN dotnet build "MedicineBackend.csproj" -c Release -o /app/build
+# CRÍTICO: Eliminar obj/bin de Windows antes de compilar
+RUN rm -rf obj bin
 
-# ═══════════════════════════════════════════════════════════════
-# ETAPA 2: PUBLISH
+# Compilar
+RUN dotnet build -c Release -o /app/build
+
 # ═══════════════════════════════════════════════════════════════
 FROM build AS publish
-RUN dotnet publish "MedicineBackend.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-# ═══════════════════════════════════════════════════════════════
-# ETAPA 3: RUNTIME
-# ✅ SIN TESSERACT - Solo runtime básico con .NET 10
 # ═══════════════════════════════════════════════════════════════
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS final
 WORKDIR /app
 
-# Crear directorio para uploads
-RUN mkdir -p /app/uploads
+# Instalar curl para healthcheck
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copiar aplicación publicada
-COPY --from=publish /app/publish .
+# Usuario no-root
+RUN groupadd -r nexussalud && \
+    useradd -r -g nexussalud nexussalud
 
-# Variables de entorno por defecto
-ENV ASPNETCORE_URLS=http://+:5000
-ENV ASPNETCORE_ENVIRONMENT=Production
+# Crear directorios
+RUN mkdir -p /app/uploads /app/logs && \
+    chown -R nexussalud:nexussalud /app
 
-# Puerto
+# Copiar aplicación
+COPY --from=publish --chown=nexussalud:nexussalud /app/publish .
+
+# Variables de entorno
+ENV ASPNETCORE_URLS=http://+:5000 \
+    ASPNETCORE_ENVIRONMENT=Production
+
 EXPOSE 5000
+USER nexussalud
 
-# Ejecutar aplicación
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
 ENTRYPOINT ["dotnet", "MedicineBackend.dll"]

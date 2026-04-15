@@ -15,7 +15,7 @@ import AdminSpecialtiesPage from './pages/AdminSpecialtiesPage';
 import DoctorRegisterPage from './pages/DoctorRegisterPage';
 import DoctorDashboard from './pages/DoctorDashboard';
 import CompleteProfilePage from './pages/CompleteProfilePage';
-import AvailabilityPage from './pages/AvailabilityPage';
+import AvailabilitySettingsPage from './pages/AvailabilitySettingsPage';
 import UploadVideosPage from './pages/UploadVideosPage';
 import EarningsPage from './pages/EarningsPage';
 import CreateCoursePage from './pages/CreateCoursePage';
@@ -176,7 +176,7 @@ function App() {
                             path="/doctor/appointments"
                             element={
                                 <ProtectedRoute allowedRoles={['Doctor']}>
-                                    <AvailabilityPage />
+                                    <AvailabilitySettingsPage />
                                 </ProtectedRoute>
                             }
                         />

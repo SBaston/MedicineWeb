@@ -1,50 +1,30 @@
-# ═══════════════════════════════════════════════════════════════
-# Frontend Dockerfile - React + Vite + NGINX
-# ✅ Usa nginx para servir archivos estáticos correctamente
-# ═══════════════════════════════════════════════════════════════
-
-# ═══════════════════════════════════════════════════════════════
-# ETAPA 1: BUILD
-# ═══════════════════════════════════════════════════════════════
-FROM node:18 AS build
+FROM node:20 AS build
 WORKDIR /app
 
-# Copiar package files
-COPY package*.json ./
+ARG VITE_API_URL
+ARG VITE_BACKEND_URL
 
-# Instalar dependencias
-RUN npm ci
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_BACKEND_URL=$VITE_BACKEND_URL
 
-# Copiar código fuente
+# NODE_ENV debe ser development durante npm install para que se incluyan
+# devDependencies (vite, @vitejs/plugin-react, etc.). Sin esto npm las omite
+# y el comando `vite build` no se encuentra.
+COPY package.json ./
+RUN NODE_ENV=development npm install
+
 COPY . .
 
-# ✅ Variables de entorno para el build
-ARG VITE_API_URL=http://localhost:5000/api
-ARG VITE_BACKEND_URL=http://localhost:5000
-
-ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
-
-# Build de producción
 RUN npm run build
 
-# ═══════════════════════════════════════════════════════════════
-# ETAPA 2: NGINX (Producción)
-# ═══════════════════════════════════════════════════════════════
-FROM nginx:alpine
-WORKDIR /usr/share/nginx/html
-
-# Eliminar archivos por defecto de nginx
-RUN rm -rf ./*
-
-# Copiar build artifacts desde la etapa de build
-COPY --from=build /app/dist .
-
-# Copiar configuración personalizada de nginx
+FROM nginx:alpine AS runtime
+COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Puerto
-EXPOSE 5173
+# Instalar wget para healthcheck
+RUN apk add --no-cache wget
 
-# Ejecutar nginx
+EXPOSE 5173
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:5173 || exit 1
 CMD ["nginx", "-g", "daemon off;"]
