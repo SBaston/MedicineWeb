@@ -15,8 +15,8 @@ public class AppointmentService : IAppointmentService
     private readonly IEmailService _emailService;
     private readonly ILogger<AppointmentService> _logger;
 
-    // Duración estándar de cada slot en minutos
-    private const int SlotDurationMinutes = 60;
+    // Duración por defecto si el doctor no la ha configurado
+    private const int DefaultSlotDurationMinutes = 60;
 
     public AppointmentService(AppDbContext context, IEmailService emailService, ILogger<AppointmentService> logger)
     {
@@ -33,7 +33,13 @@ public class AppointmentService : IAppointmentService
     {
         var dayOfWeek = (int)date.DayOfWeek;
 
-        // 1. Obtener disponibilidad del doctor para ese día de la semana
+        // 1. Obtener doctor para saber su duración de sesión configurada
+        var doctor = await _context.Doctors.FindAsync(doctorId);
+        var slotDuration = doctor?.SessionDurationMinutes > 0
+            ? doctor.SessionDurationMinutes
+            : DefaultSlotDurationMinutes;
+
+        // 2. Obtener disponibilidad del doctor para ese día de la semana
         var availability = await _context.DoctorAvailabilities
             .Where(a => a.DoctorId == doctorId && a.DayOfWeek == dayOfWeek && a.IsAvailable)
             .ToListAsync();
@@ -41,8 +47,7 @@ public class AppointmentService : IAppointmentService
         if (!availability.Any())
             return new List<AvailableSlotDto>();
 
-        // 2. Obtener citas ya reservadas para ese día
-        // PostgreSQL requiere DateTimeKind.Utc
+        // 3. Obtener citas ya reservadas para ese día
         var dayStart = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var dayEnd   = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
@@ -55,7 +60,7 @@ public class AppointmentService : IAppointmentService
             .Select(a => a.AppointmentDate)
             .ToListAsync();
 
-        // 3. Generar todos los slots posibles y filtrar los ocupados
+        // 4. Generar todos los slots posibles y filtrar los ocupados
         var slots = new List<AvailableSlotDto>();
 
         foreach (var avail in availability)
@@ -63,23 +68,22 @@ public class AppointmentService : IAppointmentService
             var current = DateTime.SpecifyKind(date.Date.Add(avail.StartTime), DateTimeKind.Utc);
             var endTime = DateTime.SpecifyKind(date.Date.Add(avail.EndTime),   DateTimeKind.Utc);
 
-            while (current.AddMinutes(SlotDurationMinutes) <= endTime)
+            while (current.AddMinutes(slotDuration) <= endTime)
             {
-                // Verificar que no está ocupado y que es en el futuro
                 var isBooked = bookedAppointments.Any(b =>
-                    Math.Abs((b - current).TotalMinutes) < SlotDurationMinutes);
+                    Math.Abs((b - current).TotalMinutes) < slotDuration);
 
                 if (!isBooked && current > DateTime.UtcNow.AddMinutes(30))
                 {
                     slots.Add(new AvailableSlotDto
                     {
                         Start = current,
-                        End = current.AddMinutes(SlotDurationMinutes),
-                        Label = $"{current:HH:mm} - {current.AddMinutes(SlotDurationMinutes):HH:mm}"
+                        End = current.AddMinutes(slotDuration),
+                        Label = $"{current:HH:mm} - {current.AddMinutes(slotDuration):HH:mm}"
                     });
                 }
 
-                current = current.AddMinutes(SlotDurationMinutes);
+                current = current.AddMinutes(slotDuration);
             }
         }
 
@@ -106,7 +110,7 @@ public class AppointmentService : IAppointmentService
 
         // 3. Verificar que el slot sigue disponible
         var apptDateUtc = DateTime.SpecifyKind(dto.AppointmentDate, DateTimeKind.Utc);
-        var slotEnd     = DateTime.SpecifyKind(dto.AppointmentDate.AddMinutes(SlotDurationMinutes), DateTimeKind.Utc);
+        var slotEnd     = DateTime.SpecifyKind(dto.AppointmentDate.AddMinutes(doctor.SessionDurationMinutes > 0 ? doctor.SessionDurationMinutes : DefaultSlotDurationMinutes), DateTimeKind.Utc);
         var conflict = await _context.Appointments
             .AnyAsync(a =>
                 a.DoctorId == dto.DoctorId &&
@@ -121,13 +125,17 @@ public class AppointmentService : IAppointmentService
         var isOnline = dto.AppointmentType?.ToLower() == "online";
         var meetingPlatform = isOnline ? "Online_Pending" : null;
 
-        // 5. Crear la cita
+        // 5. Crear la cita usando la duración configurada por el doctor
+        var sessionDuration = doctor.SessionDurationMinutes > 0
+            ? doctor.SessionDurationMinutes
+            : DefaultSlotDurationMinutes;
+
         var appointment = new Appointment
         {
             DoctorId = dto.DoctorId,
             PatientId = patient.Id,
             AppointmentDate = apptDateUtc,
-            DurationMinutes = SlotDurationMinutes,
+            DurationMinutes = sessionDuration,
             Status = "Confirmada",
             Price = doctor.PricePerSession,
             Reason = dto.Reason,
@@ -153,6 +161,9 @@ public class AppointmentService : IAppointmentService
                 await _emailService.SendAppointmentConfirmationToPatientAsync(
                     patient.User.Email, patientName, doctorName,
                     dto.AppointmentDate, appointmentType, doctor.PricePerSession, dto.Reason ?? "");
+
+                // Pequeña pausa para evitar el límite de Mailtrap (demasiados emails/segundo)
+                await Task.Delay(1000);
 
                 await _emailService.SendNewAppointmentNotificationToDoctorAsync(
                     doctor.User.Email, doctorName, patientName,

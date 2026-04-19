@@ -180,12 +180,32 @@ const doctorDashboardService = {
     uploadCourseCover: async (id, file) => {
         const formData = new FormData();
         formData.append('file', file);
-
         const response = await api.post(`/doctor/courses/${id}/cover-image`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
+            headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return response.data;
+    },
+
+    uploadCourseContentFile: async (id, file, onProgress) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/doctor/courses/${id}/content-file`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: onProgress
+                ? (e) => onProgress(Math.round((e.loaded * 100) / e.total))
+                : undefined,
+            timeout: 0, // sin timeout para archivos grandes
+        });
+        return response.data;
+    },
+
+    setCourseVideoUrl: async (id, url) => {
+        const response = await api.patch(`/doctor/courses/${id}/content-url`, { url });
+        return response.data;
+    },
+
+    setCourseArticle: async (id, content) => {
+        const response = await api.patch(`/doctor/courses/${id}/content-article`, { content });
         return response.data;
     },
 

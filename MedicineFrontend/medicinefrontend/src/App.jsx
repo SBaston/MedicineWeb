@@ -25,6 +25,7 @@ import DoctorProfilePage from './pages/DoctorProfilePage';
 import PricingPage from './pages/PricingPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import CoursesPage from './pages/CoursesPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -305,10 +306,7 @@ function App() {
                             path="/courses"
                             element={
                                 <Layout>
-                                    <div className="container-custom py-12">
-                                        <h1 className="text-3xl font-bold">Cursos de Formación</h1>
-                                        <p className="text-gray-600 mt-2">Aprende de los mejores profesionales</p>
-                                    </div>
+                                    <CoursesPage />
                                 </Layout>
                             }
                         />

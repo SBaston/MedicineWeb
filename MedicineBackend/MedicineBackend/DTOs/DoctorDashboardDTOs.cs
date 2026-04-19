@@ -181,6 +181,7 @@ public class TransactionDto
 public class DoctorPricingDto
 {
     public decimal PricePerSession { get; set; }
+    public int SessionDurationMinutes { get; set; } = 60;
     public PackagePricesDto PackagePrices { get; set; } = new();
 }
 
@@ -195,4 +196,5 @@ public class PackagePricesDto
 public class UpdatePricingDto
 {
     public decimal PricePerSession { get; set; }
+    public int SessionDurationMinutes { get; set; } = 60;
 }

@@ -470,7 +470,7 @@ const DoctorRegisterPage = () => {
                                             onChange={handleChange}
                                             className={`input-field ${errors.pricePerSession ? 'border-red-300' : ''}`}
                                             min="1"
-                                            step="0.01"
+                                            step="1"
                                         />
                                         {errors.pricePerSession && (
                                             <p className="text-red-600 text-sm mt-1">{errors.pricePerSession}</p>

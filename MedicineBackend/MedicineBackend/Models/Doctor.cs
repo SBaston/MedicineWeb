@@ -65,6 +65,9 @@ public class Doctor
     [Column(TypeName = "decimal(10,2)")]
     public decimal PricePerSession { get; set; }
 
+    /// <summary>Duración de cada sesión en minutos (30, 45, 60, 90...)</summary>
+    public int SessionDurationMinutes { get; set; } = 60;
+
     /// <summary>Total de ganancias acumuladas</summary>
     [Column(TypeName = "decimal(12,2)")]
     public decimal TotalEarnings { get; set; } = 0;

@@ -19,7 +19,10 @@ public class CourseDto
     public string? CoverImageUrl { get; set; }
     public string? Level { get; set; }
     public string? Category { get; set; }
-    public int? DurationHours { get; set; }
+    public int? DurationMinutes { get; set; }
+    public string? ContentType { get; set; }
+    public string? ContentUrl { get; set; }
+    public string? ArticleContent { get; set; }
     public string Language { get; set; } = "Español";
     public string? Prerequisites { get; set; }
     public string? LearningObjectives { get; set; }
@@ -55,9 +58,17 @@ public class CreateCourseDto
     [MaxLength(100, ErrorMessage = "La categoría no puede exceder los 100 caracteres")]
     public string Category { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "La duración es obligatoria")]
-    [Range(1, 1000, ErrorMessage = "La duración debe ser entre 1 y 1000 horas")]
-    public int DurationHours { get; set; }
+    [Range(1, 60000, ErrorMessage = "La duración debe ser entre 1 y 60000 minutos")]
+    public int? DurationMinutes { get; set; }
+
+    [MaxLength(20, ErrorMessage = "El tipo de contenido no es válido")]
+    [RegularExpression("^(video_url|video_file|document|article)?$", ErrorMessage = "ContentType no válido")]
+    public string? ContentType { get; set; }
+
+    [MaxLength(1000, ErrorMessage = "La URL no puede exceder los 1000 caracteres")]
+    public string? ContentUrl { get; set; }
+
+    public string? ArticleContent { get; set; }
 
     [MaxLength(20, ErrorMessage = "El idioma no puede exceder los 20 caracteres")]
     public string? Language { get; set; }
@@ -91,15 +102,36 @@ public class UpdateCourseDto
     [MaxLength(100, ErrorMessage = "La categoría no puede exceder los 100 caracteres")]
     public string Category { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "La duración es obligatoria")]
-    [Range(1, 1000, ErrorMessage = "La duración debe ser entre 1 y 1000 horas")]
-    public int DurationHours { get; set; }
+    [Range(1, 60000, ErrorMessage = "La duración debe ser entre 1 y 60000 minutos")]
+    public int? DurationMinutes { get; set; }
+
+    [MaxLength(20)]
+    [RegularExpression("^(video_url|video_file|document|article)?$", ErrorMessage = "ContentType no válido")]
+    public string? ContentType { get; set; }
+
+    [MaxLength(1000)]
+    public string? ContentUrl { get; set; }
+
+    public string? ArticleContent { get; set; }
 
     [MaxLength(1000, ErrorMessage = "Los requisitos no pueden exceder los 1000 caracteres")]
     public string? Prerequisites { get; set; }
 
     [MaxLength(2000, ErrorMessage = "Los objetivos no pueden exceder los 2000 caracteres")]
     public string? LearningObjectives { get; set; }
+}
+
+public class SetVideoUrlDto
+{
+    [Required]
+    [MaxLength(1000)]
+    public string Url { get; set; } = string.Empty;
+}
+
+public class SetArticleDto
+{
+    [Required]
+    public string Content { get; set; } = string.Empty;
 }
 
 // ══════════════════════════════════════════════════════════

@@ -58,7 +58,10 @@ public class CourseService : ICourseService
             Price = dto.Price,
             Level = dto.Level,
             Category = dto.Category,
-            DurationHours = dto.DurationHours,
+            DurationMinutes = dto.DurationMinutes,
+            ContentType = dto.ContentType,
+            ContentUrl = dto.ContentUrl,
+            ArticleContent = dto.ArticleContent,
             Language = dto.Language ?? "Español",
             Prerequisites = dto.Prerequisites,
             LearningObjectives = dto.LearningObjectives,
@@ -83,7 +86,10 @@ public class CourseService : ICourseService
         course.Price = dto.Price;
         course.Level = dto.Level;
         course.Category = dto.Category;
-        course.DurationHours = dto.DurationHours;
+        course.DurationMinutes = dto.DurationMinutes;
+        course.ContentType = dto.ContentType;
+        course.ContentUrl = dto.ContentUrl;
+        course.ArticleContent = dto.ArticleContent;
         course.Prerequisites = dto.Prerequisites;
         course.LearningObjectives = dto.LearningObjectives;
         course.UpdatedAt = DateTime.UtcNow;
@@ -115,14 +121,8 @@ public class CourseService : ICourseService
     public async Task<CourseDto> PublishCourseAsync(int doctorId, int courseId)
     {
         var course = await _context.Courses
-            .Include(c => c.Modules)
             .FirstOrDefaultAsync(c => c.Id == courseId && c.DoctorId == doctorId)
             ?? throw new KeyNotFoundException("Curso no encontrado");
-
-        if (!course.Modules.Any())
-        {
-            throw new InvalidOperationException("El curso debe tener al menos un módulo");
-        }
 
         course.IsPublished = true;
         course.PublishedAt = DateTime.UtcNow;
@@ -151,7 +151,9 @@ public class CourseService : ICourseService
             throw new InvalidOperationException("El archivo es demasiado grande (máx 5MB)");
         }
 
-        var uploadsPath = Path.Combine(_env.WebRootPath, "uploads", "courses", "covers");
+        // WebRootPath puede ser null si no existe wwwroot → usamos ContentRootPath/wwwroot
+        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+        var uploadsPath = Path.Combine(webRoot, "uploads", "courses", "covers");
         Directory.CreateDirectory(uploadsPath);
 
         var fileName = $"{courseId}_{Guid.NewGuid()}{extension}";
@@ -164,7 +166,7 @@ public class CourseService : ICourseService
 
         if (!string.IsNullOrEmpty(course.CoverImageUrl))
         {
-            var oldFilePath = Path.Combine(_env.WebRootPath, course.CoverImageUrl.TrimStart('/'));
+            var oldFilePath = Path.Combine(webRoot, course.CoverImageUrl.TrimStart('/'));
             if (File.Exists(oldFilePath))
             {
                 File.Delete(oldFilePath);
@@ -176,6 +178,52 @@ public class CourseService : ICourseService
         await _context.SaveChangesAsync();
 
         return course.CoverImageUrl;
+    }
+
+    public async Task<string> UploadCourseContentFileAsync(int courseId, IFormFile file)
+    {
+        var course = await _context.Courses.FindAsync(courseId)
+            ?? throw new KeyNotFoundException("Curso no encontrado");
+
+        // Vídeos y documentos permitidos
+        var allowedExtensions = new[] { ".mp4", ".mov", ".avi", ".webm", ".pdf", ".docx", ".doc", ".pptx", ".ppt" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        if (!allowedExtensions.Contains(extension))
+            throw new InvalidOperationException("Formato no permitido. Acepta: mp4, mov, avi, webm, pdf, docx, pptx");
+
+        if (file.Length > 500 * 1024 * 1024) // 500 MB
+            throw new InvalidOperationException("El archivo es demasiado grande (máx 500 MB)");
+
+        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+        var uploadsPath = Path.Combine(webRoot, "uploads", "courses", "content");
+        Directory.CreateDirectory(uploadsPath);
+
+        var fileName = $"{courseId}_{Guid.NewGuid()}{extension}";
+        var filePath = Path.Combine(uploadsPath, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        // Determinar tipo de contenido
+        var videoExtensions = new[] { ".mp4", ".mov", ".avi", ".webm" };
+        var contentType = videoExtensions.Contains(extension) ? "video_file" : "document";
+
+        // Borrar archivo anterior si existe
+        if (!string.IsNullOrEmpty(course.ContentUrl) && course.ContentType != "video_url")
+        {
+            var oldPath = Path.Combine(webRoot, course.ContentUrl.TrimStart('/'));
+            if (File.Exists(oldPath)) File.Delete(oldPath);
+        }
+
+        course.ContentType = contentType;
+        course.ContentUrl  = $"/uploads/courses/content/{fileName}";
+        course.UpdatedAt   = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return course.ContentUrl;
     }
 
     public async Task<CourseModuleDto> CreateModuleAsync(int doctorId, int courseId, CreateCourseModuleDto dto)
@@ -265,7 +313,10 @@ public class CourseService : ICourseService
             CoverImageUrl = course.CoverImageUrl,
             Level = course.Level,
             Category = course.Category,
-            DurationHours = course.DurationHours,
+            DurationMinutes = course.DurationMinutes,
+            ContentType = course.ContentType,
+            ContentUrl = course.ContentUrl,
+            ArticleContent = course.ArticleContent,
             Language = course.Language,
             Prerequisites = course.Prerequisites,
             LearningObjectives = course.LearningObjectives,

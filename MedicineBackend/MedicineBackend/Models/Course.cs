@@ -51,9 +51,30 @@ public class Course
     public string? Category { get; set; }
 
     /// <summary>
-    /// Duración total estimada en horas
+    /// Duración total estimada en minutos
     /// </summary>
-    public int? DurationHours { get; set; }
+    public int? DurationMinutes { get; set; }
+
+    // ══════════════════════════════════════════════════════════
+    // CONTENIDO PRINCIPAL DEL CURSO
+    // ══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Tipo de contenido: 'video_url' | 'video_file' | 'document' | 'article'
+    /// </summary>
+    [MaxLength(20)]
+    public string? ContentType { get; set; }
+
+    /// <summary>
+    /// URL externa del vídeo (YouTube, Vimeo, etc.) o ruta del archivo subido
+    /// </summary>
+    [MaxLength(1000)]
+    public string? ContentUrl { get; set; }
+
+    /// <summary>
+    /// Contenido escrito del curso (artículo / texto largo)
+    /// </summary>
+    public string? ArticleContent { get; set; }
 
     /// <summary>
     /// Idioma del curso

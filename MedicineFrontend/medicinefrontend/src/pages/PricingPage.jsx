@@ -15,6 +15,7 @@ const PricingPage = () => {
     const [loading, setLoading] = useState(false);
     const [loadingData, setLoadingData] = useState(true);
     const [pricePerSession, setPricePerSession] = useState('');
+    const [sessionDurationMinutes, setSessionDurationMinutes] = useState(60);
     const [packagePrices, setPackagePrices] = useState({
         single: 0,
         pack3: 0,
@@ -37,6 +38,7 @@ const PricingPage = () => {
             setLoadingData(true);
             const data = await doctorDashboardService.getPricing();
             setPricePerSession(data.pricePerSession.toString());
+            setSessionDurationMinutes(data.sessionDurationMinutes || 60);
             setPackagePrices(data.packagePrices);
         } catch (error) {
             console.error('Error al cargar precios:', error);
@@ -66,7 +68,8 @@ const PricingPage = () => {
 
         try {
             await doctorDashboardService.updatePricing({
-                pricePerSession: parseFloat(pricePerSession)
+                pricePerSession: parseFloat(pricePerSession),
+                sessionDurationMinutes: parseInt(sessionDurationMinutes)
             });
 
             alert('✅ Precios actualizados correctamente');
@@ -148,27 +151,49 @@ const PricingPage = () => {
                         <h2 className="text-xl font-bold text-slate-900">Precio base por sesión</h2>
                     </div>
 
-                    <div className="max-w-md">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Precio por consulta (€)
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-xl">
-                                €
-                            </span>
-                            <input
-                                type="number"
-                                value={pricePerSession}
-                                onChange={(e) => setPricePerSession(e.target.value)}
-                                min="0"
-                                step="0.01"
-                                placeholder="75.00"
-                                className="w-full pl-12 pr-4 py-4 text-2xl font-bold rounded-lg border-2 border-slate-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                            />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                Precio por consulta (€)
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-xl">
+                                    €
+                                </span>
+                                <input
+                                    type="number"
+                                    value={pricePerSession}
+                                    onChange={(e) => setPricePerSession(e.target.value)}
+                                    min="1"
+                                    step="1"
+                                    placeholder="75"
+                                    className="w-full pl-12 pr-4 py-4 text-2xl font-bold rounded-lg border-2 border-slate-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                />
+                            </div>
+                            <p className="text-sm text-slate-500 mt-2">
+                                Precio visible para los pacientes
+                            </p>
                         </div>
-                        <p className="text-sm text-slate-500 mt-2">
-                            Este será el precio que verán los pacientes para una sesión individual
-                        </p>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                Duración de la sesión
+                            </label>
+                            <select
+                                value={sessionDurationMinutes}
+                                onChange={(e) => setSessionDurationMinutes(parseInt(e.target.value))}
+                                className="w-full py-4 px-4 text-lg font-bold rounded-lg border-2 border-slate-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                            >
+                                <option value={30}>30 minutos</option>
+                                <option value={45}>45 minutos</option>
+                                <option value={60}>1 hora</option>
+                                <option value={90}>1 hora 30 min</option>
+                                <option value={120}>2 horas</option>
+                            </select>
+                            <p className="text-sm text-slate-500 mt-2">
+                                Duración de cada franja horaria
+                            </p>
+                        </div>
                     </div>
                 </div>
 

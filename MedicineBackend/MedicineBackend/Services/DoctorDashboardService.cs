@@ -503,6 +503,7 @@ public class DoctorDashboardService : IDoctorDashboardService
         return new DoctorPricingDto
         {
             PricePerSession = doctor.PricePerSession,
+            SessionDurationMinutes = doctor.SessionDurationMinutes,
             PackagePrices = new PackagePricesDto
             {
                 Single = doctor.PricePerSession,
@@ -519,6 +520,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             ?? throw new KeyNotFoundException("Doctor no encontrado");
 
         doctor.PricePerSession = dto.PricePerSession;
+        doctor.SessionDurationMinutes = dto.SessionDurationMinutes > 0 ? dto.SessionDurationMinutes : 60;
         doctor.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
