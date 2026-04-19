@@ -63,6 +63,37 @@ const doctorDashboardService = {
     },
 
     // ══════════════════════════════════════════════════════════
+    // APPOINTMENT SETTINGS
+    // ══════════════════════════════════════════════════════════
+    getAppointmentSettings: async () => {
+        const response = await api.get('/doctor/appointment-settings');
+        return response.data;
+    },
+
+    updateAppointmentSettings: async (data) => {
+        const response = await api.put('/doctor/appointment-settings', data);
+        return response.data;
+    },
+
+    // ══════════════════════════════════════════════════════════
+    // BLOCKED DATES
+    // ══════════════════════════════════════════════════════════
+    getBlockedDates: async () => {
+        const response = await api.get('/doctor/blocked-dates');
+        return response.data;
+    },
+
+    createBlockedDate: async (data) => {
+        const response = await api.post('/doctor/blocked-dates', data);
+        return response.data;
+    },
+
+    deleteBlockedDate: async (id) => {
+        const response = await api.delete(`/doctor/blocked-dates/${id}`);
+        return response.data;
+    },
+
+    // ══════════════════════════════════════════════════════════
     // VIDEOS
     // ══════════════════════════════════════════════════════════
     getVideos: async () => {

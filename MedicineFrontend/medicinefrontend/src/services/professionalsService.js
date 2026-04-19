@@ -61,6 +61,14 @@ const professionalsService = {
     getAvailability: async (doctorId) => {
         const response = await api.get(`/professionals/${doctorId}/availability`);
         return response.data;
+    },
+
+    /**
+     * Obtener redes sociales públicas de un profesional
+     */
+    getSocialMedia: async (doctorId) => {
+        const response = await api.get(`/professionals/${doctorId}/social-media`);
+        return response.data;
     }
 };
 

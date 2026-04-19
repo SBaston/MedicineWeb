@@ -83,6 +83,10 @@ builder.Services.AddScoped<IDoctorDashboardService, DoctorDashboardService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
+// ✅ NUEVOS SERVICIOS: Citas y Email
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+
 builder.Services.AddMemoryCache();
 
 // Autenticación JWT

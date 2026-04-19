@@ -16,11 +16,13 @@ namespace MedicineBackend.Controllers
     {
         private readonly IDoctorDashboardService _service;
         private readonly AppDbContext _context;
+        private readonly IAppointmentService _appointmentService;
 
-        public DoctorDashboardController(IDoctorDashboardService service, AppDbContext context)
+        public DoctorDashboardController(IDoctorDashboardService service, AppDbContext context, IAppointmentService appointmentService)
         {
             _service = service;
             _context = context;
+            _appointmentService = appointmentService;
         }
 
         /// <summary>
@@ -181,6 +183,56 @@ namespace MedicineBackend.Controllers
             var doctorId = await GetCurrentDoctorIdAsync();
             var earnings = await _service.GetEarningsAsync(doctorId, timeRange, filterType);
             return Ok(earnings);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // APPOINTMENTS (CITAS)
+        // ═══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Obtiene todas las citas del doctor autenticado
+        /// GET /api/doctor/appointments
+        /// </summary>
+        [HttpGet("appointments")]
+        public async Task<IActionResult> GetMyAppointments()
+        {
+            try
+            {
+                var doctorId = await GetCurrentDoctorIdAsync();
+                var appointments = await _appointmentService.GetDoctorAppointmentsAsync(doctorId);
+                return Ok(appointments);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// El doctor añade el enlace de videollamada a una cita online
+        /// POST /api/doctor/appointments/{id}/meeting-link
+        /// </summary>
+        [HttpPost("appointments/{id}/meeting-link")]
+        public async Task<IActionResult> AddMeetingLink(int id, [FromBody] AddMeetingLinkDto dto)
+        {
+            try
+            {
+                var doctorId = await GetCurrentDoctorIdAsync();
+                var result = await _appointmentService.AddMeetingLinkAsync(doctorId, id, dto);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
 
         // ═══════════════════════════════════════════════════════════

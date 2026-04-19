@@ -10,11 +10,34 @@ import {
     CheckCircle, AlertCircle, ExternalLink, Save, Plus
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
+import socialMediaService from '../services/socialMediaService';
 
 const PLATFORMS = [
-    { value: 'TikTok', label: 'TikTok', color: 'from-black to-pink-600', icon: '🎵' },
-    { value: 'Instagram', label: 'Instagram', color: 'from-purple-600 to-pink-600', icon: '📷' },
-    { value: 'YouTube', label: 'YouTube', color: 'from-red-600 to-red-700', icon: '▶️' },
+    {
+        value: 'YouTube', label: 'YouTube', color: 'from-red-600 to-red-700', icon: '▶️',
+        urlHint: 'https://youtube.com/watch?v=… o https://youtu.be/…',
+        urlExample: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+    },
+    {
+        value: 'TikTok', label: 'TikTok', color: 'from-gray-900 to-pink-600', icon: '🎵',
+        urlHint: 'https://tiktok.com/@usuario/video/1234567890',
+        urlExample: 'https://www.tiktok.com/@usuario/video/1234567890'
+    },
+    {
+        value: 'Instagram', label: 'Instagram', color: 'from-purple-600 to-pink-500', icon: '📷',
+        urlHint: 'https://instagram.com/reel/ABC123… o /p/ABC123…',
+        urlExample: 'https://www.instagram.com/reel/ABC123/'
+    },
+    {
+        value: 'Facebook', label: 'Facebook', color: 'from-blue-700 to-blue-900', icon: '👤',
+        urlHint: 'https://facebook.com/watch?v=… o enlace directo al vídeo',
+        urlExample: 'https://www.facebook.com/watch?v=1234567890'
+    },
+    {
+        value: 'Vimeo', label: 'Vimeo', color: 'from-cyan-500 to-blue-600', icon: '🎬',
+        urlHint: 'https://vimeo.com/1234567890',
+        urlExample: 'https://vimeo.com/1234567890'
+    },
 ];
 
 const UploadVideosPage = () => {
@@ -30,21 +53,41 @@ const UploadVideosPage = () => {
         tags: '',
     });
     const [errors, setErrors] = useState({});
+    const [socialAccounts, setSocialAccounts] = useState(null); // null = aún cargando
+
+    // true cuando ya cargaron las cuentas, hay al menos una, pero no la de la plataforma seleccionada
+    const platformNotLinked = socialAccounts !== null
+        && socialAccounts.length > 0
+        && !socialAccounts.some(a => a.platform.toLowerCase() === newVideo.platform.toLowerCase());
 
     useEffect(() => {
-        loadVideos();
+        loadData();
     }, []);
 
-    const loadVideos = async () => {
+    const loadData = async () => {
         try {
             setLoadingData(true);
+            const [videosData, socialData] = await Promise.allSettled([
+                doctorDashboardService.getVideos(),
+                socialMediaService.getAll(),
+            ]);
+            if (videosData.status === 'fulfilled') setVideos(videosData.value);
+            setSocialAccounts(socialData.status === 'fulfilled' ? socialData.value : []);
+        } catch (error) {
+            console.error('Error al cargar datos:', error);
+            setSocialAccounts([]);
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    // Alias para recargar solo los videos
+    const loadVideos = async () => {
+        try {
             const data = await doctorDashboardService.getVideos();
             setVideos(data);
         } catch (error) {
             console.error('Error al cargar vídeos:', error);
-            alert('Error al cargar los vídeos');
-        } finally {
-            setLoadingData(false);
         }
     };
 
@@ -209,6 +252,33 @@ const UploadVideosPage = () => {
                     </div>
                 </div>
 
+                {/* ⚠️ Aviso: Sin redes sociales */}
+                {socialAccounts !== null && socialAccounts.length === 0 && (
+                    <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 mb-8">
+                        <div className="flex items-start gap-4">
+                            <AlertCircle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                                <h3 className="font-bold text-amber-900 text-lg mb-1">
+                                    Necesitas vincular una red social primero
+                                </h3>
+                                <p className="text-amber-800 text-sm mb-4">
+                                    Antes de publicar vídeos debes tener al menos una red social
+                                    (YouTube, TikTok, Instagram…) vinculada a tu perfil.
+                                    Esto nos permite verificar que el contenido es tuyo y mostrar
+                                    tus vídeos con el contexto correcto.
+                                </p>
+                                <button
+                                    onClick={() => navigate('/doctor/dashboard')}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold transition-colors"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    Ir al dashboard y añadir red social
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Add New Video */}
                     <div className="lg:col-span-2">
@@ -224,23 +294,45 @@ const UploadVideosPage = () => {
                                     <label className="block text-sm font-semibold text-slate-700 mb-3">
                                         Plataforma *
                                     </label>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                                         {PLATFORMS.map(platform => (
                                             <button
                                                 key={platform.value}
                                                 type="button"
-                                                onClick={() => setNewVideo(prev => ({ ...prev, platform: platform.value }))}
-                                                className={`p-4 rounded-xl border-2 transition-all ${newVideo.platform === platform.value
+                                                onClick={() => setNewVideo(prev => ({ ...prev, platform: platform.value, videoUrl: '' }))}
+                                                className={`p-3 rounded-xl border-2 transition-all text-center ${newVideo.platform === platform.value
                                                         ? 'border-red-600 bg-red-50'
                                                         : 'border-slate-200 hover:border-slate-300'
                                                     }`}
                                             >
-                                                <div className="text-3xl mb-2">{platform.icon}</div>
-                                                <div className="font-semibold text-sm">{platform.label}</div>
+                                                <div className="text-2xl mb-1">{platform.icon}</div>
+                                                <div className="font-semibold text-xs">{platform.label}</div>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* ⚠️ Aviso: plataforma no vinculada */}
+                                {platformNotLinked && (
+                                    <div className="flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-xl p-4">
+                                        <AlertCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-orange-800">
+                                                No tienes una cuenta de {newVideo.platform} vinculada
+                                            </p>
+                                            <p className="text-xs text-orange-700 mt-0.5">
+                                                Añade tu perfil de {newVideo.platform} en "Mis Redes Sociales" antes de subir este vídeo. Solo puedes publicar vídeos de plataformas que hayas verificado.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate('/doctor/dashboard')}
+                                                className="mt-2 text-xs font-semibold text-orange-700 underline hover:text-orange-900 transition-colors"
+                                            >
+                                                Ir al dashboard y añadir {newVideo.platform} →
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* URL */}
                                 <div>
@@ -252,10 +344,16 @@ const UploadVideosPage = () => {
                                         name="videoUrl"
                                         value={newVideo.videoUrl}
                                         onChange={handleInputChange}
-                                        placeholder="https://tiktok.com/@usuario/video123"
+                                        placeholder={PLATFORMS.find(p => p.value === newVideo.platform)?.urlExample || 'https://...'}
                                         className={`w-full px-4 py-3 rounded-lg border ${errors.videoUrl ? 'border-red-300 bg-red-50' : 'border-slate-200'
                                             } focus:ring-2 focus:ring-red-500 focus:border-transparent`}
                                     />
+                                    {/* Hint por plataforma */}
+                                    {!errors.videoUrl && (
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            💡 {PLATFORMS.find(p => p.value === newVideo.platform)?.urlHint}
+                                        </p>
+                                    )}
                                     {errors.videoUrl && (
                                         <p className="text-red-600 text-sm mt-1">{errors.videoUrl}</p>
                                     )}
@@ -315,8 +413,15 @@ const UploadVideosPage = () => {
 
                                 <button
                                     onClick={handleAddVideo}
-                                    disabled={loading}
-                                    className="w-full py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                                    disabled={loading || (socialAccounts !== null && socialAccounts.length === 0) || platformNotLinked}
+                                    title={
+                                        socialAccounts?.length === 0
+                                            ? 'Debes vincular una red social antes de subir vídeos'
+                                            : platformNotLinked
+                                                ? `Vincula tu cuenta de ${newVideo.platform} primero`
+                                                : ''
+                                    }
+                                    className="w-full py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg font-semibold hover:from-red-700 hover:to-orange-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {loading ? (
                                         <>

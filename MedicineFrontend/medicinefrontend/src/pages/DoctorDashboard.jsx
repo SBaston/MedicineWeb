@@ -9,15 +9,23 @@ import { useNavigate } from 'react-router-dom';
 import {
     DollarSign, Calendar, Users, Star, TrendingUp, TrendingDown,
     User, Clock, Video, BookOpen, AlertCircle,
-    ArrowRight, CheckCircle, Eye
+    ArrowRight, CheckCircle, Eye, Link as LinkIcon,
+    MapPin, Loader2, ChevronDown, ChevronUp, Send
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
 import SocialMediaSection from '../components/SocialMediaSection';
+import appointmentService from '../services/appointmentService';
 
 const DoctorDashboard = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [appointments, setAppointments] = useState([]);
+    const [loadingAppointments, setLoadingAppointments] = useState(false);
+    const [showAppointments, setShowAppointments] = useState(false);
+    const [meetingLinkData, setMeetingLinkData] = useState({});
+    const [savingLink, setSavingLink] = useState({});
+    const [linkSuccess, setLinkSuccess] = useState({});
 
     useEffect(() => {
         loadDashboardStats();
@@ -33,6 +41,42 @@ const DoctorDashboard = () => {
             alert('Error al cargar el dashboard');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadAppointments = async () => {
+        if (appointments.length > 0) {
+            setShowAppointments(prev => !prev);
+            return;
+        }
+        setLoadingAppointments(true);
+        try {
+            const data = await appointmentService.getDoctorAppointments();
+            setAppointments(data);
+            setShowAppointments(true);
+        } catch (error) {
+            console.error('Error al cargar citas:', error);
+        } finally {
+            setLoadingAppointments(false);
+        }
+    };
+
+    const handleSaveMeetingLink = async (appointmentId) => {
+        const data = meetingLinkData[appointmentId];
+        if (!data?.link) return;
+        setSavingLink(prev => ({ ...prev, [appointmentId]: true }));
+        try {
+            const updated = await appointmentService.addMeetingLink(appointmentId, {
+                meetingLink: data.link,
+                platform: data.platform || 'Online',
+            });
+            setAppointments(prev => prev.map(a => a.id === appointmentId ? updated : a));
+            setLinkSuccess(prev => ({ ...prev, [appointmentId]: true }));
+            setTimeout(() => setLinkSuccess(prev => ({ ...prev, [appointmentId]: false })), 3000);
+        } catch (error) {
+            alert('Error al guardar el enlace');
+        } finally {
+            setSavingLink(prev => ({ ...prev, [appointmentId]: false }));
         }
     };
 
@@ -130,6 +174,153 @@ const DoctorDashboard = () => {
                     <SocialMediaSection />
                 </div>
 
+                {/* ═══ SECCIÓN: MIS CITAS ═══ */}
+                <div className="mb-8">
+                    <button
+                        onClick={loadAppointments}
+                        className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-blue-100 rounded-xl">
+                                <Calendar className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div className="text-left">
+                                <h3 className="font-bold text-slate-900">Mis citas</h3>
+                                <p className="text-sm text-slate-500">Ver todas las citas y añadir enlaces de videollamada</p>
+                            </div>
+                        </div>
+                        {loadingAppointments
+                            ? <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                            : showAppointments
+                                ? <ChevronUp className="w-5 h-5 text-slate-400" />
+                                : <ChevronDown className="w-5 h-5 text-slate-400" />
+                        }
+                    </button>
+
+                    {showAppointments && (
+                        <div className="mt-3 space-y-3">
+                            {appointments.length === 0 ? (
+                                <div className="text-center py-8 bg-white rounded-2xl border border-slate-200">
+                                    <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                                    <p className="text-slate-600 font-medium">No tienes citas aún</p>
+                                    <p className="text-slate-400 text-sm">Las citas aparecerán aquí cuando los pacientes reserven</p>
+                                </div>
+                            ) : (
+                                appointments.map((appt) => {
+                                    const isOnline = appt.appointmentType === 'online';
+                                    const needsLink = isOnline && !appt.meetingLink;
+                                    const date = new Date(appt.appointmentDate);
+                                    const statusColors = {
+                                        'Confirmada': 'bg-blue-100 text-blue-700',
+                                        'Completada': 'bg-green-100 text-green-700',
+                                        'Cancelada': 'bg-red-100 text-red-700',
+                                        'Pendiente': 'bg-yellow-100 text-yellow-700',
+                                    };
+
+                                    return (
+                                        <div
+                                            key={appt.id}
+                                            className={`bg-white rounded-xl border p-4 shadow-sm ${needsLink ? 'border-amber-200' : 'border-slate-200'}`}
+                                        >
+                                            <div className="flex items-start justify-between gap-4 mb-3">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <p className="font-semibold text-slate-900">{appt.patientName}</p>
+                                                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[appt.status] || 'bg-gray-100 text-gray-700'}`}>
+                                                            {appt.status}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-slate-500">
+                                                        {date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las {date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                    <div className="flex items-center gap-1 mt-1">
+                                                        {isOnline
+                                                            ? <Video className="w-3.5 h-3.5 text-blue-500" />
+                                                            : <MapPin className="w-3.5 h-3.5 text-green-500" />
+                                                        }
+                                                        <span className={`text-xs font-medium ${isOnline ? 'text-blue-600' : 'text-green-600'}`}>
+                                                            {isOnline ? 'Online' : 'Presencial'} · {appt.price?.toFixed(2)} €
+                                                        </span>
+                                                    </div>
+                                                    {appt.reason && (
+                                                        <p className="text-xs text-slate-400 mt-1">Motivo: {appt.reason}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Enlace de videollamada */}
+                                            {isOnline && appt.status !== 'Cancelada' && (
+                                                <div className="border-t border-slate-100 pt-3">
+                                                    {appt.meetingLink ? (
+                                                        <div className="flex items-center gap-2 text-sm text-green-600">
+                                                            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                                                            <span className="font-medium">Enlace enviado:</span>
+                                                            <a href={appt.meetingLink} target="_blank" rel="noopener noreferrer"
+                                                                className="text-blue-600 hover:underline truncate">
+                                                                {appt.meetingLink}
+                                                            </a>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            <p className="text-xs font-medium text-amber-700 flex items-center gap-1">
+                                                                <AlertCircle className="w-3.5 h-3.5" />
+                                                                Pendiente: añade el enlace de videollamada
+                                                            </p>
+                                                            <div className="flex gap-2">
+                                                                <input
+                                                                    type="url"
+                                                                    placeholder="https://zoom.us/j/... o meet.google.com/..."
+                                                                    value={meetingLinkData[appt.id]?.link || ''}
+                                                                    onChange={(e) => setMeetingLinkData(prev => ({
+                                                                        ...prev,
+                                                                        [appt.id]: { ...prev[appt.id], link: e.target.value }
+                                                                    }))}
+                                                                    className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                />
+                                                                <select
+                                                                    value={meetingLinkData[appt.id]?.platform || ''}
+                                                                    onChange={(e) => setMeetingLinkData(prev => ({
+                                                                        ...prev,
+                                                                        [appt.id]: { ...prev[appt.id], platform: e.target.value }
+                                                                    }))}
+                                                                    className="text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                >
+                                                                    <option value="">Plataforma</option>
+                                                                    <option value="Zoom">Zoom</option>
+                                                                    <option value="Teams">Teams</option>
+                                                                    <option value="Meet">Google Meet</option>
+                                                                    <option value="Otro">Otro</option>
+                                                                </select>
+                                                                <button
+                                                                    onClick={() => handleSaveMeetingLink(appt.id)}
+                                                                    disabled={!meetingLinkData[appt.id]?.link || savingLink[appt.id]}
+                                                                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+                                                                >
+                                                                    {savingLink[appt.id]
+                                                                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                                                                        : <Send className="w-4 h-4" />
+                                                                    }
+                                                                    Enviar
+                                                                </button>
+                                                            </div>
+                                                            {linkSuccess[appt.id] && (
+                                                                <p className="text-xs text-green-600 flex items-center gap-1">
+                                                                    <CheckCircle className="w-3.5 h-3.5" />
+                                                                    Enlace enviado al paciente por email
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    )}
+                </div>
+
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <StatCard
@@ -164,8 +355,8 @@ const DoctorDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <QuickActionCard
                         icon={Calendar}
-                        title="Ver Citas"
-                        description="Gestiona tus citas"
+                        title="Fijar Disponibilidad"
+                        description="Configura tu horario"
                         onClick={() => navigate('/doctor/appointments')}
                         color="blue"
                     />

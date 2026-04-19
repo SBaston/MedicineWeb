@@ -5,15 +5,17 @@
 // ✅ Filtros avanzados
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import professionalsService from '../services/professionalsService';
 import {
     Search, Star, Clock, Stethoscope,
     SlidersHorizontal, X, ChevronDown, Play,
-    TrendingUp, Users, Video as VideoIcon
+    TrendingUp, Users, Video as VideoIcon, ExternalLink, CalendarPlus
 } from 'lucide-react';
+import { useState } from 'react';
+import BookingModal from '../components/BookingModal';
 
 // ═══════════════════════════════════════════════════════════════
 // OPCIONES DE FILTROS
@@ -49,12 +51,28 @@ const ProfessionalCard = ({ professional }) => {
     const avatarUrl = professional.profilePictureUrl
         || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=3b82f6&color=fff&size=200&bold=true`;
 
+    const [showBooking, setShowBooking] = useState(false);
+
     // ✅ NUEVO: Obtener videos del profesional
     const { data: videos = [] } = useQuery({
         queryKey: ['professional-videos', professional.id],
         queryFn: () => professionalsService.getVideos(professional.id),
         enabled: !!professional.id,
     });
+
+    // ✅ NUEVO: Obtener redes sociales del profesional (solo si tiene videos)
+    const { data: socialAccounts = [] } = useQuery({
+        queryKey: ['professional-social', professional.id],
+        queryFn: () => professionalsService.getSocialMedia(professional.id),
+        enabled: videos.length > 0,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    // Cuentas cuya plataforma aparece en al menos uno de los videos del doctor
+    const videoPlatforms = new Set(videos.map(v => (v.platform || '').toLowerCase()));
+    const relevantAccounts = socialAccounts.filter(
+        a => videoPlatforms.has((a.platform || '').toLowerCase())
+    );
 
     return (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-all">
@@ -136,13 +154,7 @@ const ProfessionalCard = ({ professional }) => {
                                     {professional.yearsOfExperience} años exp.
                                 </span>
                             )}
-                            {professional.isAcceptingPatients && (
-                                <span className="flex items-center gap-1 text-green-600 font-medium">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                                    Acepta pacientes
-                                </span>
-                            )}
-                            {/* ✅ NUEVO: Contador de videos */}
+                            {/* Contador de videos */}
                             {videos.length > 0 && (
                                 <span className="flex items-center gap-1 text-purple-600 font-medium">
                                     <VideoIcon className="w-4 h-4" />
@@ -152,19 +164,65 @@ const ProfessionalCard = ({ professional }) => {
                         </div>
                     </div>
                 </Link>
+
+                {/* ✅ BOTÓN RESERVAR CITA */}
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                    <button
+                        onClick={() => setShowBooking(true)}
+                        className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors"
+                    >
+                        <CalendarPlus className="w-4 h-4" />
+                        Reservar cita
+                    </button>
+                </div>
             </div>
+
+            {/* Modal de reserva */}
+            {showBooking && (
+                <BookingModal
+                    professional={professional}
+                    onClose={() => setShowBooking(false)}
+                />
+            )}
 
             {/* ✅ NUEVA SECCIÓN: Videos del profesional */}
             {videos.length > 0 && (
                 <div className="border-t border-gray-100 bg-gray-50 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <VideoIcon className="w-4 h-4 text-gray-600" />
-                        <h4 className="font-semibold text-gray-900 text-sm">Contenido educativo</h4>
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <VideoIcon className="w-4 h-4 text-gray-600" />
+                            <h4 className="font-semibold text-gray-900 text-sm">Contenido educativo</h4>
+                        </div>
+                        {/* Cuentas de redes sociales relevantes */}
+                        {relevantAccounts.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                                {relevantAccounts.map(account => {
+                                    const style = PLATFORM_STYLES[(account.platform || '').toLowerCase()] || PLATFORM_STYLES.unknown;
+                                    const href = account.profileUrl?.startsWith('http')
+                                        ? account.profileUrl
+                                        : `https://${account.profileUrl}`;
+                                    return (
+                                        <a
+                                            key={account.id}
+                                            href={href}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={e => e.stopPropagation()}
+                                            title={`Ver perfil de ${account.platform}`}
+                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white ${style.bg}`}
+                                        >
+                                            <span>{style.emoji}</span>
+                                            <span>{style.label}</span>
+                                        </a>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-3 gap-2">
                         {videos.slice(0, 3).map((video) => (
-                            <VideoThumbnail key={video.id} video={video} professionalId={professional.id} />
+                            <VideoPlayer key={video.id} video={video} />
                         ))}
                     </div>
 
@@ -183,58 +241,175 @@ const ProfessionalCard = ({ professional }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// COMPONENTE: Miniatura de Video
+// COMPONENTE: Reproductor de Video con embed real
 // ═══════════════════════════════════════════════════════════════
 
-const VideoThumbnail = ({ video, professionalId }) => {
-    const getThumbnail = (url) => {
-        // YouTube
-        if (url.includes('youtube.com') || url.includes('youtu.be')) {
-            const videoId = url.includes('youtu.be')
-                ? url.split('/').pop()
-                : new URLSearchParams(new URL(url).search).get('v');
-            return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-        }
+/**
+ * Extrae URL de embed e imagen de miniatura según plataforma.
+ * Devuelve { canEmbed, embedUrl, thumbnail, platform }
+ */
+const parseVideoMeta = (video) => {
+    const url = video.videoUrl || '';
+    const platform = (video.platform || '').toLowerCase();
 
-        // TikTok (placeholder)
-        if (url.includes('tiktok.com')) {
-            return 'https://placehold.co/300x400/e91e63/white?text=TikTok';
-        }
+    // ── YouTube ──────────────────────────────────────────────
+    if (platform === 'youtube' || url.includes('youtube.com') || url.includes('youtu.be')) {
+        try {
+            let videoId;
+            if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1]?.split(/[?&#]/)[0];
+            } else if (url.includes('/shorts/')) {
+                videoId = url.split('/shorts/')[1]?.split(/[?&#]/)[0];
+            } else {
+                videoId = new URL(url).searchParams.get('v');
+            }
+            if (videoId) return {
+                canEmbed: true,
+                platform: 'youtube',
+                embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`,
+                thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
+            };
+        } catch { /* invalid URL */ }
+    }
 
-        // Instagram (placeholder)
-        if (url.includes('instagram.com')) {
-            return 'https://placehold.co/300x400/e4405f/white?text=Instagram';
-        }
+    // ── TikTok ────────────────────────────────────────────────
+    if (platform === 'tiktok' || url.includes('tiktok.com')) {
+        const match = url.match(/\/video\/(\d+)/);
+        if (match) return {
+            canEmbed: true,
+            platform: 'tiktok',
+            embedUrl: `https://www.tiktok.com/embed/v2/${match[1]}`,
+            thumbnail: null,
+        };
+        return { canEmbed: false, platform: 'tiktok', embedUrl: null, thumbnail: null };
+    }
 
-        // Default
-        return 'https://placehold.co/300x400/3b82f6/white?text=Video';
-    };
+    // ── Vimeo ─────────────────────────────────────────────────
+    if (platform === 'vimeo' || url.includes('vimeo.com')) {
+        const match = url.match(/vimeo\.com\/(\d+)/);
+        if (match) return {
+            canEmbed: true,
+            platform: 'vimeo',
+            embedUrl: `https://player.vimeo.com/video/${match[1]}?autoplay=1&title=0&byline=0`,
+            thumbnail: `https://vumbnail.com/${match[1]}.jpg`,
+        };
+    }
 
+    // ── Instagram ─────────────────────────────────────────────
+    if (platform === 'instagram' || url.includes('instagram.com')) {
+        return { canEmbed: false, platform: 'instagram', embedUrl: null, thumbnail: null };
+    }
+
+    // ── Facebook ──────────────────────────────────────────────
+    if (platform === 'facebook' || url.includes('facebook.com')) {
+        return { canEmbed: false, platform: 'facebook', embedUrl: null, thumbnail: null };
+    }
+
+    return { canEmbed: false, platform: 'unknown', embedUrl: null, thumbnail: null };
+};
+
+const PLATFORM_STYLES = {
+    youtube:   { bg: 'bg-red-600',    label: 'YouTube',   emoji: '▶️' },
+    tiktok:    { bg: 'bg-black',      label: 'TikTok',    emoji: '🎵' },
+    vimeo:     { bg: 'bg-cyan-600',   label: 'Vimeo',     emoji: '🎬' },
+    instagram: { bg: 'bg-gradient-to-br from-purple-600 to-pink-500', label: 'Instagram', emoji: '📷' },
+    facebook:  { bg: 'bg-blue-700',   label: 'Facebook',  emoji: '👤' },
+    unknown:   { bg: 'bg-slate-600',  label: 'Video',     emoji: '🎥' },
+};
+
+const VideoPlayer = ({ video }) => {
+    const [playing, setPlaying] = useState(false);
+    const meta = parseVideoMeta(video);
+    const style = PLATFORM_STYLES[meta.platform] || PLATFORM_STYLES.unknown;
+
+    // Plataformas sin embed directo: abrir en nueva pestaña
+    if (!meta.canEmbed) {
+        return (
+            <a
+                href={video.videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative group block aspect-video rounded-lg overflow-hidden"
+            >
+                {/* Fondo de color de plataforma */}
+                <div className={`absolute inset-0 ${style.bg} flex flex-col items-center justify-center gap-2`}>
+                    <span className="text-3xl">{style.emoji}</span>
+                    <span className="text-white text-xs font-semibold">{style.label}</span>
+                </div>
+                {/* Overlay hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-lg px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-800">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Abrir en {style.label}
+                    </div>
+                </div>
+                {/* Título */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                    <p className="text-white text-xs font-medium line-clamp-2">{video.title}</p>
+                </div>
+            </a>
+        );
+    }
+
+    // Plataformas con embed: thumbnail → iframe al hacer clic
+    if (playing) {
+        return (
+            <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
+                <iframe
+                    src={meta.embedUrl}
+                    title={video.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                    loading="lazy"
+                />
+            </div>
+        );
+    }
+
+    // Thumbnail estático con botón play
     return (
-        <Link
-            to={`/professionals/${professionalId}#video-${video.id}`}
-            className="relative group block aspect-video bg-gray-200 rounded-lg overflow-hidden"
+        <button
+            onClick={() => setPlaying(true)}
+            className="relative group block aspect-video w-full rounded-lg overflow-hidden bg-gray-200 cursor-pointer"
+            title={`Reproducir: ${video.title}`}
         >
-            <img
-                src={getThumbnail(video.videoUrl)}
-                alt={video.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-            />
+            {meta.thumbnail ? (
+                <img
+                    src={meta.thumbnail}
+                    alt={video.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                />
+            ) : (
+                <div className={`absolute inset-0 ${style.bg} flex items-center justify-center`}>
+                    <span className="text-4xl">{style.emoji}</span>
+                </div>
+            )}
 
-            {/* Overlay con botón play */}
-            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center transition-colors">
-                    <Play className="w-5 h-5 text-gray-900 ml-0.5" />
+            {/* Play overlay */}
+            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-white/90 group-hover:bg-white group-hover:scale-110 transition-all flex items-center justify-center shadow-lg">
+                    <Play className="w-5 h-5 text-gray-900 ml-1" />
                 </div>
             </div>
 
-            {/* Título del video */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                <p className="text-white text-xs font-medium line-clamp-2">
-                    {video.title}
-                </p>
+            {/* Badge de plataforma */}
+            <div className="absolute top-2 left-2">
+                <span className={`text-xs font-bold text-white px-2 py-0.5 rounded-full ${
+                    meta.platform === 'youtube' ? 'bg-red-600' :
+                    meta.platform === 'tiktok' ? 'bg-black' :
+                    meta.platform === 'vimeo' ? 'bg-cyan-600' : 'bg-slate-600'
+                }`}>
+                    {style.label}
+                </span>
             </div>
-        </Link>
+
+            {/* Título */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                <p className="text-white text-xs font-medium line-clamp-2">{video.title}</p>
+            </div>
+        </button>
     );
 };
 
