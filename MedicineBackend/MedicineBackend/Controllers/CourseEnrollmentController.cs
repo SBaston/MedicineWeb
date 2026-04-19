@@ -1,0 +1,344 @@
+// ═══════════════════════════════════════════════════════════════
+// Controllers/CourseEnrollmentController.cs
+// Controlador para gestionar inscripciones en cursos (Patients y Doctors)
+// ═══════════════════════════════════════════════════════════════
+
+using MedicineBackend.Data;
+using MedicineBackend.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.Extensions.Logging;
+
+
+namespace MedicineBackend.Controllers;
+
+[ApiController]
+[Route("api/courses")]
+public class CourseEnrollmentController : ControllerBase
+{
+    private readonly AppDbContext _context;
+    private readonly ILogger<CourseEnrollmentController> _logger;
+
+    public CourseEnrollmentController(AppDbContext context, ILogger<CourseEnrollmentController> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // POST /api/courses/{id}/enroll
+    // ─────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Inscribirse en un curso (Patient o Doctor)
+    /// </summary>
+    [HttpPost("{id}/enroll")]
+    [Authorize(Roles = "Patient,Doctor")]
+    public async Task<ActionResult<object>> Enroll(int id)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Usuario no autenticado" });
+
+            // Verify course exists and is published
+            var course = await _context.Courses.FindAsync(id);
+            if (course == null)
+                return NotFound(new { message = "Curso no encontrado" });
+
+            if (!course.IsPublished)
+                return BadRequest(new { message = "El curso no está disponible" });
+
+            CourseEnrollment enrollment;
+
+            if (role == "Patient")
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+                if (patient == null)
+                    return NotFound(new { message = "Paciente no encontrado" });
+
+                // Check if already enrolled
+                var existing = await _context.CourseEnrollments
+                    .FirstOrDefaultAsync(e => e.CourseId == id && e.PatientId == patient.Id);
+                if (existing != null)
+                    return Conflict(new { message = "Ya estás inscrito en este curso" });
+
+                enrollment = new CourseEnrollment
+                {
+                    CourseId = id,
+                    PatientId = patient.Id,
+                    EnrolledAt = DateTime.UtcNow
+                };
+            }
+            else if (role == "Doctor")
+            {
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+                if (doctor == null)
+                    return NotFound(new { message = "Médico no encontrado" });
+
+                // Check if already enrolled
+                var existing = await _context.CourseEnrollments
+                    .FirstOrDefaultAsync(e => e.CourseId == id && e.DoctorId == doctor.Id);
+                if (existing != null)
+                    return Conflict(new { message = "Ya estás inscrito en este curso" });
+
+                enrollment = new CourseEnrollment
+                {
+                    CourseId = id,
+                    DoctorId = doctor.Id,
+                    EnrolledAt = DateTime.UtcNow
+                };
+            }
+            else
+            {
+                return Forbid();
+            }
+
+            _context.CourseEnrollments.Add(enrollment);
+            course.TotalEnrollments++;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("User {UserId} (role: {Role}) enrolled in course {CourseId}", userId, role, id);
+
+            return Ok(new
+            {
+                id = enrollment.Id,
+                courseId = enrollment.CourseId,
+                enrolledAt = enrollment.EnrolledAt,
+                progress = enrollment.Progress,
+                isCompleted = enrollment.IsCompleted,
+                course = new
+                {
+                    id = course.Id,
+                    title = course.Title,
+                    description = course.Description,
+                    price = course.Price,
+                    coverImageUrl = course.CoverImageUrl,
+                    level = course.Level,
+                    category = course.Category,
+                    durationMinutes = course.DurationMinutes
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al inscribirse en el curso {CourseId}", id);
+            return StatusCode(500, new { message = "Error al procesar la inscripción", error = ex.Message });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DELETE /api/courses/{id}/enroll
+    // ─────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Darse de baja de un curso (Patient o Doctor)
+    /// </summary>
+    [HttpDelete("{id}/enroll")]
+    [Authorize(Roles = "Patient,Doctor")]
+    public async Task<ActionResult> Unenroll(int id)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Usuario no autenticado" });
+
+            CourseEnrollment? enrollment = null;
+
+            if (role == "Patient")
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+                if (patient == null)
+                    return NotFound(new { message = "Paciente no encontrado" });
+
+                enrollment = await _context.CourseEnrollments
+                    .FirstOrDefaultAsync(e => e.CourseId == id && e.PatientId == patient.Id);
+            }
+            else if (role == "Doctor")
+            {
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+                if (doctor == null)
+                    return NotFound(new { message = "Médico no encontrado" });
+
+                enrollment = await _context.CourseEnrollments
+                    .FirstOrDefaultAsync(e => e.CourseId == id && e.DoctorId == doctor.Id);
+            }
+            else
+            {
+                return Forbid();
+            }
+
+            if (enrollment == null)
+                return NotFound(new { message = "No estás inscrito en este curso" });
+
+            var course = await _context.Courses.FindAsync(id);
+
+            _context.CourseEnrollments.Remove(enrollment);
+
+            if (course != null && course.TotalEnrollments > 0)
+                course.TotalEnrollments--;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("User {UserId} (role: {Role}) unenrolled from course {CourseId}", userId, role, id);
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al darse de baja del curso {CourseId}", id);
+            return StatusCode(500, new { message = "Error al procesar la baja", error = ex.Message });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GET /api/courses/{id}/my-enrollment
+    // ─────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Obtener inscripción propia en un curso (null si no inscrito)
+    /// </summary>
+    [HttpGet("{id}/my-enrollment")]
+    [Authorize(Roles = "Patient,Doctor")]
+    public async Task<ActionResult<object>> GetMyEnrollment(int id)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Usuario no autenticado" });
+
+            CourseEnrollment? enrollment = null;
+
+            if (role == "Patient")
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+                if (patient != null)
+                {
+                    enrollment = await _context.CourseEnrollments
+                        .Include(e => e.Course)
+                        .FirstOrDefaultAsync(e => e.CourseId == id && e.PatientId == patient.Id);
+                }
+            }
+            else if (role == "Doctor")
+            {
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+                if (doctor != null)
+                {
+                    enrollment = await _context.CourseEnrollments
+                        .Include(e => e.Course)
+                        .FirstOrDefaultAsync(e => e.CourseId == id && e.DoctorId == doctor.Id);
+                }
+            }
+
+            if (enrollment == null)
+                return Ok((object?)null);
+
+            return Ok(new
+            {
+                id = enrollment.Id,
+                courseId = enrollment.CourseId,
+                enrolledAt = enrollment.EnrolledAt,
+                progress = enrollment.Progress,
+                isCompleted = enrollment.IsCompleted,
+                course = enrollment.Course == null ? null : new
+                {
+                    id = enrollment.Course.Id,
+                    title = enrollment.Course.Title,
+                    description = enrollment.Course.Description,
+                    price = enrollment.Course.Price,
+                    coverImageUrl = enrollment.Course.CoverImageUrl,
+                    level = enrollment.Course.Level,
+                    category = enrollment.Course.Category,
+                    durationMinutes = enrollment.Course.DurationMinutes
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener inscripción del curso {CourseId}", id);
+            return StatusCode(500, new { message = "Error al obtener la inscripción", error = ex.Message });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GET /api/courses/my-enrollments
+    // ─────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Obtener todas las inscripciones del usuario actual con datos del curso
+    /// </summary>
+    [HttpGet("my-enrollments")]
+    [Authorize(Roles = "Patient,Doctor")]
+    public async Task<ActionResult<object>> GetMyEnrollments()
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Usuario no autenticado" });
+
+            List<CourseEnrollment> enrollments = new();
+
+            if (role == "Patient")
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+                if (patient != null)
+                {
+                    enrollments = await _context.CourseEnrollments
+                        .Include(e => e.Course)
+                        .Where(e => e.PatientId == patient.Id)
+                        .OrderByDescending(e => e.EnrolledAt)
+                        .ToListAsync();
+                }
+            }
+            else if (role == "Doctor")
+            {
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+                if (doctor != null)
+                {
+                    enrollments = await _context.CourseEnrollments
+                        .Include(e => e.Course)
+                        .Where(e => e.DoctorId == doctor.Id)
+                        .OrderByDescending(e => e.EnrolledAt)
+                        .ToListAsync();
+                }
+            }
+
+            var result = enrollments.Select(e => new
+            {
+                id = e.Id,
+                courseId = e.CourseId,
+                enrolledAt = e.EnrolledAt,
+                progress = e.Progress,
+                isCompleted = e.IsCompleted,
+                course = e.Course == null ? null : new
+                {
+                    id = e.Course.Id,
+                    title = e.Course.Title,
+                    description = e.Course.Description,
+                    price = e.Course.Price,
+                    coverImageUrl = e.Course.CoverImageUrl,
+                    level = e.Course.Level,
+                    category = e.Course.Category,
+                    durationMinutes = e.Course.DurationMinutes
+                }
+            });
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener inscripciones del usuario");
+            return StatusCode(500, new { message = "Error al obtener las inscripciones", error = ex.Message });
+        }
+    }
+}

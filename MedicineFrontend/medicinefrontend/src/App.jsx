@@ -26,6 +26,8 @@ import PricingPage from './pages/PricingPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import CoursesPage from './pages/CoursesPage';
+import CourseDetailPage from './pages/CourseDetailPage';
+import DoctorMyCoursesPage from './pages/DoctorMyCoursesPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -308,6 +310,25 @@ function App() {
                                 <Layout>
                                     <CoursesPage />
                                 </Layout>
+                            }
+                        />
+
+                        <Route
+                            path="/courses/:id"
+                            element={
+                                <Layout>
+                                    <CourseDetailPage />
+                                </Layout>
+                            }
+                        />
+
+                        {/* Doctor: gestión de mis cursos */}
+                        <Route
+                            path="/doctor/my-courses"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <DoctorMyCoursesPage />
+                                </ProtectedRoute>
                             }
                         />
 

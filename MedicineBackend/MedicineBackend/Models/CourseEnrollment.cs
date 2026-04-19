@@ -20,10 +20,14 @@ public class CourseEnrollment
     public int CourseId { get; set; }
 
     /// <summary>
-    /// ID del paciente inscrito
+    /// ID del paciente inscrito (nullable — either PatientId OR DoctorId must be set, enforced in service)
     /// </summary>
-    [Required]
-    public int PatientId { get; set; }
+    public int? PatientId { get; set; }
+
+    /// <summary>
+    /// ID del médico inscrito (nullable — either PatientId OR DoctorId must be set, enforced in service)
+    /// </summary>
+    public int? DoctorId { get; set; }
 
     /// <summary>
     /// Progreso del curso en porcentaje (0-100)
@@ -74,5 +78,8 @@ public class CourseEnrollment
     public Course Course { get; set; } = null!;
 
     [ForeignKey("PatientId")]
-    public Patient Patient { get; set; } = null!;
+    public Patient? Patient { get; set; }
+
+    [ForeignKey("DoctorId")]
+    public Doctor? Doctor { get; set; }
 }

@@ -133,6 +133,21 @@ public class CourseService : ICourseService
         return MapToDto(course);
     }
 
+    public async Task<CourseDto> UnpublishCourseAsync(int doctorId, int courseId)
+    {
+        var course = await _context.Courses
+            .FirstOrDefaultAsync(c => c.Id == courseId && c.DoctorId == doctorId)
+            ?? throw new KeyNotFoundException("Curso no encontrado");
+
+        course.IsPublished = false;
+        course.PublishedAt = null;
+        course.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return MapToDto(course);
+    }
+
     public async Task<string> UploadCoverImageAsync(int courseId, IFormFile file)
     {
         var course = await _context.Courses.FindAsync(courseId)

@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { LogOut, Calendar, BookOpen, ChevronDown, Sun, Moon } from 'lucide-react';
+import { LogOut, BookOpen, ChevronDown, Sun, Moon } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 import UserAvatar from '../UserAvatar';
 import { useState, useEffect, useRef } from 'react';
@@ -58,22 +58,23 @@ const Navbar = () => {
                         )}
 
                         {isAuthenticated && user?.role === 'Patient' && (
-                            <>
-                                <Link
-                                    to="/appointments"
-                                    className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors flex items-center gap-2"
-                                >
-                                    <Calendar className="w-4 h-4" />
-                                    {t('nav.appointments')}
-                                </Link>
-                                <Link
-                                    to="/courses"
-                                    className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors flex items-center gap-2"
-                                >
-                                    <BookOpen className="w-4 h-4" />
-                                    {t('nav.courses')}
-                                </Link>
-                            </>
+                            <Link
+                                to="/courses"
+                                className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors flex items-center gap-2"
+                            >
+                                <BookOpen className="w-4 h-4" />
+                                {t('nav.courses')}
+                            </Link>
+                        )}
+
+                        {isAuthenticated && user?.role === 'Doctor' && (
+                            <Link
+                                to="/courses"
+                                className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors flex items-center gap-2"
+                            >
+                                <BookOpen className="w-4 h-4" />
+                                Explorar cursos
+                            </Link>
                         )}
                     </div>
 
@@ -135,22 +136,13 @@ const Navbar = () => {
                                         </Link>
 
                                         {user?.role === 'Patient' && (
-                                            <>
-                                                <Link
-                                                    to="/profile/edit"
-                                                    onClick={() => setShowDropdown(false)}
-                                                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                                >
-                                                    {t('nav.editProfile')}
-                                                </Link>
-                                                <Link
-                                                    to="/appointments"
-                                                    onClick={() => setShowDropdown(false)}
-                                                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                                >
-                                                    {t('nav.myAppointments')}
-                                                </Link>
-                                            </>
+                                            <Link
+                                                to="/profile/edit"
+                                                onClick={() => setShowDropdown(false)}
+                                                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                            >
+                                                {t('nav.editProfile')}
+                                            </Link>
                                         )}
 
                                         <hr className="my-2 border-gray-200 dark:border-gray-700" />

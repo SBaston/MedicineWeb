@@ -381,15 +381,23 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.CourseId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Relación con Patient
+            // Relación con Patient (nullable: doctor o patient)
             entity.HasOne(e => e.Patient)
                 .WithMany(p => p.CourseEnrollments)
                 .HasForeignKey(e => e.PatientId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
 
-            // Un paciente solo puede inscribirse una vez en un curso
-            entity.HasIndex(e => new { e.CourseId, e.PatientId })
-                .IsUnique();
+            // Relación con Doctor (nullable: doctor o patient)
+            entity.HasOne(e => e.Doctor)
+                .WithMany()
+                .HasForeignKey(e => e.DoctorId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
+
+            // Índices individuales para búsquedas eficientes
+            entity.HasIndex(e => e.PatientId);
+            entity.HasIndex(e => e.DoctorId);
         });
 
         // ============================================

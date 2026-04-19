@@ -247,6 +247,32 @@ public class CoursesController : ControllerBase
     }
 
     /// <summary>
+    /// Despublicar curso
+    /// </summary>
+    [HttpPost("{id}/unpublish")]
+    public async Task<ActionResult<CourseDto>> UnpublishCourse(int id)
+    {
+        try
+        {
+            var doctorId = await GetCurrentDoctorIdAsync();
+            var course = await _courseService.UnpublishCourseAsync(doctorId, id);
+            return Ok(course);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error al despublicar curso", error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Subir imagen de portada
     /// </summary>
     [HttpPost("{id}/cover-image")]

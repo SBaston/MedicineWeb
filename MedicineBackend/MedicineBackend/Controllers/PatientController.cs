@@ -18,11 +18,16 @@ namespace MedicineBackend.Controllers;
 public class PatientsController : ControllerBase
 {
     private readonly IPatientService _patientService;
+    private readonly IAppointmentService _appointmentService;
     private readonly ILogger<PatientsController> _logger;
 
-    public PatientsController(IPatientService patientService, ILogger<PatientsController> logger)
+    public PatientsController(
+        IPatientService patientService,
+        IAppointmentService appointmentService,
+        ILogger<PatientsController> logger)
     {
         _patientService = patientService;
+        _appointmentService = appointmentService;
         _logger = logger;
     }
 
@@ -98,7 +103,7 @@ public class PatientsController : ControllerBase
     }
 
     /// <summary>
-    /// Obtiene las próximas citas del paciente
+    /// Obtiene las citas del paciente con formato completo (doctorName, appointmentType, meetingLink, etc.)
     /// </summary>
     [HttpGet("me/appointments")]
     [ProducesResponseType(typeof(List<object>), StatusCodes.Status200OK)]
@@ -107,8 +112,7 @@ public class PatientsController : ControllerBase
         try
         {
             var userId = GetCurrentUserId();
-            var appointments = await _patientService.GetPatientAppointmentsAsync(userId);
-
+            var appointments = await _appointmentService.GetPatientAppointmentsAsync(userId);
             return Ok(appointments);
         }
         catch (Exception ex)

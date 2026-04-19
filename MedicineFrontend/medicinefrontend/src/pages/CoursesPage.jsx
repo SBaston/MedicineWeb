@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Search, Filter, BookOpen, Clock, Star, Users,
     X, GraduationCap
@@ -288,6 +289,7 @@ const CoursesPage = () => {
 
 // ── Tarjeta de curso ────────────────────────────────────────────
 const CourseCard = ({ course }) => {
+    const navigate = useNavigate();
     const levelColor = LEVEL_COLORS[course.level] || 'bg-slate-100 text-slate-600';
     const doctorName = `${course.doctor?.firstName ?? ''} ${course.doctor?.lastName ?? ''}`.trim();
 
@@ -380,7 +382,10 @@ const CourseCard = ({ course }) => {
                     <span className="text-2xl font-bold text-emerald-600">
                         {course.price === 0 ? 'Gratis' : `${course.price} €`}
                     </span>
-                    <button className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm">
+                    <button
+                        onClick={() => navigate('/courses/' + course.id, { state: { course } })}
+                        className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
+                    >
                         Ver curso
                     </button>
                 </div>

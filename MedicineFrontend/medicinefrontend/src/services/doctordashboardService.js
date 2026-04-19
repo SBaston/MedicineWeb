@@ -177,6 +177,11 @@ const doctorDashboardService = {
         return response.data;
     },
 
+    unpublishCourse: async (id) => {
+        const response = await api.post(`/doctor/courses/${id}/unpublish`);
+        return response.data;
+    },
+
     uploadCourseCover: async (id, file) => {
         const formData = new FormData();
         formData.append('file', file);

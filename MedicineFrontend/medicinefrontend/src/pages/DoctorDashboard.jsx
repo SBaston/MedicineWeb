@@ -371,7 +371,7 @@ const DoctorDashboard = () => {
                         icon={BookOpen}
                         title="Mis Cursos"
                         description="Gestiona tus cursos"
-                        onClick={() => navigate('/doctor/courses')}
+                        onClick={() => navigate('/doctor/my-courses')}
                         color="purple"
                     />
                     <QuickActionCard

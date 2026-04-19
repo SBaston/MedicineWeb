@@ -15,6 +15,7 @@ namespace MedicineBackend.Services.Interfaces
         Task<CourseDto> UpdateCourseAsync(int doctorId, int courseId, UpdateCourseDto dto);
         Task DeleteCourseAsync(int doctorId, int courseId);
         Task<CourseDto> PublishCourseAsync(int doctorId, int courseId);
+        Task<CourseDto> UnpublishCourseAsync(int doctorId, int courseId);
         Task<string> UploadCoverImageAsync(int courseId, IFormFile file);
         Task<string> UploadCourseContentFileAsync(int courseId, IFormFile file);
         Task<CourseModuleDto> CreateModuleAsync(int doctorId, int courseId, CreateCourseModuleDto dto);
