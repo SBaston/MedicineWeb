@@ -80,6 +80,10 @@ public class CourseEnrollmentController : ControllerBase
                 if (doctor == null)
                     return NotFound(new { message = "Médico no encontrado" });
 
+                // ✅ Un doctor no puede matricularse en su propio curso
+                if (course.DoctorId == doctor.Id)
+                    return BadRequest(new { message = "No puedes matricularte en tu propio curso" });
+
                 // Check if already enrolled
                 var existing = await _context.CourseEnrollments
                     .FirstOrDefaultAsync(e => e.CourseId == id && e.DoctorId == doctor.Id);

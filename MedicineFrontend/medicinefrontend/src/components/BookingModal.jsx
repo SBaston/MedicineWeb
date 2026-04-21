@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
 import professionalsService from '../services/professionalsService';
+import api from '../services/api';
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS de fecha
@@ -383,10 +384,16 @@ const StepPayment = ({ professional, appointmentType, selectedDate, selectedSlot
                 <span className="text-2xl font-bold text-primary-700">{price?.toFixed(2)} €</span>
             </div>
 
-            <p className="text-xs text-gray-400 text-center">
-                Al confirmar, aceptas los términos y condiciones de NexusSalud.
-                El pago se procesará de forma segura.
-            </p>
+            {price > 0 ? (
+                <p className="text-xs text-gray-400 text-center">
+                    Al hacer clic en "Pagar con Stripe" serás redirigido de forma segura a Stripe.
+                    Acepta los términos y condiciones de NexusSalud.
+                </p>
+            ) : (
+                <p className="text-xs text-gray-400 text-center">
+                    Al confirmar, aceptas los términos y condiciones de NexusSalud.
+                </p>
+            )}
         </div>
     );
 };
@@ -474,13 +481,26 @@ const BookingModal = ({ professional, onClose }) => {
         setLoading(true);
         setError('');
         try {
-            await appointmentService.book({
+            // 1. Crear la cita (queda en "PendientePago" si tiene precio, o "Confirmada" si es gratuita)
+            const appointment = await appointmentService.book({
                 doctorId: professional.id,
                 appointmentDate: selectedSlot.start,
                 appointmentType,
                 reason: reason.trim() || null,
             });
-            setStep(4); // Pantalla de confirmación
+
+            const price = professional.pricePerSession ?? 0;
+
+            // 2. Si tiene precio → redirigir a Stripe Checkout
+            if (price > 0) {
+                const { data } = await api.post('/payments/appointment-checkout', {
+                    appointmentId: appointment.id,
+                });
+                window.location.href = data.url; // Redirigir a Stripe
+            } else {
+                // Cita gratuita → ir directamente a la pantalla de confirmación
+                setStep(4);
+            }
         } catch (err) {
             const msg = err.response?.data?.message || 'Error al reservar la cita. Inténtalo de nuevo.';
             setError(msg);
@@ -603,7 +623,9 @@ const BookingModal = ({ professional, onClose }) => {
                             ) : step === 3 ? (
                                 <>
                                     <CreditCard className="w-4 h-4" />
-                                    Confirmar y pagar
+                                    {(professional?.pricePerSession ?? 0) > 0
+                                        ? 'Pagar con Stripe'
+                                        : 'Confirmar cita'}
                                 </>
                             ) : (
                                 <>

@@ -1,0 +1,38 @@
+## .NET / Visual Studio
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.nupkg
+*.snupkg
+
+## Archivos de secretos — NUNCA subir a Git
+**/appsettings.Development.json
+**/appsettings.development.json
+**/appsettingsDevelopment.json
+**/appsettings.Local.json
+**/appsettings.*.json
+!**/appsettings.json
+
+## Certificados y claves
+*.pfx
+*.pem
+*.key
+certs/
+
+## Uploads locales
+**/wwwroot/uploads/
+**/uploads/
+
+## Logs
+*.log
+logs/
+
+## Rider / JetBrains
+.idea/
+
+## macOS
+.DS_Store

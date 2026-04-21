@@ -131,3 +131,6 @@ C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\Si
 C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\Tesseract.dll
 C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\tessdata\eng.traineddata
 C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\tessdata\spa.traineddata
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\Stripe.net.dll
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\System.Configuration.ConfigurationManager.dll
+C:\Users\swser\source\repos\MedicineBackend\MedicineBackend\bin\Debug\net10.0\System.Security.Cryptography.ProtectedData.dll

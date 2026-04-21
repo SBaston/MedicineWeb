@@ -130,13 +130,16 @@ public class AppointmentService : IAppointmentService
             ? doctor.SessionDurationMinutes
             : DefaultSlotDurationMinutes;
 
+        // Si el doctor tiene precio, la cita queda en "PendientePago" hasta confirmar el pago
+        var initialStatus = doctor.PricePerSession > 0 ? "PendientePago" : "Confirmada";
+
         var appointment = new Appointment
         {
             DoctorId = dto.DoctorId,
             PatientId = patient.Id,
             AppointmentDate = apptDateUtc,
             DurationMinutes = sessionDuration,
-            Status = "Confirmada",
+            Status = initialStatus,
             Price = doctor.PricePerSession,
             Reason = dto.Reason,
             MeetingPlatform = meetingPlatform,

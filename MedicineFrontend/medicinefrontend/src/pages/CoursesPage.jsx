@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import specialtyService from '../services/specialtyService';
+import { useAuth } from '../context/AuthContext';
 
 /** Convierte minutos a texto legible */
 const formatMinutes = (mins) => {
@@ -31,6 +32,7 @@ const LEVEL_COLORS = {
 };
 
 const CoursesPage = () => {
+    const { user, isDoctor, loading: authLoading } = useAuth();
     const [courses, setCourses]         = useState([]);
     const [loading, setLoading]         = useState(true);
     const [error, setError]             = useState(null);
@@ -50,6 +52,14 @@ const CoursesPage = () => {
             .catch(() => setSpecialties([]));
     }, []);
 
+    // Función auxiliar que filtra los cursos propios del doctor
+    const filterOwn = useCallback((list) => {
+        if (isDoctor && user?.userId) {
+            return list.filter(c => c.doctor?.userId !== user.userId);
+        }
+        return list;
+    }, [isDoctor, user?.userId]);
+
     const fetchCourses = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -61,25 +71,35 @@ const CoursesPage = () => {
             if (maxPrice)      params.maxPrice  = parseFloat(maxPrice);
 
             const res = await api.get('/doctor/courses/public/search', { params });
-            setCourses(res.data);
+            setCourses(filterOwn(res.data));
         } catch (err) {
             console.error('Error cargando cursos:', err);
             setError('No se pudieron cargar los cursos. Inténtalo más tarde.');
         } finally {
             setLoading(false);
         }
-    }, [search, category, level, maxPrice]);
+    }, [search, category, level, maxPrice, filterOwn]);
 
-    // Buscar al montar y cada vez que cambien los filtros de select/precio
+    // No lanzar ningún fetch hasta que AuthContext haya terminado de inicializarse
+    // Buscar al montar (cuando auth esté listo) y al cambiar filtros de select/precio
     useEffect(() => {
+        if (authLoading) return;
         fetchCourses();
-    }, [category, level, maxPrice]);
+    }, [authLoading, category, level, maxPrice]);
 
-    // Para search: debounce de 500 ms
+    // Para search: debounce de 500 ms (también espera a auth)
     useEffect(() => {
+        if (authLoading) return;
         const t = setTimeout(() => fetchCourses(), 500);
         return () => clearTimeout(t);
-    }, [search]);
+    }, [authLoading, search]);
+
+    // Si auth termina de cargar DESPUÉS de que los cursos ya están en pantalla,
+    // re-aplicar el filtro sobre los datos ya cargados sin hacer otra llamada al backend
+    useEffect(() => {
+        if (authLoading) return;
+        setCourses(prev => filterOwn(prev));
+    }, [authLoading, filterOwn]);
 
     const clearFilters = () => {
         setSearch('');

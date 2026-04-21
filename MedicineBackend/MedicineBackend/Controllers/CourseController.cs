@@ -82,6 +82,7 @@ public class CoursesController : ControllerBase
                     Doctor = new
                     {
                         c.Doctor.Id,
+                        c.Doctor.UserId,        // ← para filtrar en frontend cursos del propio doctor
                         c.Doctor.FirstName,
                         c.Doctor.LastName,
                         c.Doctor.ProfilePictureUrl,

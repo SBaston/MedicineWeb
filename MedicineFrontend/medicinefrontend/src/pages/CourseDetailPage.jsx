@@ -88,8 +88,17 @@ const CourseDetailPage = () => {
         setEnrollLoading(true);
         setEnrollError(null);
         try {
-            await api.post(`/courses/${id}/enroll`);
-            setEnrolled(true);
+            const price = course?.price ?? 0;
+
+            if (price > 0) {
+                // Curso de pago → crear sesión de Stripe y redirigir
+                const res = await api.post('/payments/course-checkout', { courseId: Number(id) });
+                window.location.href = res.data.url;
+            } else {
+                // Curso gratuito → matricularse directamente
+                await api.post(`/courses/${id}/enroll`);
+                setEnrolled(true);
+            }
         } catch (err) {
             const msg = err.response?.data?.message || 'No se pudo completar la matriculación.';
             setEnrollError(msg);
@@ -309,8 +318,10 @@ const CourseDetailPage = () => {
                                         : <GraduationCap className="w-5 h-5" />
                                     }
                                     {enrollLoading
-                                        ? 'Procesando...'
-                                        : `Matricularme${course.price > 0 ? ` — ${course.price} €` : ' gratis'}`
+                                        ? 'Redirigiendo a pago...'
+                                        : course.price > 0
+                                            ? `Pagar con Stripe — ${course.price.toFixed(2)} €`
+                                            : 'Matricularme gratis'
                                     }
                                 </button>
                                 {enrollError && (

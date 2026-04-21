@@ -87,6 +87,9 @@ builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
+// ✅ SERVICIO DE PAGOS: Stripe
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
 builder.Services.AddMemoryCache();
 
 // Autenticación JWT

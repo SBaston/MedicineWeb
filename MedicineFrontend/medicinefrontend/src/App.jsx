@@ -28,6 +28,8 @@ import PrivacyPage from './pages/PrivacyPage';
 import CoursesPage from './pages/CoursesPage';
 import CourseDetailPage from './pages/CourseDetailPage';
 import DoctorMyCoursesPage from './pages/DoctorMyCoursesPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentCancelPage from './pages/PaymentCancelPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -335,6 +337,10 @@ function App() {
                         {/* Términos y Privacidad */}
                         <Route path="/terms" element={<Layout><TermsPage /></Layout>} />
                         <Route path="/privacy" element={<Layout><PrivacyPage /></Layout>} />
+
+                        {/* Páginas de retorno de Stripe */}
+                        <Route path="/payment/success" element={<PaymentSuccessPage />} />
+                        <Route path="/payment/cancel" element={<PaymentCancelPage />} />
 
                         {/* 404 */}
                         <Route

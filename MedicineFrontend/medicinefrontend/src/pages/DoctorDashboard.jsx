@@ -10,7 +10,8 @@ import {
     DollarSign, Calendar, Users, Star, TrendingUp, TrendingDown,
     User, Clock, Video, BookOpen, AlertCircle,
     ArrowRight, CheckCircle, Eye, Link as LinkIcon,
-    MapPin, Loader2, ChevronDown, ChevronUp, Send
+    MapPin, Loader2, ChevronDown, ChevronUp, Send,
+    CreditCard, FileText, BarChart2
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
 import SocialMediaSection from '../components/SocialMediaSection';
@@ -26,6 +27,13 @@ const DoctorDashboard = () => {
     const [meetingLinkData, setMeetingLinkData] = useState({});
     const [savingLink, setSavingLink] = useState({});
     const [linkSuccess, setLinkSuccess] = useState({});
+
+    // ── Panel de ingresos ──────────────────────────────────────
+    const [showEarnings, setShowEarnings]           = useState(false);
+    const [loadingEarnings, setLoadingEarnings]     = useState(false);
+    const [earnings, setEarnings]                   = useState(null);
+    const [earningsTimeRange, setEarningsTimeRange] = useState('month');
+    const [earningsFilterType, setEarningsFilterType] = useState('all');
 
     useEffect(() => {
         loadDashboardStats();
@@ -59,6 +67,27 @@ const DoctorDashboard = () => {
         } finally {
             setLoadingAppointments(false);
         }
+    };
+
+    const loadEarnings = async (timeRange = earningsTimeRange, filterType = earningsFilterType) => {
+        setLoadingEarnings(true);
+        try {
+            const data = await doctorDashboardService.getEarnings(timeRange, filterType);
+            setEarnings(data);
+            setShowEarnings(true);
+        } catch (error) {
+            console.error('Error al cargar ingresos:', error);
+        } finally {
+            setLoadingEarnings(false);
+        }
+    };
+
+    const handleEarningsFilter = (newTimeRange, newFilterType) => {
+        const tr = newTimeRange ?? earningsTimeRange;
+        const ft = newFilterType ?? earningsFilterType;
+        if (newTimeRange) setEarningsTimeRange(tr);
+        if (newFilterType) setEarningsFilterType(ft);
+        loadEarnings(tr, ft);
     };
 
     const handleSaveMeetingLink = async (appointmentId) => {
@@ -321,6 +350,203 @@ const DoctorDashboard = () => {
                     )}
                 </div>
 
+                {/* ═══ SECCIÓN: MIS INGRESOS ═══ */}
+                <div className="mb-8">
+                    {/* Header colapsable */}
+                    <button
+                        onClick={() => {
+                            if (!earnings) {
+                                loadEarnings();
+                            } else {
+                                setShowEarnings(prev => !prev);
+                            }
+                        }}
+                        className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-emerald-100 rounded-xl">
+                                <DollarSign className="w-5 h-5 text-emerald-600" />
+                            </div>
+                            <div className="text-left">
+                                <h3 className="font-bold text-slate-900">Mis ingresos</h3>
+                                <p className="text-sm text-slate-500">Consultas, cursos y comisiones</p>
+                            </div>
+                        </div>
+                        {loadingEarnings
+                            ? <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                            : showEarnings
+                                ? <ChevronUp className="w-5 h-5 text-slate-400" />
+                                : <ChevronDown className="w-5 h-5 text-slate-400" />
+                        }
+                    </button>
+
+                    {/* Panel expandido */}
+                    {showEarnings && earnings && (
+                        <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                            {/* Filtros */}
+                            <div className="flex flex-wrap gap-2 mb-6">
+                                {/* Período */}
+                                {[
+                                    { value: 'week',  label: 'Semana' },
+                                    { value: 'month', label: 'Mes' },
+                                    { value: 'year',  label: 'Año' },
+                                ].map(opt => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => handleEarningsFilter(opt.value, null)}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                                            earningsTimeRange === opt.value
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                                <div className="w-px bg-slate-200 mx-1 self-stretch" />
+                                {/* Tipo */}
+                                {[
+                                    { value: 'all',          label: 'Todos' },
+                                    { value: 'appointments', label: 'Consultas' },
+                                    { value: 'courses',      label: 'Cursos' },
+                                ].map(opt => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => handleEarningsFilter(null, opt.value)}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                                            earningsFilterType === opt.value
+                                                ? 'bg-slate-700 text-white'
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                                {loadingEarnings && <Loader2 className="w-4 h-4 animate-spin text-slate-400 self-center ml-2" />}
+                            </div>
+
+                            {/* KPI cards */}
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-emerald-50 rounded-xl p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Total bruto</span>
+                                        {earnings.growth >= 0
+                                            ? <span className="text-xs text-emerald-600 flex items-center gap-0.5 font-semibold"><TrendingUp className="w-3 h-3" />+{earnings.growth?.toFixed(1)}%</span>
+                                            : <span className="text-xs text-red-600 flex items-center gap-0.5 font-semibold"><TrendingDown className="w-3 h-3" />{earnings.growth?.toFixed(1)}%</span>
+                                        }
+                                    </div>
+                                    <p className="text-2xl font-bold text-emerald-700">€{(earnings.total ?? 0).toFixed(2)}</p>
+                                </div>
+                                <div className="bg-blue-50 rounded-xl p-4">
+                                    <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide block mb-2">Neto</span>
+                                    <p className="text-2xl font-bold text-blue-700">€{(earnings.netEarnings ?? 0).toFixed(2)}</p>
+                                    <p className="text-xs text-blue-500 mt-1">-15% comisión</p>
+                                </div>
+                                <div className="bg-purple-50 rounded-xl p-4">
+                                    <span className="text-xs font-semibold text-purple-700 uppercase tracking-wide block mb-2">Sesiones</span>
+                                    <p className="text-2xl font-bold text-purple-700">{earnings.totalSessions ?? 0}</p>
+                                    <p className="text-xs text-purple-500 mt-1">{earnings.totalPatients ?? 0} pacientes</p>
+                                </div>
+                                <div className="bg-amber-50 rounded-xl p-4">
+                                    <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide block mb-2">Precio medio</span>
+                                    <p className="text-2xl font-bold text-amber-700">€{(earnings.avgSessionPrice ?? 0).toFixed(2)}</p>
+                                </div>
+                            </div>
+
+                            {/* Transacciones + Breakdown */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Lista de transacciones */}
+                                <div className="lg:col-span-2">
+                                    <h4 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">Últimas transacciones</h4>
+                                    {(earnings.transactions ?? []).length === 0 ? (
+                                        <p className="text-slate-500 text-sm text-center py-6">Sin transacciones en este período</p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {(earnings.transactions ?? []).slice(0, 8).map(tx => (
+                                                <div key={tx.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                                            tx.type === 'appointment'
+                                                                ? 'bg-blue-100 text-blue-700'
+                                                                : 'bg-purple-100 text-purple-700'
+                                                        }`}>
+                                                            {tx.type === 'appointment' ? 'Consulta' : 'Curso'}
+                                                        </span>
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-slate-800">{tx.patient}</p>
+                                                            {tx.courseName && <p className="text-xs text-slate-500">{tx.courseName}</p>}
+                                                            <p className="text-xs text-slate-400">{tx.date}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="font-bold text-emerald-600">+€{tx.netAmount?.toFixed(2)}</p>
+                                                        <p className="text-xs text-slate-400">Bruto €{tx.amount?.toFixed(2)}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Breakdown sidebar */}
+                                <div className="space-y-4">
+                                    <div>
+                                        <h4 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">Desglose</h4>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <div className="flex justify-between text-sm mb-1">
+                                                    <span className="text-slate-600">Consultas</span>
+                                                    <span className="font-semibold text-blue-600">€{(earnings.fromAppointments ?? 0).toFixed(2)}</span>
+                                                </div>
+                                                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-blue-500 rounded-full transition-all"
+                                                        style={{ width: `${earnings.total > 0 ? (earnings.fromAppointments / earnings.total) * 100 : 0}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-sm mb-1">
+                                                    <span className="text-slate-600">Cursos</span>
+                                                    <span className="font-semibold text-purple-600">€{(earnings.fromCourses ?? 0).toFixed(2)}</span>
+                                                </div>
+                                                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-purple-500 rounded-full transition-all"
+                                                        style={{ width: `${earnings.total > 0 ? (earnings.fromCourses / earnings.total) * 100 : 0}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="pt-3 border-t border-slate-100 flex justify-between text-sm">
+                                                <span className="text-slate-500">Comisión (15%)</span>
+                                                <span className="font-semibold text-red-500">-€{(earnings.platformFees ?? 0).toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Pagos pendientes */}
+                                    {(earnings.pendingPayouts ?? 0) > 0 && (
+                                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-4 text-white">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100 mb-1">Pagos pendientes</p>
+                                            <p className="text-2xl font-bold">€{earnings.pendingPayouts.toFixed(2)}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Link al panel completo */}
+                            <div className="mt-5 pt-4 border-t border-slate-100 text-center">
+                                <button
+                                    onClick={() => navigate('/doctor/earnings')}
+                                    className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 mx-auto transition-colors"
+                                >
+                                    Ver panel completo de ingresos <ArrowRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <StatCard
@@ -352,7 +578,7 @@ const DoctorDashboard = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                     <QuickActionCard
                         icon={Calendar}
                         title="Fijar Disponibilidad"
@@ -373,6 +599,13 @@ const DoctorDashboard = () => {
                         description="Gestiona tus cursos"
                         onClick={() => navigate('/doctor/my-courses')}
                         color="purple"
+                    />
+                    <QuickActionCard
+                        icon={DollarSign}
+                        title="Ingresos"
+                        description="Panel de facturación"
+                        onClick={() => navigate('/doctor/earnings')}
+                        color="amber"
                     />
                     <QuickActionCard
                         icon={User}
@@ -542,6 +775,11 @@ const QuickActionCard = ({ icon: Icon, title, description, onClick, color }) => 
             bg: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
             hover: 'hover:from-emerald-600 hover:to-emerald-700',
             shadow: 'shadow-emerald-500/50'
+        },
+        amber: {
+            bg: 'bg-gradient-to-br from-amber-500 to-orange-500',
+            hover: 'hover:from-amber-600 hover:to-orange-600',
+            shadow: 'shadow-amber-500/50'
         }
     };
 
