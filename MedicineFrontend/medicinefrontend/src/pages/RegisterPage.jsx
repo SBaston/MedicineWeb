@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, User, Calendar, FileText, Heart, Stethoscope, Users } from 'lucide-react';
+import { Mail, Lock, User, Calendar, Stethoscope, Users } from 'lucide-react';
+import PhoneInput from '../components/PhoneInput';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import ErrorAlert from '../components/ErrorAlert';
 import EmailVerificationModal from '../components/EmailVerificationModal';
@@ -23,6 +24,7 @@ const RegisterPage = () => {
         firstName: '',
         lastName: '',
         dateOfBirth: '',
+        phoneNumber: '',
     });
 
     const [error, setError] = useState('');
@@ -84,6 +86,15 @@ const RegisterPage = () => {
         if (formData.role === 'Patient' && !formData.dateOfBirth) {
             setError('La fecha de nacimiento es obligatoria');
             return;
+        }
+
+        // Validación de teléfono para pacientes (E.164: prefijo + mín. 6 dígitos locales)
+        if (formData.role === 'Patient') {
+            const localDigits = formData.phoneNumber.replace(/^\+\d{1,4}/, '');
+            if (!formData.phoneNumber || localDigits.length < 6) {
+                setError('Introduce un número de teléfono válido (mínimo 6 dígitos)');
+                return;
+            }
         }
 
         setLoading(true);
@@ -262,6 +273,18 @@ const RegisterPage = () => {
                                             className="input-field pl-10"
                                         />
                                     </div>
+                                </div>
+
+                                {/* Teléfono */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        {t('register.phoneNumber')}
+                                    </label>
+                                    <PhoneInput
+                                        value={formData.phoneNumber}
+                                        onChange={(val) => setFormData(prev => ({ ...prev, phoneNumber: val }))}
+                                        required
+                                    />
                                 </div>
 
                                 {/* Contraseña */}

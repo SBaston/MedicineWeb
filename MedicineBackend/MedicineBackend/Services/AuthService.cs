@@ -93,6 +93,7 @@ public class AuthService : IAuthService
                         LastName = request.LastName,
                         DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth!.Value,
                         DateTimeKind.Utc),
+                        PhoneNumber = request.PhoneNumber,
                         Country = "España",
                         CreatedAt = DateTime.UtcNow
                     };

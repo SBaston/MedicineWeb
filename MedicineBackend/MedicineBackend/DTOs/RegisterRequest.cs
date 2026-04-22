@@ -36,6 +36,10 @@ public class RegisterRequest
     // Solo para Patient
     public DateTime? DateOfBirth { get; set; }
 
+    [Phone(ErrorMessage = "El formato del teléfono no es válido")]
+    [MaxLength(20)]
+    public string? PhoneNumber { get; set; }
+
     // Solo para Admin
     public string? Department { get; set; }
 }
