@@ -22,6 +22,8 @@ const adminService = {
     // ══════════════════════════════════════════════════════════════
     getPending: () => api.get('/admin/doctors/pending').then(r => r.data),
     getAllDoctors: (status = '') => api.get(`/admin/doctors${status ? `?status=${status}` : ''}`).then(r => r.data),
+    searchDoctors: (q = '') => api.get(`/admin/doctors${q ? `?search=${encodeURIComponent(q)}` : ''}`).then(r => r.data),
+    getDoctorDetail: (id) => api.get(`/admin/doctors/${id}/detail`).then(r => r.data),
     approve: (id) => api.put(`/admin/doctors/${id}/approve`).then(r => r.data),
     reject: (id, reason) => api.put(`/admin/doctors/${id}/reject`, { reason }).then(r => r.data),
     removeDoctor: (id, reason) => api.delete(`/admin/doctors/${id}`, { data: { reason } }).then(r => r.data),

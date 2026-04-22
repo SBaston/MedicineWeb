@@ -1,7 +1,9 @@
-﻿using MedicineBackend.DTOs.Admin;
+﻿using MedicineBackend.Data;
+using MedicineBackend.DTOs.Admin;
 using MedicineBackend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -15,15 +17,18 @@ public class AdminController : ControllerBase
     private readonly IAdminService _adminService;
     private readonly IDoctorManagementService _doctorMgmt;
     private readonly ILogger<AdminController> _logger;
+    private readonly AppDbContext _db;
 
     public AdminController(
         IAdminService adminService,
         IDoctorManagementService doctorMgmt,
-        ILogger<AdminController> logger)
+        ILogger<AdminController> logger,
+        AppDbContext db)
     {
         _adminService = adminService;
         _doctorMgmt = doctorMgmt;
         _logger = logger;
+        _db = db;
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -218,6 +223,106 @@ public class AdminController : ControllerBase
         {
             _logger.LogError(ex, "Error al verificar vídeo {VideoId}", videoId);
             return StatusCode(500, new { message = "Error al verificar el vídeo" });
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // DETALLE DE UN PROFESIONAL (perfil + vídeos + cursos)
+    // GET /api/admin/doctors/{id}/detail
+    // ════════════════════════════════════════════════════════════════
+
+    [HttpGet("doctors/{doctorId:int}/detail")]
+    public async Task<IActionResult> GetDoctorDetail(int doctorId)
+    {
+        try
+        {
+            var doctor = await _db.Doctors
+                .Include(d => d.User)
+                .Include(d => d.Specialties)
+                .FirstOrDefaultAsync(d => d.Id == doctorId);
+
+            if (doctor == null)
+                return NotFound(new { message = "Profesional no encontrado" });
+
+            // Perfil
+            var profile = new DoctorAdminDto
+            {
+                Id = doctor.Id,
+                FullName = doctor.FullName,
+                Email = doctor.User.Email,
+                ProfessionalLicense = doctor.ProfessionalLicense,
+                Description = doctor.Description,
+                PhoneNumber = doctor.PhoneNumber,
+                ProfilePictureUrl = doctor.ProfilePictureUrl,
+                YearsOfExperience = doctor.YearsOfExperience,
+                PricePerSession = doctor.PricePerSession,
+                Status = doctor.Status.ToString(),
+                RegisteredAt = doctor.CreatedAt,
+                ReviewedAt = doctor.ReviewedAt,
+                DeletedAt = doctor.DeletedAt,
+                AverageRating = doctor.AverageRating,
+                TotalReviews = doctor.TotalReviews,
+                Specialties = doctor.Specialties.Select(s => s.Name).ToList(),
+                ProfessionalLicenseFrontImageUrl = doctor.ProfessionalLicenseFrontImageUrl,
+                ProfessionalLicenseBackImageUrl = doctor.ProfessionalLicenseBackImageUrl,
+                IdDocumentFrontImageUrl = doctor.IdDocumentFrontImageUrl,
+                IdDocumentBackImageUrl = doctor.IdDocumentBackImageUrl,
+                SpecialtyDegreeImageUrl = doctor.SpecialtyDegreeImageUrl,
+                UniversityDegreeImageUrl = doctor.UniversityDegreeImageUrl,
+            };
+
+            // Vídeos
+            var videos = await _db.SocialMediaVideos
+                .Where(v => v.DoctorId == doctorId)
+                .OrderByDescending(v => v.CreatedAt)
+                .Select(v => new DoctorVideoSummaryDto
+                {
+                    Id = v.Id,
+                    Title = v.Title,
+                    Description = v.Description,
+                    Platform = v.Platform,
+                    VideoUrl = v.VideoUrl,
+                    IsActive = v.IsActive,
+                    IsVerified = false,   // SocialMediaVideo no tiene verificación de admin
+                    ViewCount = v.ViewCount,
+                    LikeCount = v.LikeCount,
+                    CreatedAt = v.CreatedAt,
+                })
+                .ToListAsync();
+
+            // Cursos
+            var courses = await _db.Courses
+                .Where(c => c.DoctorId == doctorId)
+                .OrderByDescending(c => c.CreatedAt)
+                .Select(c => new DoctorCourseSummaryDto
+                {
+                    Id = c.Id,
+                    Title = c.Title,
+                    Description = c.Description,
+                    Price = c.Price,
+                    Level = c.Level,
+                    Category = c.Category,
+                    CoverImageUrl = c.CoverImageUrl,
+                    IsPublished = c.IsPublished,
+                    TotalEnrollments = c.TotalEnrollments,
+                    AverageRating = c.AverageRating,
+                    TotalRatings = c.TotalRatings,
+                    PublishedAt = c.PublishedAt,
+                    CreatedAt = c.CreatedAt,
+                })
+                .ToListAsync();
+
+            return Ok(new DoctorAdminDetailDto
+            {
+                Profile = profile,
+                Videos = videos,
+                Courses = courses,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener detalle del profesional {DoctorId}", doctorId);
+            return StatusCode(500, new { message = "Error al obtener el detalle del profesional" });
         }
     }
 

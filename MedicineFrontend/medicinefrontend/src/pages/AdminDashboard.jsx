@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -6,7 +6,9 @@ import adminService from '../services/adminService';
 import {
     ShieldCheck, Clock, CheckCircle, XCircle, Trash2, Users,
     Stethoscope, Mail, AlertTriangle, ChevronDown, ChevronUp,
-    Star, Crown, UserPlus, FileText, Shield, User, Eye, Download, X, Video
+    Star, Crown, UserPlus, FileText, Shield, User, Eye, Download, X, Video,
+    Search, BookOpen, Play, GraduationCap, Phone, Calendar, DollarSign,
+    ExternalLink, BadgeCheck, AlertCircle
 } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════════
@@ -388,6 +390,451 @@ const DoctorRow = ({ doctor, onDelete }) => {
 };
 
 // ════════════════════════════════════════════════════════════════
+// FILA DE PROFESIONAL EN EL BUSCADOR (expandible con detalle)
+// ════════════════════════════════════════════════════════════════
+
+const PLATFORM_COLORS = {
+    YouTube:  'bg-red-100 text-red-700',
+    Vimeo:    'bg-blue-100 text-blue-700',
+    TikTok:   'bg-gray-100 text-gray-700',
+    default:  'bg-slate-100 text-slate-600',
+};
+
+const LEVEL_COLORS = {
+    Principiante: 'bg-green-100 text-green-700',
+    Intermedio:   'bg-yellow-100 text-yellow-700',
+    Avanzado:     'bg-red-100 text-red-700',
+    default:      'bg-gray-100 text-gray-600',
+};
+
+const DoctorSearchRow = ({ doctor }) => {
+    const [expanded, setExpanded]         = useState(false);
+    const [detail, setDetail]             = useState(null);
+    const [loading, setLoading]           = useState(false);
+    const [error, setError]               = useState(null);
+    const [showImageModal, setShowImageModal] = useState(null);
+
+    const avatar = doctor.profilePictureUrl
+        || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.fullName)}&background=6366f1&color=fff&size=200&bold=true`;
+
+    const handleToggle = async () => {
+        if (!expanded && !detail) {
+            setLoading(true);
+            setError(null);
+            try {
+                const data = await adminService.getDoctorDetail(doctor.id);
+                setDetail(data);
+            } catch {
+                setError('No se pudo cargar el detalle del profesional.');
+            } finally {
+                setLoading(false);
+            }
+        }
+        setExpanded(v => !v);
+    };
+
+    return (
+        <>
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            {/* Cabecera de la fila */}
+            <button
+                onClick={handleToggle}
+                className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left"
+            >
+                <img src={avatar} alt={doctor.fullName}
+                    className="w-11 h-11 rounded-full object-cover flex-shrink-0 border-2 border-gray-100" />
+
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-gray-900">{doctor.fullName}</p>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_BADGE[doctor.status] ?? 'bg-gray-100 text-gray-500'}`}>
+                            {STATUS_LABEL[doctor.status] ?? doctor.status}
+                        </span>
+                    </div>
+                    <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                        <Mail className="w-3 h-3" /> {doctor.email}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                        {doctor.specialties?.slice(0, 3).map(s => (
+                            <span key={s} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs rounded-full">{s}</span>
+                        ))}
+                        {doctor.specialties?.length > 3 && (
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">+{doctor.specialties.length - 3}</span>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="text-right hidden sm:block">
+                        <p className="text-xs text-gray-400">Valoración</p>
+                        <p className="text-sm font-semibold text-gray-700 flex items-center gap-1">
+                            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                            {doctor.averageRating?.toFixed(1) ?? '—'}
+                        </p>
+                    </div>
+                    {loading
+                        ? <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                        : expanded
+                            ? <ChevronUp className="w-5 h-5 text-gray-400" />
+                            : <ChevronDown className="w-5 h-5 text-gray-400" />
+                    }
+                </div>
+            </button>
+
+            {/* Detalle expandido */}
+            {expanded && (
+                <div className="border-t border-gray-100 bg-gray-50 px-4 py-5 space-y-6">
+                    {error && (
+                        <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            {error}
+                        </div>
+                    )}
+
+                    {detail && (
+                        <>
+                            {/* ── Datos básicos ── */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                    <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5 flex items-center gap-1">
+                                        <Phone className="w-3 h-3" /> Teléfono
+                                    </p>
+                                    <p className="font-medium text-gray-800">{detail.profile.phoneNumber || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5 flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" /> Experiencia
+                                    </p>
+                                    <p className="font-medium text-gray-800">{detail.profile.yearsOfExperience ?? 0} años</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5 flex items-center gap-1">
+                                        <DollarSign className="w-3 h-3" /> Precio / sesión
+                                    </p>
+                                    <p className="font-medium text-gray-800">{detail.profile.pricePerSession} €</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5 flex items-center gap-1">
+                                        <Shield className="w-3 h-3" /> Nº Colegiado
+                                    </p>
+                                    <p className="font-medium text-gray-800">{detail.profile.professionalLicense}</p>
+                                </div>
+                            </div>
+
+                            {/* ── Descripción ── */}
+                            {detail.profile.description && (
+                                <div>
+                                    <p className="text-xs text-gray-400 font-semibold uppercase mb-1">Descripción profesional</p>
+                                    <p className="text-sm text-gray-700 leading-relaxed">{detail.profile.description}</p>
+                                </div>
+                            )}
+
+                            {/* ── Documentos ── */}
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-4">
+                                    <div className="w-6 h-6 bg-amber-100 rounded-lg flex items-center justify-center">
+                                        <FileText className="w-3.5 h-3.5 text-amber-600" />
+                                    </div>
+                                    Documentación acreditativa
+                                </h3>
+
+                                {/* Nº Colegiado */}
+                                <div className="mb-4">
+                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <Shield className="w-3.5 h-3.5 text-primary-500" /> Licencia colegial
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <ImageCard
+                                            url={detail.profile.professionalLicenseFrontImageUrl}
+                                            title="Cara Delantera"
+                                            required
+                                            icon={FileText}
+                                            onView={setShowImageModal}
+                                        />
+                                        <ImageCard
+                                            url={detail.profile.professionalLicenseBackImageUrl}
+                                            title="Cara Trasera"
+                                            required
+                                            icon={FileText}
+                                            onView={setShowImageModal}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* DNI */}
+                                <div className="mb-4">
+                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <User className="w-3.5 h-3.5 text-blue-500" /> Documento de identidad (DNI/NIE/Pasaporte)
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <ImageCard
+                                            url={detail.profile.idDocumentFrontImageUrl}
+                                            title="Cara Delantera"
+                                            required
+                                            icon={FileText}
+                                            onView={setShowImageModal}
+                                        />
+                                        <ImageCard
+                                            url={detail.profile.idDocumentBackImageUrl}
+                                            title="Cara Trasera"
+                                            required
+                                            icon={FileText}
+                                            onView={setShowImageModal}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Títulos */}
+                                <div>
+                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <GraduationCap className="w-3.5 h-3.5 text-indigo-500" /> Títulos académicos
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <ImageCard
+                                            url={detail.profile.specialtyDegreeImageUrl}
+                                            title="Título de Especialidad"
+                                            required
+                                            icon={FileText}
+                                            onView={setShowImageModal}
+                                        />
+                                        <ImageCard
+                                            url={detail.profile.universityDegreeImageUrl}
+                                            title="Título Universitario"
+                                            required
+                                            icon={FileText}
+                                            onView={setShowImageModal}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ── Vídeos ── */}
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3">
+                                    <div className="w-6 h-6 bg-red-100 rounded-lg flex items-center justify-center">
+                                        <Play className="w-3.5 h-3.5 text-red-600" />
+                                    </div>
+                                    Vídeos publicados
+                                    <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full font-normal">
+                                        {detail.videos.length}
+                                    </span>
+                                </h3>
+
+                                {detail.videos.length === 0 ? (
+                                    <p className="text-sm text-gray-400 italic">Este profesional no ha publicado vídeos.</p>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {detail.videos.map(v => (
+                                            <div key={v.id} className="bg-white border border-gray-200 rounded-lg p-3 flex gap-3">
+                                                <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                    <Video className="w-5 h-5 text-red-500" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-semibold text-gray-900 truncate">{v.title}</p>
+                                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${PLATFORM_COLORS[v.platform] ?? PLATFORM_COLORS.default}`}>
+                                                            {v.platform}
+                                                        </span>
+                                                        {v.isVerified
+                                                            ? <span className="flex items-center gap-0.5 text-xs text-green-600"><BadgeCheck className="w-3 h-3" /> Verificado</span>
+                                                            : <span className="text-xs text-yellow-600">Pendiente</span>
+                                                        }
+                                                        {!v.isActive && <span className="text-xs text-gray-400">Inactivo</span>}
+                                                    </div>
+                                                    <p className="text-xs text-gray-400 mt-1">
+                                                        {v.viewCount} reproducciones · {v.likeCount} likes
+                                                    </p>
+                                                </div>
+                                                <a href={v.videoUrl} target="_blank" rel="noopener noreferrer"
+                                                    className="flex-shrink-0 self-start p-1 text-gray-400 hover:text-indigo-600 transition-colors"
+                                                    title="Abrir vídeo">
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </a>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* ── Cursos ── */}
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3">
+                                    <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                        <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                                    </div>
+                                    Cursos
+                                    <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full font-normal">
+                                        {detail.courses.length}
+                                    </span>
+                                </h3>
+
+                                {detail.courses.length === 0 ? (
+                                    <p className="text-sm text-gray-400 italic">Este profesional no ha creado cursos.</p>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {detail.courses.map(c => (
+                                            <div key={c.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                                {c.coverImageUrl
+                                                    ? <img src={c.coverImageUrl} alt={c.title} className="w-full h-24 object-cover" />
+                                                    : <div className="w-full h-24 bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center">
+                                                        <BookOpen className="w-8 h-8 text-indigo-300" />
+                                                      </div>
+                                                }
+                                                <div className="p-3">
+                                                    <p className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2">{c.title}</p>
+                                                    <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                                                        {c.isPublished
+                                                            ? <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">Publicado</span>
+                                                            : <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-xs rounded font-medium">Borrador</span>
+                                                        }
+                                                        {c.level && (
+                                                            <span className={`px-1.5 py-0.5 text-xs rounded font-medium ${LEVEL_COLORS[c.level] ?? LEVEL_COLORS.default}`}>
+                                                                {c.level}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-xs text-gray-500">
+                                                        <span>{c.price === 0 ? 'Gratis' : `${c.price} €`}</span>
+                                                        <span className="flex items-center gap-1">
+                                                            <Users className="w-3 h-3" /> {c.totalEnrollments}
+                                                            {c.averageRating > 0 && (
+                                                                <>
+                                                                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 ml-1" />
+                                                                    {c.averageRating.toFixed(1)}
+                                                                </>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+
+        {/* Modal de imagen ampliada */}
+        {showImageModal && (
+            <div
+                className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+                onClick={() => setShowImageModal(null)}
+            >
+                <div
+                    className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white">
+                        <h3 className="font-semibold text-lg">{showImageModal.title}</h3>
+                        <button onClick={() => setShowImageModal(null)}
+                            className="text-gray-400 hover:text-gray-600 transition">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+                    <div className="p-4">
+                        {showImageModal.isPdf ? (
+                            <iframe
+                                src={showImageModal.url}
+                                title={showImageModal.title}
+                                className="w-full rounded"
+                                style={{ height: '70vh' }}
+                            />
+                        ) : (
+                            <img
+                                src={showImageModal.url}
+                                alt={showImageModal.title}
+                                className="w-full h-auto"
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
+    );
+};
+
+// ════════════════════════════════════════════════════════════════
+// SECCIÓN BUSCADOR DE PROFESIONALES
+// ════════════════════════════════════════════════════════════════
+
+const SearchDoctorsSection = () => {
+    const [query, setQuery] = useState('');
+
+    const { data: allDoctors = [], isLoading } = useQuery({
+        queryKey: ['admin-doctors-search'],
+        queryFn: () => adminService.getAllDoctors(''),   // todos los no-eliminados
+    });
+
+    const filtered = useMemo(() => {
+        const q = query.toLowerCase().trim();
+        if (!q) return allDoctors;
+        return allDoctors.filter(d =>
+            d.fullName.toLowerCase().includes(q) ||
+            d.email.toLowerCase().includes(q) ||
+            d.specialties?.some(s => s.toLowerCase().includes(q)) ||
+            d.professionalLicense?.toLowerCase().includes(q)
+        );
+    }, [query, allDoctors]);
+
+    return (
+        <div>
+            {/* Buscador */}
+            <div className="relative mb-5">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                <input
+                    type="text"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Buscar por nombre, email, especialidad o nº colegiado…"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                />
+                {query && (
+                    <button
+                        onClick={() => setQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                )}
+            </div>
+
+            {/* Contador de resultados */}
+            {!isLoading && (
+                <p className="text-xs text-gray-400 mb-3">
+                    {query
+                        ? `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''} para "${query}"`
+                        : `${allDoctors.length} profesional${allDoctors.length !== 1 ? 'es' : ''} en el sistema`
+                    }
+                </p>
+            )}
+
+            {/* Lista */}
+            {isLoading ? (
+                <div className="text-center py-12 text-gray-400 text-sm">Cargando profesionales…</div>
+            ) : filtered.length === 0 ? (
+                <div className="bg-white rounded-xl border border-gray-100 py-14 text-center">
+                    <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                    <p className="font-medium text-gray-500">Sin resultados</p>
+                    <p className="text-sm text-gray-400 mt-1">
+                        {query ? 'Prueba con otro nombre o especialidad.' : 'No hay profesionales registrados.'}
+                    </p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {filtered.map(d => (
+                        <DoctorSearchRow key={d.id} doctor={d} />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ════════════════════════════════════════════════════════════════
 // SECCIÓN DE ADMINS (solo para SuperAdmin)
 // ════════════════════════════════════════════════════════════════
 
@@ -695,6 +1142,7 @@ const AdminDashboard = () => {
                 {[
                     { key: 'pending', label: 'Pendientes', icon: Clock },
                     { key: 'all', label: 'Todos los profesionales', icon: Users },
+                    { key: 'search', label: 'Buscar profesional', icon: Search },
                 ].map(({ key, label, icon: Icon }) => (
                     <button key={key} onClick={() => setTab(key)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
@@ -764,6 +1212,9 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
+
+            {/* Tab: Buscar profesional */}
+            {tab === 'search' && <SearchDoctorsSection />}
 
             {/* Sección de Admins - Solo SuperAdmin */}
             <AdminsSection />
