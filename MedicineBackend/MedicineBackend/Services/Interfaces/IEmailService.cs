@@ -49,4 +49,14 @@ public interface IEmailService
         DateTime appointmentDate,
         string appointmentType,
         string? meetingLink = null);
+
+    /// <summary>
+    /// Envía el código de verificación de email al usuario recién registrado
+    /// </summary>
+    Task SendEmailVerificationCodeAsync(string toEmail, string userName, string code);
+
+    /// <summary>
+    /// Envía el enlace de recuperación de contraseña
+    /// </summary>
+    Task SendPasswordResetEmailAsync(string toEmail, string userName, string resetToken, string appUrl);
 }

@@ -171,6 +171,75 @@ public class EmailService : IEmailService
     }
 
     // ─────────────────────────────────────────────────────────────
+    // VERIFICACIÓN DE EMAIL: Código 6 dígitos
+    // ─────────────────────────────────────────────────────────────
+
+    public async Task SendEmailVerificationCodeAsync(string toEmail, string userName, string code)
+    {
+        var subject = "🔐 Tu código de verificación de NexusSalud";
+        var digits = string.Join("</td><td style='padding:0 6px;font-size:36px;font-weight:700;color:#1e40af;background:#eff6ff;border-radius:8px;text-align:center;width:48px;'>", code.ToCharArray());
+        var body = $@"
+<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;'>
+  <div style='background:linear-gradient(135deg,#3b82f6,#1d4ed8);padding:32px;border-radius:12px 12px 0 0;text-align:center;'>
+    <h1 style='color:white;margin:0;font-size:24px;'>🏥 NexusSalud</h1>
+    <p style='color:#bfdbfe;margin:8px 0 0;'>Verificación de cuenta</p>
+  </div>
+  <div style='background:#f8fafc;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;'>
+    <h2 style='color:#1e40af;'>Hola, {userName} 👋</h2>
+    <p>Para completar tu registro en NexusSalud, introduce este código de verificación:</p>
+    <div style='text-align:center;margin:28px 0;'>
+      <table style='margin:0 auto;border-spacing:8px;border-collapse:separate;'>
+        <tr>
+          <td style='padding:0 6px;font-size:36px;font-weight:700;color:#1e40af;background:#eff6ff;border-radius:8px;text-align:center;width:48px;'>{digits}</td>
+        </tr>
+      </table>
+    </div>
+    <div style='background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;margin:16px 0;'>
+      <p style='margin:0;color:#92400e;font-size:14px;'>⏱️ <strong>Este código caduca en 1 minuto.</strong> Si no lo usas a tiempo, puedes solicitar uno nuevo.</p>
+    </div>
+    <p style='color:#6b7280;font-size:13px;'>Si no has creado una cuenta en NexusSalud, ignora este email.</p>
+    <p>Un saludo,<br><strong>El equipo de NexusSalud</strong></p>
+  </div>
+</body></html>";
+
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // RECUPERACIÓN DE CONTRASEÑA
+    // ─────────────────────────────────────────────────────────────
+
+    public async Task SendPasswordResetEmailAsync(string toEmail, string userName, string resetToken, string appUrl)
+    {
+        var resetUrl = $"{appUrl}/reset-password?token={Uri.EscapeDataString(resetToken)}";
+        var subject = "🔑 Recupera tu contraseña de NexusSalud";
+        var body = $@"
+<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;'>
+  <div style='background:linear-gradient(135deg,#3b82f6,#1d4ed8);padding:32px;border-radius:12px 12px 0 0;text-align:center;'>
+    <h1 style='color:white;margin:0;font-size:24px;'>🏥 NexusSalud</h1>
+    <p style='color:#bfdbfe;margin:8px 0 0;'>Recuperación de contraseña</p>
+  </div>
+  <div style='background:#f8fafc;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;'>
+    <h2 style='color:#1e40af;'>Hola, {userName} 🔑</h2>
+    <p>Has solicitado restablecer tu contraseña. Haz clic en el botón para crear una nueva:</p>
+    <div style='text-align:center;margin:28px 0;'>
+      <a href='{resetUrl}' style='display:inline-block;background:#2563eb;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;'>
+        🔑 Restablecer contraseña
+      </a>
+    </div>
+    <div style='background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;margin:16px 0;'>
+      <p style='margin:0;color:#92400e;font-size:14px;'>⏱️ <strong>Este enlace caduca en 15 minutos.</strong></p>
+    </div>
+    <p style='color:#9ca3af;font-size:12px;word-break:break-all;'>Si el botón no funciona, copia este enlace en tu navegador:<br>{resetUrl}</p>
+    <p style='color:#6b7280;font-size:13px;'>Si no has solicitado este cambio, ignora este email. Tu contraseña no cambiará.</p>
+    <p>Un saludo,<br><strong>El equipo de NexusSalud</strong></p>
+  </div>
+</body></html>";
+
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // MÉTODO PRIVADO: Enviar email
     // ─────────────────────────────────────────────────────────────
 
@@ -197,6 +266,7 @@ public class EmailService : IEmailService
             {
                 Credentials = new NetworkCredential(_username, _password),
                 EnableSsl = true,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
             };
 
             using var message = new MailMessage
@@ -214,7 +284,10 @@ public class EmailService : IEmailService
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Error al enviar email a {To}: {Subject}", toEmail, subject);
-            // No relanzar - los emails no deben bloquear el flujo principal
+            Console.WriteLine($"❌ EMAIL ERROR → {ex.GetType().Name}: {ex.Message}");
+            if (ex.InnerException != null)
+                Console.WriteLine($"   Inner: {ex.InnerException.Message}");
+            throw; // Relanzar temporalmente para ver el error
         }
     }
 }

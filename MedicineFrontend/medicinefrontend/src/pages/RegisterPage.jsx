@@ -4,10 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, User, Calendar, FileText, Heart, Stethoscope, Users } from 'lucide-react';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import ErrorAlert from '../components/ErrorAlert';
+import EmailVerificationModal from '../components/EmailVerificationModal';
 import logo from '../assets/nexussalud-logo1.jpg';
 import DarkModeToggle from '../components/DarkModeToggle';
 import { useLanguage } from '../context/LanguageContext';
 import { translateError } from '../utils/translateError';
+import api from '../services/api';
 
 const RegisterPage = () => {
     const [searchParams] = useSearchParams();
@@ -25,6 +27,8 @@ const RegisterPage = () => {
 
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showVerification, setShowVerification] = useState(false);
+    const [pendingEmail, setPendingEmail] = useState('');
 
     const { register } = useAuth();
     const { t } = useLanguage();
@@ -87,7 +91,11 @@ const RegisterPage = () => {
         try {
             const {...registerData } = formData;
             await register(registerData);
-            navigate('/dashboard');
+
+            // Enviar código de verificación tras registro
+            await api.post('/auth/send-verification', { email: formData.email });
+            setPendingEmail(formData.email);
+            setShowVerification(true);
         } catch (err) {
             if (err.response?.data?.errors) {
                 const backendErrors = err.response.data.errors;
@@ -103,7 +111,19 @@ const RegisterPage = () => {
         }
     };
 
+    const handleVerified = () => {
+        navigate('/dashboard');
+    };
+
     return (
+        <>
+        {showVerification && (
+            <EmailVerificationModal
+                email={pendingEmail}
+                onVerified={handleVerified}
+                onClose={() => setShowVerification(false)}
+            />
+        )}
         <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4">
             <DarkModeToggle />
             <div className="max-w-2xl mx-auto">
@@ -353,6 +373,7 @@ const RegisterPage = () => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

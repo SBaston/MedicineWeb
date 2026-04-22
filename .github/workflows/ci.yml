@@ -1,163 +1,163 @@
-name: Full Stack CI
+# name: Full Stack CI
 
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+# on:
+#   push:
+#     branches: [ "master" ]
+#   pull_request:
+#     branches: [ "master" ]
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: MedicalPlatformDB
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+#     services:
+#       postgres:
+#         image: postgres:15
+#         env:
+#           POSTGRES_USER: postgres
+#           POSTGRES_PASSWORD: postgres
+#           POSTGRES_DB: MedicalPlatformDB
+#         ports:
+#           - 5432:5432
+#         options: >-
+#           --health-cmd="pg_isready -U postgres"
+#           --health-interval=10s
+#           --health-timeout=5s
+#           --health-retries=5
 
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+#       redis:
+#         image: redis:7
+#         ports:
+#           - 6379:6379
+#         options: >-
+#           --health-cmd="redis-cli ping"
+#           --health-interval=10s
+#           --health-timeout=5s
+#           --health-retries=5
 
-    steps:
-    - uses: actions/checkout@v4
+#     steps:
+#     - uses: actions/checkout@v4
 
-    # ════════════════════════════════════════════════════════════════
-    # DEBUG: Verificar estructura del proyecto
-    # ════════════════════════════════════════════════════════════════
-    - name: Check project structure
-      run: |
-        echo "📁 Project structure:"
-        ls -la
-        echo ""
-        echo "📁 MedicineBackend contents:"
-        ls -la MedicineBackend/ || echo "MedicineBackend folder not found!"
-        echo ""
-        echo "🔍 Looking for .csproj files:"
-        find . -name "*.csproj" -type f
+#     # ════════════════════════════════════════════════════════════════
+#     # DEBUG: Verificar estructura del proyecto
+#     # ════════════════════════════════════════════════════════════════
+#     - name: Check project structure
+#       run: |
+#         echo "📁 Project structure:"
+#         ls -la
+#         echo ""
+#         echo "📁 MedicineBackend contents:"
+#         ls -la MedicineBackend/ || echo "MedicineBackend folder not found!"
+#         echo ""
+#         echo "🔍 Looking for .csproj files:"
+#         find . -name "*.csproj" -type f
 
-    # ════════════════════════════════════════════════════════════════
-    # BACKEND
-    # ════════════════════════════════════════════════════════════════
+#     # ════════════════════════════════════════════════════════════════
+#     # BACKEND
+#     # ════════════════════════════════════════════════════════════════
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
+#     - name: Setup .NET
+#       uses: actions/setup-dotnet@v4
+#       with:
+#         dotnet-version: 8.0.x
 
-    # Verificar instalación de .NET
-    - name: Verify .NET installation
-      run: |
-        dotnet --version
-        dotnet --info
+#     # Verificar instalación de .NET
+#     - name: Verify .NET installation
+#       run: |
+#         dotnet --version
+#         dotnet --info
 
-    # Restaurar dependencias
-    - name: Restore backend dependencies
-      run: |
-        cd MedicineBackend
-        dotnet restore
+#     # Restaurar dependencias
+#     - name: Restore backend dependencies
+#       run: |
+#         cd MedicineBackend
+#         dotnet restore
 
-    # Build del proyecto
-    - name: Build backend
-      run: |
-        cd MedicineBackend
-        dotnet build --configuration Release --no-restore
+#     # Build del proyecto
+#     - name: Build backend
+#       run: |
+#         cd MedicineBackend
+#         dotnet build --configuration Release --no-restore
 
-    # Instalar EF Core Tools (globalmente)
-    - name: Install EF Core Tools
-      run: dotnet tool install --global dotnet-ef --version 8.0.*
+#     # Instalar EF Core Tools (globalmente)
+#     - name: Install EF Core Tools
+#       run: dotnet tool install --global dotnet-ef --version 8.0.*
 
-    # Verificar que EF Tools está instalado
-    - name: Verify EF Tools installation
-      run: |
-        export PATH="$PATH:$HOME/.dotnet/tools"
-        dotnet ef --version
+#     # Verificar que EF Tools está instalado
+#     - name: Verify EF Tools installation
+#       run: |
+#         export PATH="$PATH:$HOME/.dotnet/tools"
+#         dotnet ef --version
 
-    # ════════════════════════════════════════════════════════════════
-    # APLICAR MIGRACIONES
-    # ════════════════════════════════════════════════════════════════
-    - name: Apply database migrations
-      run: |
-        export PATH="$PATH:$HOME/.dotnet/tools"
-        cd MedicineBackend/MedicineBackend
-        dotnet ef database update --verbose
-      env:
-        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=MedicalPlatformDB;Username=postgres;Password=postgres"
-        ConnectionStrings__Redis: "localhost:6379"
-        ASPNETCORE_ENVIRONMENT: Development
+#     # ════════════════════════════════════════════════════════════════
+#     # APLICAR MIGRACIONES
+#     # ════════════════════════════════════════════════════════════════
+#     - name: Apply database migrations
+#       run: |
+#         export PATH="$PATH:$HOME/.dotnet/tools"
+#         cd MedicineBackend/MedicineBackend
+#         dotnet ef database update --verbose
+#       env:
+#         ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=MedicalPlatformDB;Username=postgres;Password=postgres"
+#         ConnectionStrings__Redis: "localhost:6379"
+#         ASPNETCORE_ENVIRONMENT: Development
 
-    # Publicar backend
-    - name: Publish backend
-      run: |
-        cd MedicineBackend
-        dotnet publish -c Release -o ../backend_publish
+#     # Publicar backend
+#     - name: Publish backend
+#       run: |
+#         cd MedicineBackend
+#         dotnet publish -c Release -o ../backend_publish
 
-    # Subir artifact del backend
-    - name: Upload backend artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: backend
-        path: backend_publish
-        retention-days: 7
+#     # Subir artifact del backend
+#     - name: Upload backend artifact
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: backend
+#         path: backend_publish
+#         retention-days: 7
 
-    # ════════════════════════════════════════════════════════════════
-    # FRONTEND
-    # ════════════════════════════════════════════════════════════════
+#     # ════════════════════════════════════════════════════════════════
+#     # FRONTEND
+#     # ════════════════════════════════════════════════════════════════
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18
-        cache: 'npm'
-        cache-dependency-path: MedicineFrontend/medicinefrontend/package-lock.json
+#     - name: Setup Node.js
+#       uses: actions/setup-node@v4
+#       with:
+#         node-version: 18
+#         cache: 'npm'
+#         cache-dependency-path: MedicineFrontend/medicinefrontend/package-lock.json
 
-    - name: Install frontend dependencies
-      run: |
-        cd MedicineFrontend/medicinefrontend
-        npm ci
+#     - name: Install frontend dependencies
+#       run: |
+#         cd MedicineFrontend/medicinefrontend
+#         npm ci
 
-    - name: Build frontend
-      run: |
-        cd MedicineFrontend/medicinefrontend
-        npm run build
-      env:
-        CI: false  # Ignora warnings como errores
-        REACT_APP_API_URL: http://localhost:5000
+#     - name: Build frontend
+#       run: |
+#         cd MedicineFrontend/medicinefrontend
+#         npm run build
+#       env:
+#         CI: false  # Ignora warnings como errores
+#         REACT_APP_API_URL: http://localhost:5000
 
-    - name: Upload frontend artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: frontend
-        path: MedicineFrontend/medicinefrontend/dist  # o 'build' si usas create-react-app
-        retention-days: 7
+#     - name: Upload frontend artifact
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: frontend
+#         path: MedicineFrontend/medicinefrontend/dist  # o 'build' si usas create-react-app
+#         retention-days: 7
 
-    # ════════════════════════════════════════════════════════════════
-    # TESTS (opcional pero recomendado)
-    # ════════════════════════════════════════════════════════════════
-    - name: Run backend tests
-      run: |
-        cd MedicineBackend
-        dotnet test --no-build --verbosity normal --configuration Release
-      continue-on-error: true  # No falla el pipeline si no hay tests
+#     # ════════════════════════════════════════════════════════════════
+#     # TESTS (opcional pero recomendado)
+#     # ════════════════════════════════════════════════════════════════
+#     - name: Run backend tests
+#       run: |
+#         cd MedicineBackend
+#         dotnet test --no-build --verbosity normal --configuration Release
+#       continue-on-error: true  # No falla el pipeline si no hay tests
 
-    - name: Run frontend tests
-      run: |
-        cd MedicineFrontend
-        npm test -- --passWithNoTests
-      continue-on-error: true
+#     - name: Run frontend tests
+#       run: |
+#         cd MedicineFrontend
+#         npm test -- --passWithNoTests
+#       continue-on-error: true

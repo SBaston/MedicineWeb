@@ -3,6 +3,7 @@ using MedicineBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MedicineBackend.Controllers;
 
@@ -14,12 +15,37 @@ namespace MedicineBackend.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(IAuthService authService, IEmailService emailService, ILogger<AuthController> logger)
     {
         _authService = authService;
+        _emailService = emailService;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Endpoint de diagnóstico: envía un email de prueba para verificar la configuración SMTP
+    /// </summary>
+    [HttpPost("test-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> TestEmail([FromBody] SendVerificationRequest request)
+    {
+        try
+        {
+            await _emailService.SendEmailVerificationCodeAsync(request.Email, "Usuario Prueba", "123456");
+            return Ok(new { message = $"Email de prueba enviado correctamente a {request.Email}" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                message = "Error al enviar email",
+                error = ex.Message,
+                inner = ex.InnerException?.Message
+            });
+        }
     }
 
     /// <summary>
@@ -81,13 +107,111 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Verifica si un email está disponible
     /// </summary>
-    /// <param name="email">Email a verificar</param>
-    /// <returns>True si el email ya existe, False si está disponible</returns>
     [HttpGet("check-email")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckEmail([FromQuery] string email)
     {
         var exists = await _authService.EmailExistsAsync(email);
         return Ok(new { exists });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // VERIFICACIÓN DE EMAIL POR CÓDIGO
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Envía (o reenvía) el código de verificación de 6 dígitos al email indicado.
+    /// </summary>
+    [HttpPost("send-verification")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SendVerification([FromBody] SendVerificationRequest request)
+    {
+        try
+        {
+            await _authService.SendVerificationCodeAsync(request.Email);
+            return Ok(new { message = "Código enviado correctamente" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al enviar código de verificación");
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Verifica el código de 6 dígitos introducido por el usuario.
+    /// </summary>
+    [HttpPost("verify-email")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+    {
+        try
+        {
+            await _authService.VerifyEmailCodeAsync(request.Email, request.Code);
+            return Ok(new { message = "Email verificado correctamente" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al verificar email");
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // RECUPERACIÓN DE CONTRASEÑA
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Solicita el envío del enlace de recuperación de contraseña.
+    /// Siempre responde 200 OK por seguridad (no revela si el email existe).
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        try
+        {
+            await _authService.ForgotPasswordAsync(request.Email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error en forgot-password");
+        }
+        // Siempre OK para no revelar si el email está registrado
+        return Ok(new { message = "Si el email existe en nuestro sistema, recibirás un enlace en breve" });
+    }
+
+    /// <summary>
+    /// Restablece la contraseña usando el token del email.
+    /// </summary>
+    [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        try
+        {
+            await _authService.ResetPasswordAsync(request.Token, request.NewPassword);
+            return Ok(new { message = "Contraseña restablecida correctamente" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al resetear contraseña");
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
     }
 }

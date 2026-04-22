@@ -43,10 +43,15 @@ public class User
     public bool IsEmailVerified { get; set; } = false;
 
     /// <summary>
-    /// Token de verificación de email
+    /// Código de verificación de email (6 dígitos)
     /// </summary>
-    [MaxLength(500)]
+    [MaxLength(10)]
     public string? EmailVerificationToken { get; set; }
+
+    /// <summary>
+    /// Fecha de expiración del código de verificación de email
+    /// </summary>
+    public DateTime? EmailVerificationExpiry { get; set; }
 
     /// <summary>
     /// Token para resetear contraseña

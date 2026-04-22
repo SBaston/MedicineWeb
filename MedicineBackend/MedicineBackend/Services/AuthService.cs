@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using MedicineBackend.Data;
 using MedicineBackend.DTOs.Auth;
 using MedicineBackend.Helpers;
@@ -15,11 +16,16 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly JwtHelper _jwtHelper;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(AppDbContext context, JwtHelper jwtHelper)
+    public AuthService(AppDbContext context, JwtHelper jwtHelper,
+        IEmailService emailService, IConfiguration configuration)
     {
         _context = context;
         _jwtHelper = jwtHelper;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -230,5 +236,104 @@ public class AuthService : IAuthService
     public async Task<bool> EmailExistsAsync(string email)
     {
         return await _context.Users.AnyAsync(u => u.Email == email);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // VERIFICACIÓN DE EMAIL POR CÓDIGO DE 6 DÍGITOS
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Genera y envía un código de verificación de 6 dígitos al email del usuario.
+    /// Válido 1 minuto.
+    /// </summary>
+    public async Task SendVerificationCodeAsync(string email)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email)
+            ?? throw new InvalidOperationException("No existe ninguna cuenta con ese email");
+
+        // Generar código de 6 dígitos
+        var code = new Random().Next(100000, 999999).ToString();
+
+        user.EmailVerificationToken = code;
+        user.EmailVerificationExpiry = DateTime.UtcNow.AddMinutes(1);
+        await _context.SaveChangesAsync();
+
+        // Obtener nombre del usuario
+        var name = user.Role switch
+        {
+            "Doctor"  => (await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id))?.FullName ?? "Usuario",
+            "Patient" => (await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id))?.FullName ?? "Usuario",
+            _         => "Usuario"
+        };
+
+        await _emailService.SendEmailVerificationCodeAsync(email, name, code);
+    }
+
+    /// <summary>
+    /// Verifica el código introducido por el usuario.
+    /// Marca el email como verificado si es correcto y no ha expirado.
+    /// </summary>
+    public async Task VerifyEmailCodeAsync(string email, string code)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email)
+            ?? throw new InvalidOperationException("Usuario no encontrado");
+
+        if (user.EmailVerificationToken != code)
+            throw new InvalidOperationException("El código es incorrecto");
+
+        if (user.EmailVerificationExpiry == null || user.EmailVerificationExpiry < DateTime.UtcNow)
+            throw new InvalidOperationException("El código ha expirado. Solicita uno nuevo.");
+
+        user.IsEmailVerified = true;
+        user.EmailVerificationToken = null;
+        user.EmailVerificationExpiry = null;
+        await _context.SaveChangesAsync();
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // RECUPERACIÓN DE CONTRASEÑA
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Genera un token único de reset y envía el enlace por email. Expira en 15 minutos.
+    /// </summary>
+    public async Task ForgotPasswordAsync(string email)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        // Por seguridad, no revelar si el email existe o no
+        if (user == null) return;
+
+        var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"); // 64 chars
+        user.PasswordResetToken = token;
+        user.PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
+        await _context.SaveChangesAsync();
+
+        var name = user.Role switch
+        {
+            "Doctor"  => (await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id))?.FullName ?? "Usuario",
+            "Patient" => (await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id))?.FullName ?? "Usuario",
+            _         => "Usuario"
+        };
+
+        var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
+        await _emailService.SendPasswordResetEmailAsync(email, name, token, frontendUrl);
+    }
+
+    /// <summary>
+    /// Restablece la contraseña del usuario usando el token recibido por email.
+    /// </summary>
+    public async Task ResetPasswordAsync(string token, string newPassword)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == token)
+            ?? throw new InvalidOperationException("El enlace de recuperación no es válido o ya fue usado");
+
+        if (user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry < DateTime.UtcNow)
+            throw new InvalidOperationException("El enlace ha expirado. Solicita uno nuevo desde la página de login.");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiry = null;
+        await _context.SaveChangesAsync();
     }
 }

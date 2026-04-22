@@ -30,6 +30,8 @@ import CourseDetailPage from './pages/CourseDetailPage';
 import DoctorMyCoursesPage from './pages/DoctorMyCoursesPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -148,6 +150,8 @@ function App() {
                         />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                        <Route path="/reset-password" element={<ResetPasswordPage />} />
                         {/* Nueva ruta única que reemplaza /doctors y /specialties */}
                         <Route path="/professionals"
                             element={<Layout><ProfessionalsPage /></Layout>} />

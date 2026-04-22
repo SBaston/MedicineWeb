@@ -21,4 +21,24 @@ public interface IAuthService
     /// Verifica si un email ya está registrado
     /// </summary>
     Task<bool> EmailExistsAsync(string email);
+
+    /// <summary>
+    /// Envía (o reenvía) el código de verificación de 6 dígitos al email del usuario
+    /// </summary>
+    Task SendVerificationCodeAsync(string email);
+
+    /// <summary>
+    /// Verifica el código de 6 dígitos introducido por el usuario
+    /// </summary>
+    Task VerifyEmailCodeAsync(string email, string code);
+
+    /// <summary>
+    /// Genera un token de reset de contraseña y lo envía por email
+    /// </summary>
+    Task ForgotPasswordAsync(string email);
+
+    /// <summary>
+    /// Restablece la contraseña usando el token recibido por email
+    /// </summary>
+    Task ResetPasswordAsync(string token, string newPassword);
 }

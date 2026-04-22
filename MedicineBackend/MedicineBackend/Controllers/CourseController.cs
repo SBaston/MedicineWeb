@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 using MedicineBackend.Data;
+using MedicineBackend.DTOs;
 using MedicineBackend.DTOs.DoctorDTO;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -277,16 +278,17 @@ public class CoursesController : ControllerBase
     /// Subir imagen de portada
     /// </summary>
     [HttpPost("{id}/cover-image")]
-    public async Task<ActionResult<object>> UploadCoverImage(int id, [FromForm] IFormFile file)
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<object>> UploadCoverImage(int id, [FromForm] FileUploadRequest request)
     {
         try
         {
-            if (file == null || file.Length == 0)
+            if (request.File == null || request.File.Length == 0)
             {
                 return BadRequest(new { message = "No se ha enviado ningún archivo" });
             }
 
-            var url = await _courseService.UploadCoverImageAsync(id, file);
+            var url = await _courseService.UploadCoverImageAsync(id, request.File);
             return Ok(new { url });
         }
         catch (KeyNotFoundException ex)
@@ -308,14 +310,15 @@ public class CoursesController : ControllerBase
     /// </summary>
     [HttpPost("{id}/content-file")]
     [RequestSizeLimit(524_288_000)] // 500 MB
-    public async Task<ActionResult<object>> UploadContentFile(int id, [FromForm] IFormFile file)
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<object>> UploadContentFile(int id, [FromForm] FileUploadRequest request)
     {
         try
         {
-            if (file == null || file.Length == 0)
+            if (request.File == null || request.File.Length == 0)
                 return BadRequest(new { message = "No se ha enviado ningún archivo" });
 
-            var url = await _courseService.UploadCourseContentFileAsync(id, file);
+            var url = await _courseService.UploadCourseContentFileAsync(id, request.File);
             return Ok(new { url });
         }
         catch (KeyNotFoundException ex)  { return NotFound(new { message = ex.Message }); }

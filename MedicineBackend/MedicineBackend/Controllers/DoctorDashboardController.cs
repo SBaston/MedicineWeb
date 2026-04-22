@@ -1,4 +1,5 @@
 ﻿using MedicineBackend.Data;
+using MedicineBackend.DTOs;
 using MedicineBackend.DTOs.DoctorDTO;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -86,10 +87,11 @@ namespace MedicineBackend.Controllers
         }
 
         [HttpPost("profile/picture")]
-        public async Task<IActionResult> UploadProfilePicture([FromForm] IFormFile file)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadProfilePicture([FromForm] FileUploadRequest request)
         {
             var doctorId = await GetCurrentDoctorIdAsync();
-            var url = await _service.UploadProfilePictureAsync(doctorId, file);
+            var url = await _service.UploadProfilePictureAsync(doctorId, request.File);
             return Ok(new { profilePictureUrl = url });
         }
 
