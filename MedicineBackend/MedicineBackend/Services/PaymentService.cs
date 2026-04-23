@@ -260,9 +260,10 @@ public class PaymentService : IPaymentService
             if (payment == null || payment.Status == "Completado") return;
 
             // Marcar pago como completado
+            // NOTA: no sobreescribimos TransactionId porque es el session.Id
+            // que usa GetSessionStatus para buscar el pago desde la página de éxito.
             payment.Status      = "Completado";
             payment.ProcessedAt = DateTime.UtcNow;
-            payment.TransactionId = session.PaymentIntentId ?? session.Id;
 
             // ── Activar CITA ────────────────────────────────────
             if (meta.TryGetValue("type", out var type) && type == "appointment"
