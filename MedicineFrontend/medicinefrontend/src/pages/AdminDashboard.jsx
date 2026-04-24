@@ -78,7 +78,7 @@ const ImageCard = ({ url, title, required = false, icon: IconComponent = FileTex
 
     if (!url) {
         return (
-            <div className={`${required ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'} rounded-lg border-2 border-dashed p-4 flex flex-col items-center justify-center h-64`}>
+            <div className={`${required ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'} rounded-lg border-2 border-dashed p-4 flex flex-col items-center justify-center h-40 sm:h-64`}>
                 <IconComponent className={`w-8 h-8 ${required ? 'text-red-300' : 'text-gray-300'} mb-2`} />
                 <p className={`text-xs font-semibold ${required ? 'text-red-700' : 'text-gray-600'}`}>{title}</p>
                 <p className={`text-xs ${required ? 'text-red-600' : 'text-gray-400'} mt-1`}>
@@ -186,7 +186,7 @@ const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
                 {expanded && (
                     <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
                         {/* Información básica */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                             <div>
                                 <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5">Nº Colegiado</p>
                                 <p className="font-medium text-gray-800">{doctor.professionalLicense}</p>
@@ -272,13 +272,32 @@ const PendingDoctorRow = ({ doctor, onApprove, onReject }) => {
                                     🎓 Títulos Académicos <span className="text-red-500">(Obligatorio)</span>
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <ImageCard
-                                        url={doctor.specialtyDegreeImageUrl}
-                                        title="Título de Especialidad"
-                                        required
-                                        icon={FileText}
-                                        onView={setShowImageModal}
-                                    />
+                                    {/* Títulos de especialidad — puede haber varios */}
+                                    {(doctor.specialtyDegreeImageUrls?.length > 0
+                                        ? doctor.specialtyDegreeImageUrls
+                                        : [doctor.specialtyDegreeImageUrl].filter(Boolean)
+                                    ).map((url, i) => (
+                                        <ImageCard
+                                            key={i}
+                                            url={url}
+                                            title={doctor.specialtyDegreeImageUrls?.length > 1
+                                                ? `Título de Especialidad ${i + 1}`
+                                                : 'Título de Especialidad'}
+                                            required
+                                            icon={FileText}
+                                            onView={setShowImageModal}
+                                        />
+                                    ))}
+                                    {/* Si no hay ninguno subido */}
+                                    {!doctor.specialtyDegreeImageUrls?.length && !doctor.specialtyDegreeImageUrl && (
+                                        <ImageCard
+                                            url={null}
+                                            title="Título de Especialidad"
+                                            required
+                                            icon={FileText}
+                                            onView={setShowImageModal}
+                                        />
+                                    )}
                                     <ImageCard
                                         url={doctor.universityDegreeImageUrl}
                                         title="Título Universitario"
@@ -494,7 +513,7 @@ const DoctorSearchRow = ({ doctor }) => {
                     {detail && (
                         <>
                             {/* ── Datos básicos ── */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                 <div>
                                     <p className="text-xs text-gray-400 font-semibold uppercase mb-0.5 flex items-center gap-1">
                                         <Phone className="w-3 h-3" /> Teléfono
@@ -590,13 +609,31 @@ const DoctorSearchRow = ({ doctor }) => {
                                         <GraduationCap className="w-3.5 h-3.5 text-indigo-500" /> Títulos académicos
                                     </h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <ImageCard
-                                            url={detail.profile.specialtyDegreeImageUrl}
-                                            title="Título de Especialidad"
-                                            required
-                                            icon={FileText}
-                                            onView={setShowImageModal}
-                                        />
+                                        {/* Títulos de especialidad — puede haber varios */}
+                                        {(detail.profile.specialtyDegreeImageUrls?.length > 0
+                                            ? detail.profile.specialtyDegreeImageUrls
+                                            : [detail.profile.specialtyDegreeImageUrl].filter(Boolean)
+                                        ).map((url, i) => (
+                                            <ImageCard
+                                                key={i}
+                                                url={url}
+                                                title={detail.profile.specialtyDegreeImageUrls?.length > 1
+                                                    ? `Título de Especialidad ${i + 1}`
+                                                    : 'Título de Especialidad'}
+                                                required
+                                                icon={FileText}
+                                                onView={setShowImageModal}
+                                            />
+                                        ))}
+                                        {!detail.profile.specialtyDegreeImageUrls?.length && !detail.profile.specialtyDegreeImageUrl && (
+                                            <ImageCard
+                                                url={null}
+                                                title="Título de Especialidad"
+                                                required
+                                                icon={FileText}
+                                                onView={setShowImageModal}
+                                            />
+                                        )}
                                         <ImageCard
                                             url={detail.profile.universityDegreeImageUrl}
                                             title="Título Universitario"
@@ -1109,7 +1146,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Estadísticas - con click en specialties */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <StatCard
                     icon={Clock}
                     label="Pendientes de revisión"

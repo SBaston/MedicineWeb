@@ -46,12 +46,14 @@ const DoctorRegisterPage = () => {
         pricePerSession: 50,
         description: '',
 
-        // Documentos - 6 imágenes
+        // Documentos - carnet, DNI y universidad
         professionalLicenseFront: '',
         professionalLicenseBack: '',
         idDocumentFront: '',
         idDocumentBack: '',
-        specialtyDegree: '',
+        // Títulos de especialidad: { [specialtyId]: base64DataURL }
+        // Se genera dinámicamente según las especialidades seleccionadas en el paso 2
+        specialtyDegrees: {},
         universityDegree: '',
         profilePicture: '',
 
@@ -98,7 +100,16 @@ const DoctorRegisterPage = () => {
     };
 
     const handleCameraCapture = (imageBase64, docType) => {
-        setFormData(prev => ({ ...prev, [docType]: imageBase64 }));
+        if (docType.startsWith('specialtyDegree_')) {
+            // docType = "specialtyDegree_42" → key = "42"
+            const key = docType.replace('specialtyDegree_', '');
+            setFormData(prev => ({
+                ...prev,
+                specialtyDegrees: { ...prev.specialtyDegrees, [key]: imageBase64 }
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [docType]: imageBase64 }));
+        }
         setShowCamera(null);
     };
 
@@ -147,8 +158,10 @@ const DoctorRegisterPage = () => {
             if (!formData.idDocumentBack) {
                 newErrors.idDocumentBack = 'El DNI (atrás) es obligatorio';
             }
-            if (!formData.specialtyDegree) {
-                newErrors.specialtyDegree = 'El título de especialidad es obligatorio';
+            // Validar que se haya subido al menos un título de especialidad
+            const uploadedDegrees = Object.values(formData.specialtyDegrees).filter(Boolean);
+            if (uploadedDegrees.length === 0) {
+                newErrors.specialtyDegrees = 'Debes subir al menos un título de especialidad';
             }
             if (!formData.universityDegree) {
                 newErrors.universityDegree = 'El título universitario es obligatorio';
@@ -221,7 +234,7 @@ const DoctorRegisterPage = () => {
                 professionalLicenseBack: formData.professionalLicenseBack,
                 idDocumentFront: formData.idDocumentFront,
                 idDocumentBack: formData.idDocumentBack,
-                specialtyDegree: formData.specialtyDegree,
+                specialtyDegrees: formData.specialtyDegrees,
                 universityDegree: formData.universityDegree,
                 profilePicture: formData.profilePicture || null
             };
@@ -539,16 +552,52 @@ const DoctorRegisterPage = () => {
                                         error={errors.idDocumentBack}
                                     />
 
-                                    <DocumentUpload
-                                        title={t('doctorRegister.specialtyDegree')}
-                                        required
-                                        allowPdf
-                                        image={formData.specialtyDegree}
-                                        onCapture={() => setShowCamera('specialtyDegree')}
-                                        onUpload={(data) => setFormData(prev => ({ ...prev, specialtyDegree: data }))}
-                                        onRemove={() => setFormData(prev => ({ ...prev, specialtyDegree: '' }))}
-                                        error={errors.specialtyDegree}
-                                    />
+                                    {/* Títulos de especialidad — uno por cada especialidad seleccionada */}
+                                    {formData.specialtyIds.length === 0 ? (
+                                        <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                                            ⚠️ Vuelve al paso anterior y selecciona tus especialidades para poder subir los títulos correspondientes.
+                                        </div>
+                                    ) : (
+                                        <div className="col-span-2 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-sm font-semibold text-gray-700">
+                                                    Títulos de especialidad <span className="text-red-500">*</span>
+                                                    <span className="ml-2 text-xs font-normal text-gray-500">
+                                                        (uno por cada especialidad seleccionada)
+                                                    </span>
+                                                </p>
+                                                {errors.specialtyDegrees && (
+                                                    <p className="text-red-600 text-xs">{errors.specialtyDegrees}</p>
+                                                )}
+                                            </div>
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                                {formData.specialtyIds.map((specialty) => {
+                                                    const id = typeof specialty === 'object' ? specialty.id : specialty;
+                                                    const name = typeof specialty === 'object' ? specialty.name : `Especialidad ${id}`;
+                                                    const key = String(id);
+                                                    return (
+                                                        <DocumentUpload
+                                                            key={key}
+                                                            title={`Título: ${name}`}
+                                                            required
+                                                            allowPdf
+                                                            image={formData.specialtyDegrees[key] || ''}
+                                                            onCapture={() => setShowCamera(`specialtyDegree_${key}`)}
+                                                            onUpload={(data) => setFormData(prev => ({
+                                                                ...prev,
+                                                                specialtyDegrees: { ...prev.specialtyDegrees, [key]: data }
+                                                            }))}
+                                                            onRemove={() => setFormData(prev => {
+                                                                const updated = { ...prev.specialtyDegrees };
+                                                                delete updated[key];
+                                                                return { ...prev, specialtyDegrees: updated };
+                                                            })}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <DocumentUpload
                                         title={t('doctorRegister.universityDegree')}

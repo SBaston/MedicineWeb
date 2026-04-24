@@ -30,6 +30,8 @@ import CourseDetailPage from './pages/CourseDetailPage';
 import DoctorMyCoursesPage from './pages/DoctorMyCoursesPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
+import AboutPage from './pages/AboutPage';
+import SupportPage from './pages/SupportPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
@@ -338,9 +340,11 @@ function App() {
                             }
                         />
 
-                        {/* Términos y Privacidad */}
-                        <Route path="/terms" element={<Layout><TermsPage /></Layout>} />
-                        <Route path="/privacy" element={<Layout><PrivacyPage /></Layout>} />
+                        {/* Términos, Privacidad, Sobre nosotros y Soporte */}
+                        <Route path="/terms"   element={<Layout><TermsPage    /></Layout>} />
+                        <Route path="/privacy" element={<Layout><PrivacyPage  /></Layout>} />
+                        <Route path="/about"   element={<Layout><AboutPage    /></Layout>} />
+                        <Route path="/support" element={<Layout><SupportPage  /></Layout>} />
 
                         {/* Páginas de retorno de Stripe */}
                         <Route path="/payment/success" element={<PaymentSuccessPage />} />

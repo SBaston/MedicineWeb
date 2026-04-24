@@ -72,7 +72,8 @@ public class PendingDoctorDto
     public string? ProfessionalLicenseBackImageUrl { get; set; }
     public string? IdDocumentFrontImageUrl { get; set; }
     public string? IdDocumentBackImageUrl { get; set; }
-    public string? SpecialtyDegreeImageUrl { get; set; }
+    /// <summary>URLs de los títulos de especialidad, deserializadas desde JSON</summary>
+    public List<string> SpecialtyDegreeImageUrls { get; set; } = new();
     public string? UniversityDegreeImageUrl { get; set; }
 }
 

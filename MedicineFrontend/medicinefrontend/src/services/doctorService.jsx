@@ -77,11 +77,17 @@ const doctorService = {
             if (blob4) formData.append('idDocumentBack', blob4, 'id_back.jpg');
         }
 
-        // OBLIGATORIAS (Títulos) — extensión dinámica según tipo de archivo
-        if (data.specialtyDegree) {
-            const blob5 = dataURLtoBlob(data.specialtyDegree);
-            const ext5 = data.specialtyDegree.startsWith('data:application/pdf') ? 'pdf' : 'jpg';
-            if (blob5) formData.append('specialtyDegree', blob5, `specialty_degree.${ext5}`);
+        // OBLIGATORIAS: Títulos de especialidad — uno por cada especialidad seleccionada
+        // data.specialtyDegrees = { [specialtyId]: base64DataURL, ... }
+        if (data.specialtyDegrees && typeof data.specialtyDegrees === 'object') {
+            let idx = 1;
+            for (const [specialtyId, dataURL] of Object.entries(data.specialtyDegrees)) {
+                if (!dataURL) continue;
+                const blob = dataURLtoBlob(dataURL);
+                const ext = dataURL.startsWith('data:application/pdf') ? 'pdf' : 'jpg';
+                if (blob) formData.append('specialtyDegrees', blob, `specialty_degree_${specialtyId}_${idx}.${ext}`);
+                idx++;
+            }
         }
         if (data.universityDegree) {
             const blob6 = dataURLtoBlob(data.universityDegree);

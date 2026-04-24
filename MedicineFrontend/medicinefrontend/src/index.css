@@ -139,6 +139,80 @@ body {
     animation: fadeIn 0.3s ease-out;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   ANIMACIONES HOMEPAGE
+   ═══════════════════════════════════════════════════════════ */
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-10px); }
+}
+
+@keyframes pulseRing {
+    0%   { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+    70%  { transform: scale(1);   box-shadow: 0 0 0 12px rgba(37, 99, 235, 0); }
+    100% { transform: scale(0.9); box-shadow: 0 0 0 0  rgba(37, 99, 235, 0); }
+}
+
+@keyframes countUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up        { animation: slideUp      0.6s ease-out forwards; }
+.animate-slide-up-delay1 { animation: slideUp      0.6s ease-out 0.15s both; }
+.animate-slide-up-delay2 { animation: slideUp      0.6s ease-out 0.30s both; }
+.animate-slide-up-delay3 { animation: slideUp      0.6s ease-out 0.45s both; }
+.animate-slide-left      { animation: slideInLeft  0.6s ease-out forwards; }
+.animate-slide-right     { animation: slideInRight 0.6s ease-out forwards; }
+.animate-float           { animation: float        3s ease-in-out infinite; }
+.animate-pulse-ring      { animation: pulseRing    2s infinite; }
+
+/* Reveal on scroll usando IntersectionObserver */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.reveal-delay1 { transition-delay: 0.1s; }
+.reveal-delay2 { transition-delay: 0.2s; }
+.reveal-delay3 { transition-delay: 0.3s; }
+
+/* Gradientes de texto */
+.gradient-text {
+    background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Glassmorphism card */
+.glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 ::-webkit-scrollbar {
     width: 10px;
 }

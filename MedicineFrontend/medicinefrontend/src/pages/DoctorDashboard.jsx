@@ -426,7 +426,7 @@ const DoctorDashboard = () => {
                             </div>
 
                             {/* KPI cards */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                                 <div className="bg-emerald-50 rounded-xl p-4">
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Total bruto</span>
@@ -548,7 +548,7 @@ const DoctorDashboard = () => {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <StatCard
                         icon={DollarSign}
                         label="Ingresos totales"
@@ -578,7 +578,7 @@ const DoctorDashboard = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                     <QuickActionCard
                         icon={Calendar}
                         title="Fijar Disponibilidad"

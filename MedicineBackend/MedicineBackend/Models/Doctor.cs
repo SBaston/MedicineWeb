@@ -122,8 +122,12 @@ public class Doctor
     [MaxLength(500)]
     public string? IdDocumentBackImageUrl { get; set; }
 
-    /// <summary>Título de especialidad (OPCIONAL)</summary>
-    [MaxLength(500)]
+    /// <summary>
+    /// URLs de los títulos de especialidad, almacenadas como JSON array.
+    /// Puede haber varias si el doctor tiene múltiples especialidades.
+    /// Ejemplo: ["https://…/titulo1.pdf","https://…/titulo2.jpg"]
+    /// </summary>
+    [MaxLength(4000)]
     public string? SpecialtyDegreeImageUrl { get; set; }
 
     /// <summary>Título universitario (OPCIONAL)</summary>

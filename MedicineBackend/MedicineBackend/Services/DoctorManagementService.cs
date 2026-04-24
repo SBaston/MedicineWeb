@@ -3,6 +3,7 @@ using MedicineBackend.DTOs.Admin;
 using MedicineBackend.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace MedicineBackend.Services;
 
@@ -52,7 +53,7 @@ public class DoctorManagementService : IDoctorManagementService
                 ProfessionalLicenseBackImageUrl = d.ProfessionalLicenseBackImageUrl,
                 IdDocumentFrontImageUrl = d.IdDocumentFrontImageUrl,
                 IdDocumentBackImageUrl = d.IdDocumentBackImageUrl,
-                SpecialtyDegreeImageUrl = d.SpecialtyDegreeImageUrl,
+                SpecialtyDegreeImageUrls = DeserializeImageUrls(d.SpecialtyDegreeImageUrl),
                 UniversityDegreeImageUrl = d.UniversityDegreeImageUrl
             })
             .ToListAsync();
@@ -258,7 +259,7 @@ public class DoctorManagementService : IDoctorManagementService
         ProfessionalLicenseBackImageUrl = d.ProfessionalLicenseBackImageUrl,
         IdDocumentFrontImageUrl = d.IdDocumentFrontImageUrl,
         IdDocumentBackImageUrl = d.IdDocumentBackImageUrl,
-        SpecialtyDegreeImageUrl = d.SpecialtyDegreeImageUrl,
+        SpecialtyDegreeImageUrls = DeserializeImageUrls(d.SpecialtyDegreeImageUrl),
         UniversityDegreeImageUrl = d.UniversityDegreeImageUrl,
 
         // Datos admin
@@ -269,4 +270,19 @@ public class DoctorManagementService : IDoctorManagementService
         TotalReviews = d.TotalReviews,
         TotalEarnings = d.TotalEarnings
     };
+
+    /// <summary>
+    /// Deserializa URLs de títulos de especialidad desde JSON.
+    /// Compatible con registros antiguos que tienen una sola URL.
+    /// </summary>
+    private static List<string> DeserializeImageUrls(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return new List<string>();
+        if (raw.TrimStart().StartsWith('['))
+        {
+            try { return JsonSerializer.Deserialize<List<string>>(raw) ?? new List<string>(); }
+            catch { }
+        }
+        return new List<string> { raw };
+    }
 }

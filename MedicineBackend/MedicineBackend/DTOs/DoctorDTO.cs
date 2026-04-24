@@ -98,9 +98,11 @@ public class DoctorRegisterDto
     [Required(ErrorMessage = "La foto trasera del DNI es obligatoria")]
     public IFormFile IdDocumentBack { get; set; } = null!;
 
-    /// <summary>Título de especialidad (OBLIGATORIO)</summary>
-    [Required(ErrorMessage = "El título de especialidad es obligatorio")]
-    public IFormFile SpecialtyDegree { get; set; } = null!;
+    /// <summary>
+    /// Títulos de especialidad — uno por cada especialidad seleccionada.
+    /// Mínimo 1 archivo obligatorio.
+    /// </summary>
+    public List<IFormFile> SpecialtyDegrees { get; set; } = new();
 
     /// <summary>Título universitario (OBLIGATORIO)</summary>
     [Required(ErrorMessage = "El título universitario es obligatorio")]
@@ -137,7 +139,8 @@ public class CreateDoctorRequest
     public string? ProfessionalLicenseBackImageUrl { get; set; }
     public string? IdDocumentFrontImageUrl { get; set; }
     public string? IdDocumentBackImageUrl { get; set; }
-    public string? SpecialtyDegreeImageUrl { get; set; }
+    /// <summary>URLs de los títulos de especialidad (JSON array serializado)</summary>
+    public List<string> SpecialtyDegreeImageUrls { get; set; } = new();
     public string? UniversityDegreeImageUrl { get; set; }
     public string? ProfilePictureUrl { get; set; }
 
@@ -168,7 +171,8 @@ public class PendingDoctorDto
     public string? ProfessionalLicenseBackImageUrl { get; set; }
     public string? IdDocumentFrontImageUrl { get; set; }
     public string? IdDocumentBackImageUrl { get; set; }
-    public string? SpecialtyDegreeImageUrl { get; set; }
+    /// <summary>URLs de los títulos de especialidad, deserializadas desde JSON</summary>
+    public List<string> SpecialtyDegreeImageUrls { get; set; } = new();
     public string? UniversityDegreeImageUrl { get; set; }
 
     public DateTime CreatedAt { get; set; }

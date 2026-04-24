@@ -9,6 +9,7 @@ using MedicineBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace MedicineBackend.Controllers
 {
@@ -80,9 +81,9 @@ namespace MedicineBackend.Controllers
                     return BadRequest(new { message = "La imagen trasera del DNI es obligatoria" });
                 }
 
-                if (dto.SpecialtyDegree == null)
+                if (dto.SpecialtyDegrees == null || dto.SpecialtyDegrees.Count == 0)
                 {
-                    return BadRequest(new { message = "El título de especialidad es obligatorio" });
+                    return BadRequest(new { message = "Debes subir al menos un título de especialidad" });
                 }
 
                 if (dto.UniversityDegree == null)
@@ -119,12 +120,17 @@ namespace MedicineBackend.Controllers
                     $"{licensePrefix}_id_back"
                 );
 
-                // OBLIGATORIAS: Títulos
-                var specialtyDegreeUrl = await _fileStorage.SaveFileAsync(
-                    dto.SpecialtyDegree,
-                    "doctors/documents",
-                    $"{licensePrefix}_specialty_degree"
-                );
+                // OBLIGATORIAS: Títulos de especialidad (uno por especialidad)
+                var specialtyDegreeUrls = new List<string>();
+                for (int i = 0; i < dto.SpecialtyDegrees.Count; i++)
+                {
+                    var url = await _fileStorage.SaveFileAsync(
+                        dto.SpecialtyDegrees[i],
+                        "doctors/documents",
+                        $"{licensePrefix}_specialty_degree_{i + 1}"
+                    );
+                    specialtyDegreeUrls.Add(url);
+                }
 
                 var universityDegreeUrl = await _fileStorage.SaveFileAsync(
                     dto.UniversityDegree,
@@ -165,7 +171,7 @@ namespace MedicineBackend.Controllers
                         ProfessionalLicenseBackImageUrl = licenseBackUrl,
                         IdDocumentFrontImageUrl = idFrontUrl,
                         IdDocumentBackImageUrl = idBackUrl,
-                        SpecialtyDegreeImageUrl = specialtyDegreeUrl,
+                        SpecialtyDegreeImageUrls = specialtyDegreeUrls,
                         UniversityDegreeImageUrl = universityDegreeUrl,
 
                         // ✅ NUEVO: Términos y redes sociales
@@ -198,7 +204,7 @@ namespace MedicineBackend.Controllers
                             professionalLicenseBack = !string.IsNullOrEmpty(licenseBackUrl),
                             idDocumentFront = !string.IsNullOrEmpty(idFrontUrl),
                             idDocumentBack = !string.IsNullOrEmpty(idBackUrl),
-                            specialtyDegree = !string.IsNullOrEmpty(specialtyDegreeUrl),
+                            specialtyDegrees = specialtyDegreeUrls.Count,
                             universityDegree = !string.IsNullOrEmpty(universityDegreeUrl)
                         },
                         contentTermsAccepted = dto.AcceptContentTerms,

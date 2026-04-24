@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace MedicineBackend.Controllers;
 
@@ -267,7 +268,7 @@ public class AdminController : ControllerBase
                 ProfessionalLicenseBackImageUrl = doctor.ProfessionalLicenseBackImageUrl,
                 IdDocumentFrontImageUrl = doctor.IdDocumentFrontImageUrl,
                 IdDocumentBackImageUrl = doctor.IdDocumentBackImageUrl,
-                SpecialtyDegreeImageUrl = doctor.SpecialtyDegreeImageUrl,
+                SpecialtyDegreeImageUrls = DeserializeImageUrls(doctor.SpecialtyDegreeImageUrl),
                 UniversityDegreeImageUrl = doctor.UniversityDegreeImageUrl,
             };
 
@@ -334,5 +335,32 @@ public class AdminController : ControllerBase
     {
         var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return int.TryParse(value, out var id) ? id : throw new UnauthorizedAccessException();
+    }
+
+    /// <summary>
+    /// Deserializa el campo SpecialtyDegreeImageUrl que puede ser:
+    /// - null / vacío → lista vacía
+    /// - JSON array: ["url1","url2"] → lista de URLs
+    /// - URL simple (registros antiguos): "https://…" → lista con un elemento
+    /// </summary>
+    private static List<string> DeserializeImageUrls(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return new List<string>();
+
+        // Intentar deserializar como JSON array
+        if (raw.TrimStart().StartsWith('['))
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<List<string>>(raw) ?? new List<string>();
+            }
+            catch
+            {
+                // Si falla, tratar como URL simple
+            }
+        }
+
+        // Compatibilidad con registros antiguos (URL simple)
+        return new List<string> { raw };
     }
 }

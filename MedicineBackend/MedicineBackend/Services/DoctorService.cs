@@ -4,6 +4,7 @@ using MedicineBackend.Models;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace MedicineBackend.Services;
 
@@ -91,7 +92,10 @@ public class DoctorService : IDoctorService
                 ProfessionalLicenseBackImageUrl = request.ProfessionalLicenseBackImageUrl,
                 IdDocumentFrontImageUrl = request.IdDocumentFrontImageUrl,
                 IdDocumentBackImageUrl = request.IdDocumentBackImageUrl,
-                SpecialtyDegreeImageUrl = request.SpecialtyDegreeImageUrl,
+                // Serializar la lista de URLs a JSON para almacenamiento en una sola columna
+                SpecialtyDegreeImageUrl = request.SpecialtyDegreeImageUrls.Count > 0
+                    ? JsonSerializer.Serialize(request.SpecialtyDegreeImageUrls)
+                    : null,
                 UniversityDegreeImageUrl = request.UniversityDegreeImageUrl,
 
                 Specialties = specialties,
