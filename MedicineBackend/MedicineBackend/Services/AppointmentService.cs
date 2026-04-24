@@ -3,6 +3,7 @@ using MedicineBackend.Models;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Data;
 
 namespace MedicineBackend.Services;
 
@@ -108,46 +109,60 @@ public class AppointmentService : IAppointmentService
             .FirstOrDefaultAsync(d => d.Id == dto.DoctorId && d.Status == DoctorStatus.Active)
             ?? throw new KeyNotFoundException("Profesional no encontrado o no activo");
 
-        // 3. Verificar que el slot sigue disponible
-        var apptDateUtc = DateTime.SpecifyKind(dto.AppointmentDate, DateTimeKind.Utc);
-        var slotEnd     = DateTime.SpecifyKind(dto.AppointmentDate.AddMinutes(doctor.SessionDurationMinutes > 0 ? doctor.SessionDurationMinutes : DefaultSlotDurationMinutes), DateTimeKind.Utc);
-        var conflict = await _context.Appointments
-            .AnyAsync(a =>
-                a.DoctorId == dto.DoctorId &&
-                a.Status != "Cancelada" &&
-                a.AppointmentDate < slotEnd &&
-                a.AppointmentDate.AddMinutes(a.DurationMinutes) > apptDateUtc);
-
-        if (conflict)
-            throw new InvalidOperationException("Este horario ya no está disponible. Por favor, elige otro.");
-
-        // 4. Determinar tipo de cita: "online" → MeetingPlatform = "Online_Pending"
-        var isOnline = dto.AppointmentType?.ToLower() == "online";
-        var meetingPlatform = isOnline ? "Online_Pending" : null;
-
-        // 5. Crear la cita usando la duración configurada por el doctor
+        // 3. Calcular tiempos del slot
+        var apptDateUtc    = DateTime.SpecifyKind(dto.AppointmentDate, DateTimeKind.Utc);
         var sessionDuration = doctor.SessionDurationMinutes > 0
             ? doctor.SessionDurationMinutes
             : DefaultSlotDurationMinutes;
+        var slotEnd = apptDateUtc.AddMinutes(sessionDuration);
 
-        // Si el doctor tiene precio, la cita queda en "PendientePago" hasta confirmar el pago
-        var initialStatus = doctor.PricePerSession > 0 ? "PendientePago" : "Confirmada";
+        var isOnline       = dto.AppointmentType?.ToLower() == "online";
+        var initialStatus  = doctor.PricePerSession > 0 ? "PendientePago" : "Confirmada";
 
-        var appointment = new Appointment
+        // 4. Transacción Serializable: el check de disponibilidad y la inserción son atómicos.
+        //    Dos peticiones simultáneas para el mismo slot no pueden pasar ambas el check.
+        await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        Appointment appointment;
+        try
         {
-            DoctorId = dto.DoctorId,
-            PatientId = patient.Id,
-            AppointmentDate = apptDateUtc,
-            DurationMinutes = sessionDuration,
-            Status = initialStatus,
-            Price = doctor.PricePerSession,
-            Reason = dto.Reason,
-            MeetingPlatform = meetingPlatform,
-            CreatedAt = DateTime.UtcNow,
-        };
+            var conflict = await _context.Appointments
+                .AnyAsync(a =>
+                    a.DoctorId == dto.DoctorId &&
+                    a.Status   != "Cancelada"  &&
+                    a.AppointmentDate < slotEnd &&
+                    a.AppointmentDate.AddMinutes(a.DurationMinutes) > apptDateUtc);
 
-        _context.Appointments.Add(appointment);
-        await _context.SaveChangesAsync();
+            if (conflict)
+                throw new InvalidOperationException("Este horario ya no está disponible. Por favor, elige otro.");
+
+            appointment = new Appointment
+            {
+                DoctorId        = dto.DoctorId,
+                PatientId       = patient.Id,
+                AppointmentDate = apptDateUtc,
+                DurationMinutes = sessionDuration,
+                Status          = initialStatus,
+                Price           = doctor.PricePerSession,
+                Reason          = dto.Reason,
+                MeetingPlatform = isOnline ? "Online_Pending" : null,
+                CreatedAt       = DateTime.UtcNow,
+            };
+
+            _context.Appointments.Add(appointment);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync();
+            // El índice único de BD actuó como segunda red de seguridad
+            throw new InvalidOperationException("Este horario ya no está disponible. Por favor, elige otro.");
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
 
         _logger.LogInformation("✅ Cita {Id} creada: Paciente {PatientId} con Doctor {DoctorId} el {Date}",
             appointment.Id, patient.Id, dto.DoctorId, dto.AppointmentDate);

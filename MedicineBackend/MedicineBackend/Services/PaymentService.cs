@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Stripe;
 using Stripe.Checkout;
+using System.Data;
 
 namespace MedicineBackend.Services;
 
@@ -256,66 +257,92 @@ public class PaymentService : IPaymentService
                 return;
             }
 
-            var payment = await _context.Payments.FindAsync(paymentId);
-            if (payment == null || payment.Status == "Completado") return;
-
-            // Marcar pago como completado
-            // NOTA: no sobreescribimos TransactionId porque es el session.Id
-            // que usa GetSessionStatus para buscar el pago desde la página de éxito.
-            payment.Status      = "Completado";
-            payment.ProcessedAt = DateTime.UtcNow;
-
-            // ── Activar CITA ────────────────────────────────────
-            if (meta.TryGetValue("type", out var type) && type == "appointment"
-                && meta.TryGetValue("appointment_id", out var apptIdStr)
-                && int.TryParse(apptIdStr, out var apptId))
+            // Transacción RepeatableRead: si Stripe reintenta el webhook y llegan dos
+            // llamadas simultáneas, solo una pasará el check status != "Completado".
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead);
+            try
             {
-                var appt = await _context.Appointments.FindAsync(apptId);
-                if (appt != null && appt.Status == "PendientePago")
-                    appt.Status = "Pendiente";
-            }
-
-            // ── Crear MATRÍCULA ─────────────────────────────────
-            if (type == "course"
-                && meta.TryGetValue("course_id", out var cIdStr)
-                && int.TryParse(cIdStr, out var cId)
-                && meta.TryGetValue("user_id", out var uIdStr)
-                && int.TryParse(uIdStr, out var uId)
-                && meta.TryGetValue("role", out var role))
-            {
-                var course = await _context.Courses.FindAsync(cId);
-                CourseEnrollment? enrollment = null;
-
-                if (role == "Patient")
+                var payment = await _context.Payments.FindAsync(paymentId);
+                if (payment == null || payment.Status == "Completado")
                 {
-                    var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == uId);
-                    if (patient != null)
+                    await transaction.RollbackAsync();
+                    return;
+                }
+
+                // Marcar pago como completado
+                // NOTA: no sobreescribimos TransactionId porque es el session.Id
+                // que usa GetSessionStatus para buscar el pago desde la página de éxito.
+                payment.Status      = "Completado";
+                payment.ProcessedAt = DateTime.UtcNow;
+
+                meta.TryGetValue("type", out var type);
+
+                // ── Activar CITA ────────────────────────────────────
+                if (type == "appointment"
+                    && meta.TryGetValue("appointment_id", out var apptIdStr)
+                    && int.TryParse(apptIdStr, out var apptId))
+                {
+                    var appt = await _context.Appointments.FindAsync(apptId);
+                    if (appt != null && appt.Status == "PendientePago")
+                        appt.Status = "Pendiente";
+                }
+
+                // ── Crear MATRÍCULA ─────────────────────────────────
+                if (type == "course"
+                    && meta.TryGetValue("course_id", out var cIdStr)
+                    && int.TryParse(cIdStr, out var cId)
+                    && meta.TryGetValue("user_id", out var uIdStr)
+                    && int.TryParse(uIdStr, out var uId)
+                    && meta.TryGetValue("role", out var role))
+                {
+                    CourseEnrollment? enrollment = null;
+
+                    if (role == "Patient")
+                    {
+                        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == uId);
+                        if (patient != null)
+                        {
+                            var exists = await _context.CourseEnrollments
+                                .AnyAsync(e => e.CourseId == cId && e.PatientId == patient.Id);
+                            if (!exists)
+                                enrollment = new CourseEnrollment { CourseId = cId, PatientId = patient.Id, EnrolledAt = DateTime.UtcNow };
+                        }
+                    }
+                    else if (role == "Doctor"
+                        && meta.TryGetValue("enroll_doctor_id", out var edStr)
+                        && int.TryParse(edStr, out var edId))
                     {
                         var exists = await _context.CourseEnrollments
-                            .AnyAsync(e => e.CourseId == cId && e.PatientId == patient.Id);
+                            .AnyAsync(e => e.CourseId == cId && e.DoctorId == edId);
                         if (!exists)
-                            enrollment = new CourseEnrollment { CourseId = cId, PatientId = patient.Id, EnrolledAt = DateTime.UtcNow };
+                            enrollment = new CourseEnrollment { CourseId = cId, DoctorId = edId, EnrolledAt = DateTime.UtcNow };
+                    }
+
+                    if (enrollment != null)
+                    {
+                        _context.CourseEnrollments.Add(enrollment);
+                        // Incremento atómico en BD para evitar carreras en el contador
+                        await _context.Courses
+                            .Where(c => c.Id == cId)
+                            .ExecuteUpdateAsync(s => s.SetProperty(c => c.TotalEnrollments, c => c.TotalEnrollments + 1));
                     }
                 }
-                else if (role == "Doctor"
-                    && meta.TryGetValue("enroll_doctor_id", out var edStr)
-                    && int.TryParse(edStr, out var edId))
-                {
-                    var exists = await _context.CourseEnrollments
-                        .AnyAsync(e => e.CourseId == cId && e.DoctorId == edId);
-                    if (!exists)
-                        enrollment = new CourseEnrollment { CourseId = cId, DoctorId = edId, EnrolledAt = DateTime.UtcNow };
-                }
 
-                if (enrollment != null)
-                {
-                    _context.CourseEnrollments.Add(enrollment);
-                    if (course != null) course.TotalEnrollments++;
-                }
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                _logger.LogInformation("Pago {PaymentId} completado vía webhook", paymentId);
             }
-
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Pago {PaymentId} completado vía webhook", paymentId);
+            catch (DbUpdateException ex)
+            {
+                await transaction.RollbackAsync();
+                // El índice único de BD evitó una matrícula duplicada — es idempotente, no es error
+                _logger.LogWarning(ex, "Webhook duplicado para pago {PaymentId} — ignorado (constraint único)", paymentId);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }

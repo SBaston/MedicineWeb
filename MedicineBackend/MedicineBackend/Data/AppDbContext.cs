@@ -220,6 +220,13 @@ public class AppDbContext : DbContext
             // Índices para búsquedas eficientes
             entity.HasIndex(a => a.AppointmentDate);
             entity.HasIndex(a => a.Status);
+
+            // Índice único parcial: un doctor no puede tener dos citas activas en el mismo slot.
+            // Las canceladas quedan excluidas para no bloquear re-reservas en ese hueco.
+            entity.HasIndex(a => new { a.DoctorId, a.AppointmentDate })
+                  .IsUnique()
+                  .HasFilter("\"Status\" != 'Cancelada'")
+                  .HasDatabaseName("IX_Appointments_DoctorId_Date_Active");
         });
 
         // ============================================
@@ -398,6 +405,18 @@ public class AppDbContext : DbContext
             // Índices individuales para búsquedas eficientes
             entity.HasIndex(e => e.PatientId);
             entity.HasIndex(e => e.DoctorId);
+
+            // Índices únicos parciales: un usuario no puede matricularse dos veces en el mismo curso.
+            // Parciales porque PatientId y DoctorId son nullable (solo uno de los dos tiene valor).
+            entity.HasIndex(e => new { e.CourseId, e.PatientId })
+                  .IsUnique()
+                  .HasFilter("\"PatientId\" IS NOT NULL")
+                  .HasDatabaseName("IX_CourseEnrollments_CourseId_PatientId");
+
+            entity.HasIndex(e => new { e.CourseId, e.DoctorId })
+                  .IsUnique()
+                  .HasFilter("\"DoctorId\" IS NOT NULL")
+                  .HasDatabaseName("IX_CourseEnrollments_CourseId_DoctorId");
         });
 
         // ============================================
@@ -452,6 +471,13 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(p => p.CourseId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // Índice único parcial: evita procesar dos veces el mismo pago de Stripe.
+            // Parcial porque TransactionId es null hasta que Stripe devuelve el session ID.
+            entity.HasIndex(p => p.TransactionId)
+                  .IsUnique()
+                  .HasFilter("\"TransactionId\" IS NOT NULL")
+                  .HasDatabaseName("IX_Payments_TransactionId");
         });
 
         // ============================================

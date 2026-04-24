@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
+using System.Data;
 
 
 namespace MedicineBackend.Controllers;
@@ -55,22 +56,17 @@ public class CourseEnrollmentController : ControllerBase
 
             CourseEnrollment enrollment;
 
+            // Resolver el enrollment fuera de la transacción (solo lecturas de patient/doctor)
             if (role == "Patient")
             {
                 var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
                 if (patient == null)
                     return NotFound(new { message = "Paciente no encontrado" });
 
-                // Check if already enrolled
-                var existing = await _context.CourseEnrollments
-                    .FirstOrDefaultAsync(e => e.CourseId == id && e.PatientId == patient.Id);
-                if (existing != null)
-                    return Conflict(new { message = "Ya estás inscrito en este curso" });
-
                 enrollment = new CourseEnrollment
                 {
-                    CourseId = id,
-                    PatientId = patient.Id,
+                    CourseId   = id,
+                    PatientId  = patient.Id,
                     EnrolledAt = DateTime.UtcNow
                 };
             }
@@ -80,20 +76,13 @@ public class CourseEnrollmentController : ControllerBase
                 if (doctor == null)
                     return NotFound(new { message = "Médico no encontrado" });
 
-                // ✅ Un doctor no puede matricularse en su propio curso
                 if (course.DoctorId == doctor.Id)
                     return BadRequest(new { message = "No puedes matricularte en tu propio curso" });
 
-                // Check if already enrolled
-                var existing = await _context.CourseEnrollments
-                    .FirstOrDefaultAsync(e => e.CourseId == id && e.DoctorId == doctor.Id);
-                if (existing != null)
-                    return Conflict(new { message = "Ya estás inscrito en este curso" });
-
                 enrollment = new CourseEnrollment
                 {
-                    CourseId = id,
-                    DoctorId = doctor.Id,
+                    CourseId   = id,
+                    DoctorId   = doctor.Id,
                     EnrolledAt = DateTime.UtcNow
                 };
             }
@@ -102,28 +91,64 @@ public class CourseEnrollmentController : ControllerBase
                 return Forbid();
             }
 
-            _context.CourseEnrollments.Add(enrollment);
-            course.TotalEnrollments++;
-            await _context.SaveChangesAsync();
+            // Transacción Serializable: el check de duplicado y la inserción son atómicos
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            try
+            {
+                // Re-verificar dentro de la transacción para evitar race conditions
+                var alreadyEnrolled = enrollment.PatientId.HasValue
+                    ? await _context.CourseEnrollments.AnyAsync(e => e.CourseId == id && e.PatientId == enrollment.PatientId)
+                    : await _context.CourseEnrollments.AnyAsync(e => e.CourseId == id && e.DoctorId  == enrollment.DoctorId);
+
+                if (alreadyEnrolled)
+                {
+                    await transaction.RollbackAsync();
+                    return Conflict(new { message = "Ya estás inscrito en este curso" });
+                }
+
+                _context.CourseEnrollments.Add(enrollment);
+                await _context.SaveChangesAsync();
+
+                // Incremento atómico para evitar carreras en el contador
+                await _context.Courses
+                    .Where(c => c.Id == id)
+                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.TotalEnrollments, c => c.TotalEnrollments + 1));
+
+                await transaction.CommitAsync();
+            }
+            catch (DbUpdateException)
+            {
+                await transaction.RollbackAsync();
+                // El índice único de BD actuó como red de seguridad
+                return Conflict(new { message = "Ya estás inscrito en este curso" });
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+            // Recargar course para tener TotalEnrollments actualizado en la respuesta
+            await _context.Entry(course).ReloadAsync();
 
             _logger.LogInformation("User {UserId} (role: {Role}) enrolled in course {CourseId}", userId, role, id);
 
             return Ok(new
             {
-                id = enrollment.Id,
-                courseId = enrollment.CourseId,
-                enrolledAt = enrollment.EnrolledAt,
-                progress = enrollment.Progress,
-                isCompleted = enrollment.IsCompleted,
+                id            = enrollment.Id,
+                courseId      = enrollment.CourseId,
+                enrolledAt    = enrollment.EnrolledAt,
+                progress      = enrollment.Progress,
+                isCompleted   = enrollment.IsCompleted,
                 course = new
                 {
-                    id = course.Id,
-                    title = course.Title,
-                    description = course.Description,
-                    price = course.Price,
-                    coverImageUrl = course.CoverImageUrl,
-                    level = course.Level,
-                    category = course.Category,
+                    id              = course.Id,
+                    title           = course.Title,
+                    description     = course.Description,
+                    price           = course.Price,
+                    coverImageUrl   = course.CoverImageUrl,
+                    level           = course.Level,
+                    category        = course.Category,
                     durationMinutes = course.DurationMinutes
                 }
             });
@@ -181,14 +206,13 @@ public class CourseEnrollmentController : ControllerBase
             if (enrollment == null)
                 return NotFound(new { message = "No estás inscrito en este curso" });
 
-            var course = await _context.Courses.FindAsync(id);
-
             _context.CourseEnrollments.Remove(enrollment);
-
-            if (course != null && course.TotalEnrollments > 0)
-                course.TotalEnrollments--;
-
             await _context.SaveChangesAsync();
+
+            // Decremento atómico — nunca baja de 0
+            await _context.Courses
+                .Where(c => c.Id == id && c.TotalEnrollments > 0)
+                .ExecuteUpdateAsync(s => s.SetProperty(c => c.TotalEnrollments, c => c.TotalEnrollments - 1));
 
             _logger.LogInformation("User {UserId} (role: {Role}) unenrolled from course {CourseId}", userId, role, id);
 
