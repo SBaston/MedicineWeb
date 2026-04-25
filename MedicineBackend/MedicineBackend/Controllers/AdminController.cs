@@ -1,6 +1,8 @@
 ﻿using MedicineBackend.Data;
 using MedicineBackend.DTOs.Admin;
+using MedicineBackend.DTOs.Chat;
 using MedicineBackend.Services;
+using MedicineBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,17 +21,20 @@ public class AdminController : ControllerBase
     private readonly IDoctorManagementService _doctorMgmt;
     private readonly ILogger<AdminController> _logger;
     private readonly AppDbContext _db;
+    private readonly IChatService _chatService;
 
     public AdminController(
         IAdminService adminService,
         IDoctorManagementService doctorMgmt,
         ILogger<AdminController> logger,
-        AppDbContext db)
+        AppDbContext db,
+        IChatService chatService)
     {
         _adminService = adminService;
         _doctorMgmt = doctorMgmt;
         _logger = logger;
         _db = db;
+        _chatService = chatService;
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -325,6 +330,92 @@ public class AdminController : ControllerBase
             _logger.LogError(ex, "Error al obtener detalle del profesional {DoctorId}", doctorId);
             return StatusCode(500, new { message = "Error al obtener el detalle del profesional" });
         }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // PLANES DE CHAT — Admin puede crear, editar y desactivar planes
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>Lista todos los planes de chat (incluye inactivos)</summary>
+    [HttpGet("chat/plans")]
+    public async Task<IActionResult> GetChatPlans()
+    {
+        var plans = await _chatService.GetAllPlansAsync();
+        return Ok(plans);
+    }
+
+    /// <summary>Crea un nuevo plan de chat</summary>
+    [HttpPost("chat/plans")]
+    public async Task<IActionResult> CreateChatPlan([FromBody] CreateChatPlanDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        try
+        {
+            var plan = await _chatService.CreatePlanAsync(dto);
+            return Ok(new { message = "Plan de chat creado correctamente.", plan });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear plan de chat");
+            return StatusCode(500, new { message = "Error al crear el plan de chat" });
+        }
+    }
+
+    /// <summary>Actualiza un plan de chat existente</summary>
+    [HttpPut("chat/plans/{id:int}")]
+    public async Task<IActionResult> UpdateChatPlan(int id, [FromBody] UpdateChatPlanDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        try
+        {
+            var plan = await _chatService.UpdatePlanAsync(id, dto);
+            return Ok(new { message = "Plan de chat actualizado correctamente.", plan });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar plan de chat {Id}", id);
+            return StatusCode(500, new { message = "Error al actualizar el plan de chat" });
+        }
+    }
+
+    /// <summary>Desactiva un plan de chat (no lo elimina, por integridad referencial)</summary>
+    [HttpDelete("chat/plans/{id:int}")]
+    public async Task<IActionResult> DeactivateChatPlan(int id)
+    {
+        try
+        {
+            await _chatService.DeactivatePlanAsync(id);
+            return Ok(new { message = "Plan de chat desactivado correctamente." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al desactivar plan de chat {Id}", id);
+            return StatusCode(500, new { message = "Error al desactivar el plan de chat" });
+        }
+    }
+
+    /// <summary>Estadísticas de suscripciones de chat</summary>
+    [HttpGet("chat/stats")]
+    public async Task<IActionResult> GetChatStats()
+    {
+        var stats = await _db.ChatSubscriptions
+            .GroupBy(s => s.Status)
+            .Select(g => new { status = g.Key, count = g.Count(), revenue = g.Sum(s => s.AmountPaid) })
+            .ToListAsync();
+
+        var totalRevenue = await _db.ChatSubscriptions
+            .Where(s => s.Status == "Active" || s.Status == "Expired")
+            .SumAsync(s => (decimal?)s.PlatformEarnings) ?? 0;
+
+        return Ok(new { byStatus = stats, platformRevenue = totalRevenue });
     }
 
     // ════════════════════════════════════════════════════════════════

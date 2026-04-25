@@ -3,9 +3,12 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import patientService from '../services/patientService';
+import chatService from '../services/chatService';
+import professionalsService from '../services/professionalsService';
 import api from '../services/api';
 import ProfileCompletionAlert from '../components/ProfileCompletionAlert';
-import { Calendar, FileText, GraduationCap, User, Clock, Video, MapPin, ChevronDown, ChevronUp, ExternalLink, XCircle, Phone, Pencil, Check, X } from 'lucide-react';
+import BookingModal from '../components/BookingModal';
+import { Calendar, FileText, GraduationCap, User, Clock, Video, MapPin, ChevronDown, ChevronUp, ExternalLink, XCircle, Phone, Pencil, Check, X, MessageCircle, Crown, Zap, Stethoscope, CalendarPlus, Loader2 } from 'lucide-react';
 import PhoneInput from '../components/PhoneInput';
 import { Link } from 'react-router-dom';
 
@@ -122,6 +125,9 @@ const PatientDashboard = () => {
     const [editingPhone, setEditingPhone] = useState(false);
     const [phoneInput, setPhoneInput] = useState('');
     const [savingPhone, setSavingPhone] = useState(false);
+    // Modal de reserva rápida desde "Mis profesionales"
+    const [bookingPro, setBookingPro] = useState(null);      // professional completo
+    const [loadingBookingPro, setLoadingBookingPro] = useState(false);
 
     // Obtener datos del paciente
     const { data: profileData, isLoading: isLoadingProfile } = useQuery({
@@ -150,6 +156,69 @@ const PatientDashboard = () => {
         enabled: !!user && user.role === 'Patient',
     });
 
+    // Obtener suscripciones de chat del paciente
+    const { data: chatSubscriptions = [] } = useQuery({
+        queryKey: ['my-chat-subscriptions'],
+        queryFn: chatService.getMySubscriptions,
+        enabled: !!user && user.role === 'Patient',
+        refetchInterval: 60000, // refrescar cada minuto para detectar expiradas
+    });
+
+    const activeChats = chatSubscriptions.filter(s => s.status === 'Active');
+
+    // ── Mis profesionales: consolidar doctores de citas + chats sin duplicados ──
+    const myProfessionals = (() => {
+        const map = new Map(); // doctorId → { doctorId, name, picture, specialty, chatSub, lastAppointment }
+
+        // 1. Agregar desde citas (cualquier estado excepto cancelada)
+        appointments
+            .filter(a => a.status !== 'Cancelada')
+            .forEach(a => {
+                if (!map.has(a.doctorId)) {
+                    map.set(a.doctorId, {
+                        doctorId:   a.doctorId,
+                        name:       a.doctorName,
+                        picture:    a.doctorProfilePicture,
+                        specialty:  a.doctorSpecialty ?? null,
+                        chatSub:    null,
+                        lastAppointment: a.appointmentDate,
+                    });
+                } else {
+                    // guardar la cita más reciente
+                    const entry = map.get(a.doctorId);
+                    if (new Date(a.appointmentDate) > new Date(entry.lastAppointment)) {
+                        entry.lastAppointment = a.appointmentDate;
+                    }
+                }
+            });
+
+        // 2. Sobreescribir / añadir suscripciones de chat activas
+        chatSubscriptions.forEach(sub => {
+            const existing = map.get(sub.doctorId);
+            if (existing) {
+                existing.chatSub = sub;
+                if (!existing.picture) existing.picture = sub.doctorProfilePictureUrl;
+            } else {
+                map.set(sub.doctorId, {
+                    doctorId:   sub.doctorId,
+                    name:       sub.doctorName,
+                    picture:    sub.doctorProfilePictureUrl,
+                    specialty:  null,
+                    chatSub:    sub,
+                    lastAppointment: null,
+                });
+            }
+        });
+
+        // 3. Ordenar: primero los que tienen chat activo, luego por nombre
+        return [...map.values()].sort((a, b) => {
+            const aActive = a.chatSub?.status === 'Active' ? 0 : 1;
+            const bActive = b.chatSub?.status === 'Active' ? 0 : 1;
+            if (aActive !== bActive) return aActive - bActive;
+            return a.name.localeCompare(b.name);
+        });
+    })();
+
     // Cancel appointment handler
     const handleCancelAppointment = async (appointment) => {
         const confirmed = window.confirm(
@@ -166,6 +235,19 @@ const PatientDashboard = () => {
             alert(t('patientDashboard.appointment.cancelError'));
         } finally {
             setCancellingId(null);
+        }
+    };
+
+    // Abrir BookingModal con datos completos del profesional
+    const handleQuickBook = async (doctorId) => {
+        setLoadingBookingPro(true);
+        try {
+            const pro = await professionalsService.getById(doctorId);
+            setBookingPro(pro);
+        } catch {
+            alert('No se pudo cargar la información del profesional. Inténtalo de nuevo.');
+        } finally {
+            setLoadingBookingPro(false);
         }
     };
 
@@ -213,6 +295,7 @@ const PatientDashboard = () => {
     const enrolledCourses = courses.length;
 
     const isLoading = isLoadingProfile || isLoadingAppointments || isLoadingCourses;
+    const activeChatCount = activeChats.length;
 
     if (isLoading) {
         return (
@@ -295,37 +378,48 @@ const PatientDashboard = () => {
             )}
 
             {/* Estadísticas rápidas */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5">
                     <div className="flex items-center justify-between mb-2">
-                        <Calendar className="w-8 h-8 text-blue-500" />
+                        <Calendar className="w-7 h-7 text-blue-500" />
                         <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{upcomingAppointments}</span>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{t('patientDashboard.stats.scheduledAppointments')}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-xs">{t('patientDashboard.stats.scheduledAppointments')}</p>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5">
                     <div className="flex items-center justify-between mb-2">
-                        <FileText className="w-8 h-8 text-green-500" />
+                        <FileText className="w-7 h-7 text-green-500" />
                         <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{completedAppointments}</span>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{t('patientDashboard.stats.completedConsultations')}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-xs">{t('patientDashboard.stats.completedConsultations')}</p>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5">
                     <div className="flex items-center justify-between mb-2">
-                        <GraduationCap className="w-8 h-8 text-purple-500" />
+                        <GraduationCap className="w-7 h-7 text-purple-500" />
                         <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{enrolledCourses}</span>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{t('patientDashboard.stats.enrolledCourses')}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-xs">{t('patientDashboard.stats.enrolledCourses')}</p>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                {/* Chat Premium stat */}
+                <div className={`rounded-xl shadow-md p-5 ${activeChatCount > 0 ? 'bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-700' : 'bg-white dark:bg-gray-800'}`}>
                     <div className="flex items-center justify-between mb-2">
-                        <User className="w-8 h-8 text-orange-500" />
+                        <MessageCircle className={`w-7 h-7 ${activeChatCount > 0 ? 'text-violet-500' : 'text-gray-400'}`} />
+                        <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{activeChatCount}</span>
+                    </div>
+                    <p className={`text-xs ${activeChatCount > 0 ? 'text-violet-600 font-semibold' : 'text-gray-600 dark:text-gray-400'}`}>
+                        Chats Premium activos
+                    </p>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5">
+                    <div className="flex items-center justify-between mb-2">
+                        <User className="w-7 h-7 text-orange-500" />
                         <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{profileCompletion}%</span>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{t('patientDashboard.stats.profileCompleted')}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-xs">{t('patientDashboard.stats.profileCompleted')}</p>
                 </div>
             </div>
 
@@ -427,6 +521,199 @@ const PatientDashboard = () => {
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* ── Mis profesionales ── */}
+            {myProfessionals.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8">
+                    <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                        <Stethoscope className="w-6 h-6 text-primary-600" />
+                        Mis profesionales
+                        <span className="ml-1 px-2 py-0.5 bg-primary-100 text-primary-700 text-xs font-bold rounded-full">
+                            {myProfessionals.length}
+                        </span>
+                    </h2>
+
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {myProfessionals.map(pro => {
+                            const avatarUrl = pro.picture ||
+                                `https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=3b82f6&color=fff&size=160&bold=true`;
+                            const hasActiveChat = pro.chatSub?.status === 'Active';
+                            const hasExpiredChat = pro.chatSub && !hasActiveChat;
+                            const daysLeft = hasActiveChat && pro.chatSub.endDate
+                                ? Math.max(0, Math.ceil((new Date(pro.chatSub.endDate) - new Date()) / (1000 * 60 * 60 * 24)))
+                                : 0;
+
+                            return (
+                                <div
+                                    key={pro.doctorId}
+                                    className="flex flex-col rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 overflow-hidden hover:shadow-md transition-all"
+                                >
+                                    {/* Header */}
+                                    <div className="flex items-center gap-3 p-4">
+                                        <img
+                                            src={avatarUrl}
+                                            alt={pro.name}
+                                            className="w-14 h-14 rounded-full object-cover flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-gray-900 dark:text-gray-100 truncate">
+                                                Dr. {pro.name}
+                                            </p>
+                                            {pro.specialty && (
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{pro.specialty}</p>
+                                            )}
+                                            {/* Badge Premium */}
+                                            {hasActiveChat && (
+                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-semibold rounded-full">
+                                                    <Crown className="w-3 h-3" />
+                                                    Premium · {daysLeft}d restantes
+                                                </span>
+                                            )}
+                                            {hasExpiredChat && (
+                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded-full">
+                                                    <Crown className="w-3 h-3" />
+                                                    Premium expirado
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Acciones */}
+                                    <div className="flex gap-2 px-4 pb-4 mt-auto">
+                                        <Link
+                                            to={`/professionals/${pro.doctorId}`}
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                                        >
+                                            <User className="w-3.5 h-3.5" />
+                                            Ver perfil
+                                        </Link>
+
+                                        {hasActiveChat ? (
+                                            <Link
+                                                to={`/chat/${pro.chatSub.id}`}
+                                                className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                                            >
+                                                <MessageCircle className="w-3.5 h-3.5" />
+                                                Chat
+                                            </Link>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleQuickBook(pro.doctorId)}
+                                                disabled={loadingBookingPro}
+                                                className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                                            >
+                                                {loadingBookingPro
+                                                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                    : <CalendarPlus className="w-3.5 h-3.5" />
+                                                }
+                                                Reservar
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Mis chats Premium */}
+            {chatSubscriptions.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                        <MessageCircle className="w-6 h-6 text-violet-600" />
+                        Mis chats Premium
+                        <span className="ml-1 px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-bold rounded-full">
+                            {activeChats.length} activo{activeChats.length !== 1 ? 's' : ''}
+                        </span>
+                    </h2>
+
+                    <div className="space-y-3">
+                        {chatSubscriptions.map(sub => {
+                            const isExpired = sub.status === 'Expired' || sub.isReadOnly;
+                            const daysLeft = sub.endDate
+                                ? Math.max(0, Math.ceil((new Date(sub.endDate) - new Date()) / (1000 * 60 * 60 * 24)))
+                                : 0;
+
+                            return (
+                                <div
+                                    key={sub.id}
+                                    className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                                        isExpired
+                                            ? 'border-gray-200 bg-gray-50 dark:bg-gray-700/50 dark:border-gray-600'
+                                            : 'border-violet-200 bg-violet-50 dark:bg-violet-900/20 dark:border-violet-700 hover:shadow-md'
+                                    }`}
+                                >
+                                    <img
+                                        src={sub.doctorProfilePictureUrl ||
+                                            `https://ui-avatars.com/api/?name=${encodeURIComponent(sub.doctorName)}&background=3b82f6&color=fff&size=80&bold=true`}
+                                        alt={sub.doctorName}
+                                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                                    />
+
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="font-semibold text-gray-900 dark:text-gray-100">
+                                                Dr. {sub.doctorName}
+                                            </p>
+                                            <span className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                                isExpired
+                                                    ? 'bg-gray-200 text-gray-500'
+                                                    : 'bg-violet-100 text-violet-700'
+                                            }`}>
+                                                <Crown className="w-3 h-3" />
+                                                {sub.planName}
+                                            </span>
+                                            {sub.unreadCount > 0 && (
+                                                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                                    {sub.unreadCount} nuevo{sub.unreadCount !== 1 ? 's' : ''}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            {isExpired ? (
+                                                <span className="text-red-500">Expirado</span>
+                                            ) : (
+                                                <span className="text-violet-600 font-medium">
+                                                    {daysLeft} día{daysLeft !== 1 ? 's' : ''} restante{daysLeft !== 1 ? 's' : ''}
+                                                </span>
+                                            )}
+                                            {sub.lastMessage && (
+                                                <>
+                                                    <span>·</span>
+                                                    <span className="truncate max-w-[180px]">{sub.lastMessage.content}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <Link
+                                        to={`/chat/${sub.id}`}
+                                        className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                            isExpired
+                                                ? 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300'
+                                                : 'bg-violet-600 text-white hover:bg-violet-700'
+                                        }`}
+                                    >
+                                        <MessageCircle className="w-4 h-4" />
+                                        {isExpired ? 'Ver historial' : 'Abrir chat'}
+                                    </Link>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <Link
+                            to="/professionals"
+                            className="flex items-center gap-2 text-sm text-violet-600 hover:text-violet-700 font-semibold"
+                        >
+                            <Zap className="w-4 h-4" />
+                            Contratar chat Premium con otro profesional →
+                        </Link>
+                    </div>
                 </div>
             )}
 

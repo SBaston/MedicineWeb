@@ -34,6 +34,7 @@ import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ChatPage from './pages/ChatPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -349,6 +350,16 @@ function App() {
                         {/* Páginas de retorno de Stripe */}
                         <Route path="/payment/success" element={<PaymentSuccessPage />} />
                         <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+
+                        {/* Chat Premium — solo pacientes y doctores autenticados */}
+                        <Route
+                            path="/chat/:subscriptionId"
+                            element={
+                                <ProtectedRoute allowedRoles={['Patient', 'Doctor']}>
+                                    <ChatPage />
+                                </ProtectedRoute>
+                            }
+                        />
 
                         {/* 404 */}
                         <Route

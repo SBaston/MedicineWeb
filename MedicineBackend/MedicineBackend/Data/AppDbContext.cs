@@ -30,9 +30,14 @@ public class AppDbContext : DbContext
     public DbSet<DoctorAvailability> DoctorAvailabilities { get; set; }
     public DbSet<Notification> Notifications { get; set; }
 
-    // ✅ NUEVO: Sistema de redes sociales y contenido
+    // ✅ Sistema de redes sociales y contenido
     public DbSet<DoctorSocialMedia> DoctorSocialMedias { get; set; }
     public DbSet<DoctorContentConsent> DoctorContentConsents { get; set; }
+
+    // ✅ Chat Premium — planes, suscripciones y mensajes
+    public DbSet<ChatPlan> ChatPlans { get; set; }
+    public DbSet<ChatSubscription> ChatSubscriptions { get; set; }
+    public DbSet<ChatMessage> ChatMessages { get; set; }
 
     // ============================================
     // CONFIGURACIÓN DE ENTIDADES
@@ -561,9 +566,68 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
 
-            entity.HasIndex(n => n.IsRead);
-            entity.HasIndex(n => n.CreatedAt);
+        // ============================================
+        // CONFIGURACIÓN: CHAT PREMIUM
+        // ============================================
+
+        modelBuilder.Entity<ChatPlan>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Name).IsRequired().HasMaxLength(100);
+            entity.Property(p => p.Description).HasMaxLength(500);
+            entity.Property(p => p.Price).HasColumnType("decimal(10,2)");
+            entity.Property(p => p.PlatformCommissionPercent).HasColumnType("decimal(5,2)");
+            entity.Property(p => p.IsActive).HasDefaultValue(true);
+            entity.Property(p => p.IsVatExempt).HasDefaultValue(true);
+            entity.Property(p => p.CreatedAt).HasDefaultValueSql("NOW()");
+        });
+
+        modelBuilder.Entity<ChatSubscription>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.Property(s => s.Status).IsRequired().HasMaxLength(20);
+            entity.Property(s => s.AmountPaid).HasColumnType("decimal(10,2)");
+            entity.Property(s => s.DoctorEarnings).HasColumnType("decimal(10,2)");
+            entity.Property(s => s.PlatformEarnings).HasColumnType("decimal(10,2)");
+            entity.Property(s => s.IsVatExempt).HasDefaultValue(true);
+            entity.Property(s => s.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(s => s.StripeSessionId).HasMaxLength(200);
+
+            entity.HasOne(s => s.Patient)
+                .WithMany()
+                .HasForeignKey(s => s.PatientUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(s => s.Doctor)
+                .WithMany()
+                .HasForeignKey(s => s.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(s => s.Plan)
+                .WithMany()
+                .HasForeignKey(s => s.ChatPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.SenderRole).IsRequired().HasMaxLength(20);
+            entity.Property(m => m.Content).IsRequired().HasMaxLength(4000);
+            entity.Property(m => m.IsRead).HasDefaultValue(false);
+            entity.Property(m => m.SentAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(m => m.Subscription)
+                .WithMany(s => s.Messages)
+                .HasForeignKey(m => m.ChatSubscriptionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(m => m.Sender)
+                .WithMany()
+                .HasForeignKey(m => m.SenderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

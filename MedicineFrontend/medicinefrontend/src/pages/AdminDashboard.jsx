@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import adminService from '../services/adminService';
+import chatService from '../services/chatService';
 import {
     ShieldCheck, Clock, CheckCircle, XCircle, Trash2, Users,
     Stethoscope, Mail, AlertTriangle, ChevronDown, ChevronUp,
     Star, Crown, UserPlus, FileText, Shield, User, Eye, Download, X, Video,
     Search, BookOpen, Play, GraduationCap, Phone, Calendar, DollarSign,
-    ExternalLink, BadgeCheck, AlertCircle
+    ExternalLink, BadgeCheck, AlertCircle, MessageCircle, Plus, Edit2,
+    ToggleLeft, ToggleRight, Zap, Percent
 } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════════
@@ -872,6 +874,312 @@ const SearchDoctorsSection = () => {
 };
 
 // ════════════════════════════════════════════════════════════════
+// SECCIÓN DE PLANES DE CHAT PREMIUM
+// ════════════════════════════════════════════════════════════════
+
+const ChatPlansSection = () => {
+    const queryClient = useQueryClient();
+    const [showForm, setShowForm] = useState(false);
+    const [editingPlan, setEditingPlan] = useState(null);
+    const [form, setForm] = useState({
+        name: '', description: '', price: '', durationDays: '',
+        platformCommissionPercent: '20', isVatExempt: true, isActive: true,
+    });
+    const [formError, setFormError] = useState('');
+
+    const { data: plans = [], isLoading } = useQuery({
+        queryKey: ['admin-chat-plans'],
+        queryFn: chatService.admin.getPlans,
+    });
+
+    const { data: stats } = useQuery({
+        queryKey: ['admin-chat-stats'],
+        queryFn: chatService.admin.getStats,
+    });
+
+    const createMut = useMutation({
+        mutationFn: chatService.admin.createPlan,
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-chat-plans'] }); resetForm(); },
+        onError: (e) => setFormError(e.response?.data?.message || 'Error al crear el plan'),
+    });
+
+    const updateMut = useMutation({
+        mutationFn: ({ id, dto }) => chatService.admin.updatePlan(id, dto),
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-chat-plans'] }); resetForm(); },
+        onError: (e) => setFormError(e.response?.data?.message || 'Error al actualizar el plan'),
+    });
+
+    const deactivateMut = useMutation({
+        mutationFn: chatService.admin.deactivatePlan,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-chat-plans'] }),
+    });
+
+    const resetForm = () => {
+        setShowForm(false);
+        setEditingPlan(null);
+        setFormError('');
+        setForm({ name: '', description: '', price: '', durationDays: '', platformCommissionPercent: '20', isVatExempt: true, isActive: true });
+    };
+
+    const openEdit = (plan) => {
+        setEditingPlan(plan);
+        setForm({
+            name: plan.name,
+            description: plan.description || '',
+            price: plan.price.toString(),
+            durationDays: plan.durationDays.toString(),
+            platformCommissionPercent: plan.platformCommissionPercent.toString(),
+            isVatExempt: plan.isVatExempt,
+            isActive: plan.isActive,
+        });
+        setShowForm(true);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setFormError('');
+        const price = parseFloat(form.price);
+        const days = parseInt(form.durationDays, 10);
+        const comm = parseFloat(form.platformCommissionPercent);
+        if (!form.name.trim() || isNaN(price) || price <= 0 || isNaN(days) || days < 1 || isNaN(comm) || comm < 0 || comm > 100) {
+            setFormError('Revisa los campos: nombre, precio, días y comisión son obligatorios.');
+            return;
+        }
+        const dto = {
+            name: form.name.trim(),
+            description: form.description.trim() || null,
+            price,
+            durationDays: days,
+            platformCommissionPercent: comm,
+            isVatExempt: form.isVatExempt,
+            isActive: form.isActive,
+        };
+        if (editingPlan) {
+            updateMut.mutate({ id: editingPlan.id, dto });
+        } else {
+            createMut.mutate(dto);
+        }
+    };
+
+    const activePlans = plans.filter(p => p.isActive);
+    const inactivePlans = plans.filter(p => !p.isActive);
+
+    return (
+        <div className="mt-10 pt-8 border-t-2 border-gray-200">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center">
+                        <MessageCircle className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Planes de Chat Premium</h2>
+                        <p className="text-sm text-gray-500">Configura duración, precio y reparto de ingresos</p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => { resetForm(); setShowForm(true); }}
+                    className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                    <Plus className="w-4 h-4" />
+                    Nuevo plan
+                </button>
+            </div>
+
+            {/* Stats rápidos */}
+            {stats && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                    {stats.byStatus?.map(s => (
+                        <div key={s.status} className="bg-white rounded-xl border border-gray-100 p-4">
+                            <p className="text-xs text-gray-500 mb-1 capitalize">{s.status}</p>
+                            <p className="text-xl font-bold text-gray-900">{s.count}</p>
+                            <p className="text-xs text-gray-400">{s.revenue?.toFixed(2)} € recaudados</p>
+                        </div>
+                    ))}
+                    <div className="bg-violet-50 rounded-xl border border-violet-200 p-4">
+                        <p className="text-xs text-violet-600 font-medium mb-1">Ingresos plataforma</p>
+                        <p className="text-xl font-bold text-violet-700">{stats.platformRevenue?.toFixed(2)} €</p>
+                        <p className="text-xs text-violet-400">sin IVA (exento)</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Formulario crear/editar */}
+            {showForm && (
+                <div className="bg-violet-50 border border-violet-200 rounded-xl p-6 mb-6">
+                    <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        {editingPlan ? <><Edit2 className="w-4 h-4" /> Editar plan: {editingPlan.name}</> : <><Plus className="w-4 h-4" /> Nuevo plan de chat</>}
+                    </h3>
+                    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Nombre del plan *</label>
+                            <input
+                                type="text" required maxLength={100}
+                                value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                                placeholder="ej: Mensual, Trimestral…"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Descripción</label>
+                            <input
+                                type="text" maxLength={500}
+                                value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                                placeholder="Descripción breve del plan…"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Precio (€) *</label>
+                            <input
+                                type="number" required min="0.01" step="0.01"
+                                value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                                placeholder="29.99"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Duración (días) *</label>
+                            <input
+                                type="number" required min="1" max="3650" step="1"
+                                value={form.durationDays} onChange={e => setForm(f => ({ ...f, durationDays: e.target.value }))}
+                                placeholder="30"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                Comisión plataforma (%) *
+                                <span className="text-gray-400 font-normal ml-1">
+                                    → Profesional recibe: {form.platformCommissionPercent ? (100 - parseFloat(form.platformCommissionPercent)).toFixed(0) : '—'}%
+                                </span>
+                            </label>
+                            <input
+                                type="number" required min="0" max="100" step="0.1"
+                                value={form.platformCommissionPercent}
+                                onChange={e => setForm(f => ({ ...f, platformCommissionPercent: e.target.value }))}
+                                placeholder="20"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            />
+                        </div>
+                        <div className="flex items-center gap-6 pt-5">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox" checked={form.isVatExempt}
+                                    onChange={e => setForm(f => ({ ...f, isVatExempt: e.target.checked }))}
+                                    className="w-4 h-4 rounded text-violet-600"
+                                />
+                                <span className="text-sm text-gray-700">Exento de IVA <span className="text-gray-400">(servicios médicos)</span></span>
+                            </label>
+                            {editingPlan && (
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox" checked={form.isActive}
+                                        onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
+                                        className="w-4 h-4 rounded text-violet-600"
+                                    />
+                                    <span className="text-sm text-gray-700">Plan activo</span>
+                                </label>
+                            )}
+                        </div>
+
+                        {formError && (
+                            <div className="sm:col-span-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                {formError}
+                            </div>
+                        )}
+
+                        <div className="sm:col-span-2 flex gap-3 justify-end">
+                            <button type="button" onClick={resetForm}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit"
+                                disabled={createMut.isPending || updateMut.isPending}
+                                className="px-6 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors">
+                                {(createMut.isPending || updateMut.isPending) ? 'Guardando…' : (editingPlan ? 'Actualizar plan' : 'Crear plan')}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* Lista de planes */}
+            {isLoading ? (
+                <div className="text-center py-10 text-gray-400">Cargando planes…</div>
+            ) : plans.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+                    <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 font-medium">No hay planes de chat configurados</p>
+                    <p className="text-sm text-gray-400 mt-1">Crea el primer plan para que los pacientes puedan contratar el chat Premium</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {[...activePlans, ...inactivePlans].map(plan => {
+                        const doctorPct = 100 - plan.platformCommissionPercent;
+                        return (
+                            <div
+                                key={plan.id}
+                                className={`bg-white rounded-xl border p-4 flex items-center gap-4 ${plan.isActive ? 'border-gray-200' : 'border-gray-100 opacity-60'}`}
+                            >
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${plan.isActive ? 'bg-violet-100' : 'bg-gray-100'}`}>
+                                    <Crown className={`w-5 h-5 ${plan.isActive ? 'text-violet-600' : 'text-gray-400'}`} />
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-semibold text-gray-900">{plan.name}</span>
+                                        {plan.isActive
+                                            ? <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Activo</span>
+                                            : <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">Inactivo</span>
+                                        }
+                                        {plan.isVatExempt && (
+                                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Exento IVA</span>
+                                        )}
+                                    </div>
+                                    {plan.description && (
+                                        <p className="text-xs text-gray-500 mt-0.5">{plan.description}</p>
+                                    )}
+                                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                                        <span className="font-bold text-gray-900 text-sm">{plan.price.toFixed(2)} €</span>
+                                        <span>·</span>
+                                        <span>{plan.durationDays} días</span>
+                                        <span>·</span>
+                                        <span className="flex items-center gap-1">
+                                            <Percent className="w-3 h-3" />
+                                            Plataforma: {plan.platformCommissionPercent}% · Profesional: {doctorPct.toFixed(0)}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    <button
+                                        onClick={() => openEdit(plan)}
+                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
+                                        title="Editar plan"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    {plan.isActive && (
+                                        <button
+                                            onClick={() => { if (window.confirm(`¿Desactivar el plan "${plan.name}"?`)) deactivateMut.mutate(plan.id); }}
+                                            className="p-2 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-600 transition-colors"
+                                            title="Desactivar plan"
+                                        >
+                                            <ToggleLeft className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ════════════════════════════════════════════════════════════════
 // SECCIÓN DE ADMINS (solo para SuperAdmin)
 // ════════════════════════════════════════════════════════════════
 
@@ -1252,6 +1560,9 @@ const AdminDashboard = () => {
 
             {/* Tab: Buscar profesional */}
             {tab === 'search' && <SearchDoctorsSection />}
+
+            {/* Planes de Chat Premium */}
+            <ChatPlansSection />
 
             {/* Sección de Admins - Solo SuperAdmin */}
             <AdminsSection />

@@ -32,7 +32,10 @@ const LEVEL_COLORS = {
 const CourseDetailPage = () => {
     const { id } = useParams();
     const location = useLocation();
-    const { user } = useAuth();
+    const { user, isDoctor, isPatient } = useAuth();
+    const IVA = 0.21;
+    // Los pacientes pagan IVA (21%); los doctores están exentos
+    const applyIva = isPatient || !user;   // visitante sin sesión → mostramos precio con IVA por defecto
 
     const [course, setCourse]           = useState(location.state?.course || null);
     const [loading, setLoading]         = useState(!course);
@@ -283,8 +286,21 @@ const CourseDetailPage = () => {
                     {/* Enrollment card */}
                     <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 sticky top-6">
                         {/* Price */}
-                        <div className="text-3xl font-bold text-emerald-600 mb-5">
-                            {course.price === 0 ? 'Gratis' : `${course.price} €`}
+                        <div className="mb-5">
+                            {course.price === 0 ? (
+                                <p className="text-3xl font-bold text-emerald-600">Gratis</p>
+                            ) : (
+                                <>
+                                    <p className="text-3xl font-bold text-emerald-600">
+                                        {applyIva
+                                            ? (course.price * (1 + IVA)).toFixed(2)
+                                            : course.price.toFixed(2)} €
+                                    </p>
+                                    <p className="text-xs text-slate-400 mt-0.5">
+                                        {applyIva ? 'IVA 21% incluido' : 'Exento de IVA'}
+                                    </p>
+                                </>
+                            )}
                         </div>
 
                         {/* Enroll CTA */}
@@ -320,7 +336,9 @@ const CourseDetailPage = () => {
                                     {enrollLoading
                                         ? 'Redirigiendo a pago...'
                                         : course.price > 0
-                                            ? `Pagar con Stripe — ${course.price.toFixed(2)} €`
+                                            ? `Pagar con Stripe — ${applyIva
+                                                ? (course.price * (1 + IVA)).toFixed(2)
+                                                : course.price.toFixed(2)} €`
                                             : 'Matricularme gratis'
                                     }
                                 </button>

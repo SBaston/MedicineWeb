@@ -1,6 +1,7 @@
 ﻿using MedicineBackend.Configuration;
 using MedicineBackend.Data;
 using MedicineBackend.Helpers;
+using MedicineBackend.Hubs;
 using MedicineBackend.Services;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -90,6 +91,12 @@ builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 // ✅ SERVICIO DE PAGOS: Stripe
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 
+// ✅ SERVICIO DE CHAT PREMIUM: suscripciones y mensajería
+builder.Services.AddScoped<IChatService, ChatService>();
+
+// ✅ SIGNALR: mensajería en tiempo real
+builder.Services.AddSignalR();
+
 builder.Services.AddMemoryCache();
 
 // Autenticación JWT
@@ -113,6 +120,21 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ClockSkew = TimeSpan.Zero
+    };
+
+    // ✅ SignalR: leer el token desde query string para WebSocket
+    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -201,7 +223,10 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseCors("AllowFrontend");  // ← SEGUNDO: CORS
 app.UseAuthentication();  // ← TERCERO: Autenticación
 app.UseAuthorization();   // ← CUARTO: Autorización
-app.MapControllers();     // ← ÚLTIMO: Controladores
+app.MapControllers();     // ← Controladores REST
+
+// ✅ SignalR Hub para chat en tiempo real
+app.MapHub<ChatHub>("/hubs/chat");
 
 // ✅ Health check endpoint para Docker
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))

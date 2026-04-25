@@ -5,17 +5,19 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
     DollarSign, Calendar, Users, Star, TrendingUp, TrendingDown,
     User, Clock, Video, BookOpen, AlertCircle,
     ArrowRight, CheckCircle, Eye, Link as LinkIcon,
     MapPin, Loader2, ChevronDown, ChevronUp, Send,
-    CreditCard, FileText, BarChart2
+    CreditCard, FileText, BarChart2, MessageCircle, Crown
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
 import SocialMediaSection from '../components/SocialMediaSection';
 import appointmentService from '../services/appointmentService';
+import chatService from '../services/chatService';
 
 const DoctorDashboard = () => {
     const navigate = useNavigate();
@@ -27,6 +29,13 @@ const DoctorDashboard = () => {
     const [meetingLinkData, setMeetingLinkData] = useState({});
     const [savingLink, setSavingLink] = useState({});
     const [linkSuccess, setLinkSuccess] = useState({});
+
+    // ── Suscripciones de chat ──────────────────────────────────
+    const { data: chatSubs = [] } = useQuery({
+        queryKey: ['doctor-chat-subscriptions'],
+        queryFn: chatService.getDoctorSubscriptions,
+        refetchInterval: 60000,
+    });
 
     // ── Panel de ingresos ──────────────────────────────────────
     const [showEarnings, setShowEarnings]           = useState(false);
@@ -615,6 +624,46 @@ const DoctorDashboard = () => {
                         color="emerald"
                     />
                 </div>
+
+                {/* Chats Premium activos */}
+                {chatSubs.length > 0 && (
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                                <MessageCircle className="w-5 h-5 text-violet-600" />
+                                Chats Premium activos
+                                <span className="ml-1 px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-bold rounded-full">
+                                    {chatSubs.length}
+                                </span>
+                            </h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {chatSubs.map(sub => (
+                                <Link
+                                    key={sub.id}
+                                    to={`/chat/${sub.id}`}
+                                    className="flex items-center gap-3 p-3 border border-violet-100 bg-violet-50 rounded-xl hover:bg-violet-100 transition-colors"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 text-sm font-bold text-primary-700">
+                                        {sub.patientName?.charAt(0)?.toUpperCase() || '?'}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-gray-900 text-sm truncate">{sub.patientName}</p>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                            <Crown className="w-3 h-3 text-violet-500" />
+                                            <span className="text-xs text-violet-600">{sub.name}</span>
+                                        </div>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-violet-400 flex-shrink-0" />
+                                </Link>
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">
+                            <Crown className="w-3 h-3" />
+                            Los mensajes se almacenan de forma segura conforme a la LOPD
+                        </p>
+                    </div>
+                )}
 
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

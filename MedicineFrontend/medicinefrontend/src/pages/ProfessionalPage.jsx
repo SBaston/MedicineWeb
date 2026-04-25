@@ -5,16 +5,19 @@
 // ✅ Filtros avanzados
 // ═══════════════════════════════════════════════════════════════
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import professionalsService from '../services/professionalsService';
+import chatService from '../services/chatService';
+import { useAuth } from '../context/AuthContext';
 import {
     Search, Star, Clock, Stethoscope,
     SlidersHorizontal, X, ChevronDown, Play,
-    TrendingUp, Users, Video as VideoIcon, ExternalLink, CalendarPlus
+    TrendingUp, Users, Video as VideoIcon, ExternalLink,
+    Briefcase, Calendar, MessageCircle
 } from 'lucide-react';
-import { useState } from 'react';
+import ContratarModal from '../components/ContratarModal';
 import BookingModal from '../components/BookingModal';
 
 // ═══════════════════════════════════════════════════════════════
@@ -51,7 +54,21 @@ const ProfessionalCard = ({ professional }) => {
     const avatarUrl = professional.profilePictureUrl
         || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=3b82f6&color=fff&size=200&bold=true`;
 
+    const { isAuthenticated } = useAuth();
+    const [showContratar, setShowContratar] = useState(false);
     const [showBooking, setShowBooking] = useState(false);
+
+    // Comprobar suscripción Premium activa con este profesional
+    const { data: chatSub } = useQuery({
+        queryKey: ['chat-sub-doctor', professional.id],
+        queryFn: () => chatService.getSubscriptionWithDoctor(professional.id),
+        enabled: isAuthenticated,
+        retry: false,
+        // 404 = sin suscripción, no es un error real
+        throwOnError: false,
+    });
+
+    const hasPremium = chatSub && chatSub.status === 'Active';
 
     // ✅ NUEVO: Obtener videos del profesional
     const { data: videos = [] } = useQuery({
@@ -165,19 +182,48 @@ const ProfessionalCard = ({ professional }) => {
                     </div>
                 </Link>
 
-                {/* ✅ BOTÓN RESERVAR CITA */}
+                {/* BOTONES — cambian según si ya tiene Premium */}
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                    <button
-                        onClick={() => setShowBooking(true)}
-                        className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors"
-                    >
-                        <CalendarPlus className="w-4 h-4" />
-                        Reservar cita
-                    </button>
+                    {hasPremium ? (
+                        /* Ya tiene Premium activo: Reservar + Chat */
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowBooking(true)}
+                                className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm"
+                            >
+                                <Calendar className="w-4 h-4" />
+                                Reservar cita
+                            </button>
+                            <Link
+                                to={`/chat/${chatSub.id}`}
+                                className="flex-1 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm"
+                            >
+                                <MessageCircle className="w-4 h-4" />
+                                Abrir chat
+                            </Link>
+                        </div>
+                    ) : (
+                        /* Sin Premium: botón Contratar que abre el modal */
+                        <button
+                            onClick={() => setShowContratar(true)}
+                            className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors"
+                        >
+                            <Briefcase className="w-4 h-4" />
+                            Contratar
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Modal de reserva */}
+            {/* Modal Contratar: Gratis / Premium */}
+            {showContratar && (
+                <ContratarModal
+                    professional={professional}
+                    onClose={() => setShowContratar(false)}
+                />
+            )}
+
+            {/* Modal Reservar (acceso directo desde botón Premium) */}
             {showBooking && (
                 <BookingModal
                     professional={professional}
