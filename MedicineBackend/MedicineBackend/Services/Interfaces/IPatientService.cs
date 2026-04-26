@@ -41,4 +41,10 @@ public interface IPatientService
     /// Verifica si un paciente existe
     /// </summary>
     Task<bool> PatientExistsAsync(int userId);
+
+    /// <summary>
+    /// Devuelve el Id de la fila en la tabla Patients para un userId dado,
+    /// o null si no existe.
+    /// </summary>
+    Task<int?> GetPatientIdByUserIdAsync(int userId);
 }

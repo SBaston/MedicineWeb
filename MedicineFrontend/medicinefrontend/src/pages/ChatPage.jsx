@@ -91,16 +91,19 @@ const ChatPage = () => {
 
     const subscription = subscriptions.find(s => s.id === subId);
 
+    // true solo cuando las suscripciones ya cargaron Y esta pertenece al usuario actual
+    const isAuthorized = !loadingSubs && !!subscription;
+
     // ── Cargar historial de mensajes ───────────────────────────
     useEffect(() => {
-        if (!subId) return;
+        if (!subId || !isAuthorized) return;
         chatService.getMessages(subId, 1)
             .then(data => {
                 // Los mensajes vienen en orden descendente (más reciente primero), invertimos
                 setMessages([...data].reverse());
             })
             .catch(console.error);
-    }, [subId]);
+    }, [subId, isAuthorized]);
 
     // ── Hacer scroll al fondo ──────────────────────────────────
     useEffect(() => {
@@ -109,13 +112,16 @@ const ChatPage = () => {
 
     // ── Marcar como leídos ─────────────────────────────────────
     useEffect(() => {
-        if (subId && user) {
+        if (subId && user && isAuthorized) {
             chatService.markRead(subId).catch(console.error);
         }
-    }, [subId, user, messages.length]);
+    }, [subId, user, messages.length, isAuthorized]);
 
     // ── Conexión SignalR ───────────────────────────────────────
+    // Solo se inicia cuando sabemos que la suscripción pertenece al usuario
     useEffect(() => {
+        if (!isAuthorized) return;
+
         const token = localStorage.getItem('token');
         if (!token || !subId) return;
 
@@ -164,7 +170,7 @@ const ChatPage = () => {
         return () => {
             connection.stop();
         };
-    }, [subId, user?.id]);
+    }, [subId, user?.id, isAuthorized]);
 
     // ── Enviar mensaje ─────────────────────────────────────────
     const handleSend = useCallback(async () => {

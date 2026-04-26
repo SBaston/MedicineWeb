@@ -277,6 +277,65 @@ public class PaymentController : ControllerBase
             return StatusCode(500, new { message = "Error al obtener los pagos" });
         }
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // POST /api/payments/{paymentId}/cancel
+    // El usuario cancela explícitamente un pago pendiente
+    // (ej. desde la página de cancelación de Stripe)
+    // ─────────────────────────────────────────────────────────────
+    [HttpPost("{paymentId}/cancel")]
+    [Authorize(Roles = "Patient,Doctor")]
+    public async Task<IActionResult> CancelPayment(int paymentId)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var role      = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+            var payment = await _context.Payments
+                .Include(p => p.Appointment)
+                .FirstOrDefaultAsync(p => p.Id == paymentId);
+
+            if (payment == null) return NotFound(new { message = "Pago no encontrado" });
+
+            // Verificar que el pago pertenece al usuario que solicita la cancelación
+            bool owns = false;
+            if (role == "Patient")
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+                owns = patient != null && payment.PatientId == patient.Id;
+            }
+            else if (role == "Doctor")
+            {
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+                owns = doctor != null && payment.DoctorId == doctor.Id;
+            }
+
+            if (!owns) return Forbid();
+
+            // Solo se pueden cancelar pagos aún pendientes
+            if (payment.Status != "Pendiente")
+                return BadRequest(new { message = "Solo se pueden cancelar pagos en estado Pendiente" });
+
+            // Marcar el pago como cancelado
+            payment.Status = "Cancelado";
+
+            // Si hay una cita asociada en PendientePago → cancelarla también
+            if (payment.Appointment != null && payment.Appointment.Status == "PendientePago")
+                payment.Appointment.Status = "Cancelada";
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Pago {PaymentId} cancelado por el usuario {UserId}", paymentId, userId);
+
+            return Ok(new { message = "Pago cancelado correctamente" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cancelando pago {PaymentId}", paymentId);
+            return StatusCode(500, new { message = "Error al cancelar el pago" });
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────

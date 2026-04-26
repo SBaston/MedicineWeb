@@ -8,6 +8,7 @@ using MedicineBackend.Models;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stripe;
 using Stripe.Checkout;
@@ -22,6 +23,7 @@ public class PaymentService : IPaymentService
     private readonly ILogger<PaymentService> _logger;
     private readonly ISettingsService _settings;
     private readonly IInvoiceService _invoices;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     // ─── Configuración de Stripe ───────────────────────────────
     private readonly string _secretKey;
@@ -36,13 +38,15 @@ public class PaymentService : IPaymentService
         IConfiguration config,
         ILogger<PaymentService> logger,
         ISettingsService settings,
-        IInvoiceService invoices)
+        IInvoiceService invoices,
+        IServiceScopeFactory scopeFactory)
     {
-        _context  = context;
-        _config   = config;
-        _logger   = logger;
-        _settings = settings;
-        _invoices = invoices;
+        _context      = context;
+        _config       = config;
+        _logger       = logger;
+        _settings     = settings;
+        _invoices     = invoices;
+        _scopeFactory = scopeFactory;
 
         var ps = config.GetSection("PaymentSettings");
         _secretKey     = ps["StripeSecretKey"]     ?? throw new InvalidOperationException("StripeSecretKey no configurada");
@@ -70,17 +74,22 @@ public class PaymentService : IPaymentService
         var appointment = await _context.Appointments.FindAsync(appointmentId)
             ?? throw new KeyNotFoundException("Cita no encontrada");
 
-        // Calcular comisión
+        // Calcular IVA y precio final (mismo patrón que cursos)
+        var ivaRate    = await _settings.GetIvaRateAsync();
+        var vatAmount  = Math.Round(price * ivaRate, 2);
+        var priceFinal = price + vatAmount;
+
+        // Comisión y ganancia del doctor se calculan sobre el precio neto (sin IVA)
         var fee        = Math.Round(price * (_commissionPct / 100m), 2);
         var doctorNet  = price - fee;
 
-        // Guardar Payment pendiente
+        // Guardar Payment pendiente (Amount = precio final con IVA)
         var payment = new Payment
         {
             PatientId      = patient.Id,
             DoctorId       = doctorId,
             AppointmentId  = appointmentId,
-            Amount         = price,
+            Amount         = priceFinal,
             Currency       = _currency.ToUpper(),
             PlatformFee    = fee,
             DoctorAmount   = doctorNet,
@@ -88,12 +97,14 @@ public class PaymentService : IPaymentService
             PaymentMethod  = "Stripe",
             PaymentType    = "Cita",
             PaymentProvider= "Stripe",
-            Description    = $"Cita #{appointmentId} con Dr. {doctor.FirstName} {doctor.LastName}"
+            Description    = $"Cita #{appointmentId} con Dr. {doctor.FirstName} {doctor.LastName} (IVA {ivaRate * 100:F0}% incluido)"
         };
         _context.Payments.Add(payment);
         await _context.SaveChangesAsync();
 
         // Crear sesión de Stripe Checkout
+        var cancelUrlWithParams = $"{_cancelUrl}?payment_id={payment.Id}&type=appointment";
+
         var options = new SessionCreateOptions
         {
             PaymentMethodTypes = ["card"],
@@ -104,11 +115,11 @@ public class PaymentService : IPaymentService
                     PriceData = new SessionLineItemPriceDataOptions
                     {
                         Currency    = _currency,
-                        UnitAmount  = (long)(price * 100), // en céntimos
+                        UnitAmount  = (long)(priceFinal * 100), // en céntimos, con IVA
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
                             Name        = $"Consulta con Dr. {doctor.FirstName} {doctor.LastName}",
-                            Description = $"Cita médica el {appointment.AppointmentDate:dd/MM/yyyy} a las {appointment.AppointmentDate:HH:mm}",
+                            Description = $"Cita médica el {appointment.AppointmentDate:dd/MM/yyyy} a las {appointment.AppointmentDate:HH:mm} · IVA {ivaRate * 100:F0}% incluido",
                         }
                     },
                     Quantity = 1
@@ -116,7 +127,7 @@ public class PaymentService : IPaymentService
             ],
             Mode       = "payment",
             SuccessUrl = _successUrl,
-            CancelUrl  = _cancelUrl,
+            CancelUrl  = cancelUrlWithParams,
             Metadata   = new Dictionary<string, string>
             {
                 { "payment_id",    payment.Id.ToString() },
@@ -198,6 +209,8 @@ public class PaymentService : IPaymentService
             ? course.Description[..150] + "…"
             : course.Description ?? "Curso en NexusSalud";
 
+        var cancelUrlWithParams = $"{_cancelUrl}?payment_id={payment.Id}&type=course";
+
         var options = new SessionCreateOptions
         {
             PaymentMethodTypes = ["card"],
@@ -225,7 +238,7 @@ public class PaymentService : IPaymentService
             ],
             Mode       = "payment",
             SuccessUrl = _successUrl,
-            CancelUrl  = _cancelUrl,
+            CancelUrl  = cancelUrlWithParams,
             Metadata   = new Dictionary<string, string>
             {
                 { "payment_id",  payment.Id.ToString() },
@@ -368,10 +381,13 @@ public class PaymentService : IPaymentService
                 await transaction.CommitAsync();
                 _logger.LogInformation("Pago {PaymentId} completado vía webhook", paymentId);
 
-                // Generar factura (fuera de la transacción para no bloquearla)
+                // Generar factura en un scope propio para que el DbContext no esté
+                // ya destruido cuando el Task.Run se ejecute tras cerrar el request HTTP.
                 _ = Task.Run(async () =>
                 {
-                    try { await _invoices.GenerateForPaymentAsync(paymentId); }
+                    await using var scope   = _scopeFactory.CreateAsyncScope();
+                    var invoices            = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
+                    try { await invoices.GenerateForPaymentAsync(paymentId); }
                     catch (Exception ex) { _logger.LogError(ex, "Error generando factura para pago {PaymentId}", paymentId); }
                 });
             }
@@ -425,10 +441,12 @@ public class PaymentService : IPaymentService
             await tx.CommitAsync();
             _logger.LogInformation("Suscripción de chat {SubId} activada vía webhook", subscriptionId);
 
-            // Generar factura fuera de la transacción
+            // Generar factura en un scope propio (mismo motivo que arriba)
             _ = Task.Run(async () =>
             {
-                try { await _invoices.GenerateForChatSubscriptionAsync(subscriptionId); }
+                await using var scope   = _scopeFactory.CreateAsyncScope();
+                var invoices            = scope.ServiceProvider.GetRequiredService<IInvoiceService>();
+                try { await invoices.GenerateForChatSubscriptionAsync(subscriptionId); }
                 catch (Exception ex) { _logger.LogError(ex, "Error generando factura para chat sub {SubId}", subscriptionId); }
             });
         }

@@ -62,6 +62,10 @@ public interface IEmailService
 
     /// <summary>
     /// Envía la factura al receptor por email (conforme a RD 1619/2012).
+    /// Si se proporciona <paramref name="pdfBytes"/>, se adjunta como PDF.
     /// </summary>
-    Task SendInvoiceEmailAsync(MedicineBackend.Models.Invoice invoice, string toEmail);
+    Task SendInvoiceEmailAsync(
+        MedicineBackend.Models.Invoice invoice,
+        string toEmail,
+        byte[]? pdfBytes = null);
 }

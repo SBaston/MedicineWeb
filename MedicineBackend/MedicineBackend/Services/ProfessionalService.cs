@@ -170,13 +170,26 @@ public class ProfessionalService : IProfessionalService
     }
 
     /// <summary>
-    /// Obtener reseñas de un profesional (placeholder)
+    /// Obtener reseñas visibles de un profesional
     /// </summary>
     public async Task<object> GetProfessionalReviewsAsync(int doctorId)
     {
-        // TODO: Implementar cuando exista el modelo de reviews
-        await Task.CompletedTask;
-        return new List<object>();
+        return await _context.Reviews
+            .Include(r => r.Patient)
+            .Where(r => r.DoctorId == doctorId && r.IsVisible)
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new
+            {
+                r.Id,
+                r.Rating,
+                r.Comment,
+                r.IsVerified,
+                PatientName = $"{r.Patient.FirstName} {r.Patient.LastName[0]}.",
+                r.DoctorResponse,
+                r.DoctorResponseDate,
+                r.CreatedAt,
+            })
+            .ToListAsync();
     }
 
     /// <summary>

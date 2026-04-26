@@ -12,6 +12,7 @@ import {
 import api from '../services/api';
 import specialtyService from '../services/specialtyService';
 import { useAuth } from '../context/AuthContext';
+import { useTaxRate } from '../hooks/useTaxRate';
 
 /** Convierte minutos a texto legible */
 const formatMinutes = (mins) => {
@@ -309,9 +310,11 @@ const CoursesPage = () => {
 
 // ── Tarjeta de curso ────────────────────────────────────────────
 const CourseCard = ({ course }) => {
-    const navigate = useNavigate();
+    const navigate   = useNavigate();
+    const ivaRate    = useTaxRate();
     const levelColor = LEVEL_COLORS[course.level] || 'bg-slate-100 text-slate-600';
     const doctorName = `${course.doctor?.firstName ?? ''} ${course.doctor?.lastName ?? ''}`.trim();
+    const priceFinal = course.price > 0 ? (course.price * (1 + ivaRate)) : 0;
 
     return (
         <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col">
@@ -399,9 +402,14 @@ const CourseCard = ({ course }) => {
 
                 {/* Precio + CTA */}
                 <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-emerald-600">
-                        {course.price === 0 ? 'Gratis' : `${course.price} €`}
-                    </span>
+                    <div>
+                        <span className="text-2xl font-bold text-emerald-600">
+                            {course.price === 0 ? 'Gratis' : `${priceFinal.toFixed(2)} €`}
+                        </span>
+                        {course.price > 0 && (
+                            <p className="text-xs text-slate-400 mt-0.5">IVA incluido</p>
+                        )}
+                    </div>
                     <button
                         onClick={() => navigate('/courses/' + course.id, { state: { course } })}
                         className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"

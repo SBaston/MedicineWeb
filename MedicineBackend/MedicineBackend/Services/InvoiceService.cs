@@ -121,7 +121,7 @@ public class InvoiceService : IInvoiceService
             InvoiceType     = total >= 400 ? "Ordinaria" : "Simplificada",
         });
 
-        _ = SendInvoiceEmailAsync(invoice, recipientEmail);
+        await SendInvoiceEmailAsync(invoice, recipientEmail);
         return invoice;
     }
 
@@ -173,7 +173,7 @@ public class InvoiceService : IInvoiceService
             InvoiceType        = total >= 400 ? "Ordinaria" : "Simplificada",
         });
 
-        _ = SendInvoiceEmailAsync(invoice, recipientEmail);
+        await SendInvoiceEmailAsync(invoice, recipientEmail);
         return invoice;
     }
 
@@ -218,8 +218,23 @@ public class InvoiceService : IInvoiceService
         if (string.IsNullOrWhiteSpace(toEmail)) return;
         try
         {
-            await _email.SendInvoiceEmailAsync(invoice, toEmail);
-            invoice.EmailSent  = true;
+            // Generar PDF de la factura
+            byte[]? pdfBytes = null;
+            try
+            {
+                pdfBytes = InvoicePdfGenerator.Generate(invoice);
+                _logger.LogInformation("PDF generado para factura {Number} ({Bytes} bytes)",
+                    invoice.InvoiceNumber, pdfBytes.Length);
+            }
+            catch (Exception pdfEx)
+            {
+                // Si falla el PDF, enviamos el email igualmente sin adjunto
+                _logger.LogWarning(pdfEx, "No se pudo generar el PDF para factura {Number}; se enviará sin adjunto",
+                    invoice.InvoiceNumber);
+            }
+
+            await _email.SendInvoiceEmailAsync(invoice, toEmail, pdfBytes);
+            invoice.EmailSent   = true;
             invoice.EmailSentAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }

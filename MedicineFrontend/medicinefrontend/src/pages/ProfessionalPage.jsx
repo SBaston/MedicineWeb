@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import ContratarModal from '../components/ContratarModal';
 import BookingModal from '../components/BookingModal';
+import { useTaxRate } from '../hooks/useTaxRate';
 
 // ═══════════════════════════════════════════════════════════════
 // OPCIONES DE FILTROS
@@ -56,6 +57,8 @@ const ProfessionalCard = ({ professional }) => {
 
     const { isAuthenticated, user } = useAuth();
     const isDoctor = user?.role === 'Doctor';
+    const ivaRate  = useTaxRate();
+    const priceFinal = (professional.pricePerSession ?? 0) * (1 + ivaRate);
     const [showContratar, setShowContratar] = useState(false);
     const [showBooking, setShowBooking] = useState(false);
 
@@ -142,9 +145,9 @@ const ProfessionalCard = ({ professional }) => {
                             {/* Precio */}
                             <div className="text-right flex-shrink-0">
                                 <p className="font-bold text-primary-600 text-xl">
-                                    {professional.pricePerSession}€
+                                    {priceFinal.toFixed(2)} €
                                 </p>
-                                <p className="text-xs text-gray-400">por sesión</p>
+                                <p className="text-xs text-gray-400">IVA incluido · por sesión</p>
                             </div>
                         </div>
 

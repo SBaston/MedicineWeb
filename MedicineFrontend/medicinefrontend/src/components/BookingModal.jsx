@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import appointmentService from '../services/appointmentService';
 import professionalsService from '../services/professionalsService';
 import api from '../services/api';
+import { useTaxRate } from '../hooks/useTaxRate';
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS de fecha
@@ -317,11 +318,13 @@ const StepReason = ({ reason, onChange }) => (
 // ─────────────────────────────────────────────────────────────
 // PASO 4: Resumen y pago
 // ─────────────────────────────────────────────────────────────
-const StepPayment = ({ professional, appointmentType, selectedDate, selectedSlot, reason, price }) => {
-    const slotDate = selectedSlot ? new Date(selectedSlot.start) : null;
-    const typeLabel = appointmentType === 'online' ? 'Online (videollamada)' : 'Presencial';
-    const typeColor = appointmentType === 'online' ? 'text-blue-600' : 'text-green-600';
-    const TypeIcon = appointmentType === 'online' ? Video : MapPin;
+const StepPayment = ({ professional, appointmentType, selectedDate, selectedSlot, reason, price, ivaRate }) => {
+    const slotDate   = selectedSlot ? new Date(selectedSlot.start) : null;
+    const typeLabel  = appointmentType === 'online' ? 'Online (videollamada)' : 'Presencial';
+    const typeColor  = appointmentType === 'online' ? 'text-blue-600' : 'text-green-600';
+    const TypeIcon   = appointmentType === 'online' ? Video : MapPin;
+    const vatAmount  = price > 0 ? Math.round(price * ivaRate * 100) / 100 : 0;
+    const priceFinal = price + vatAmount;
 
     return (
         <div className="space-y-5">
@@ -375,14 +378,36 @@ const StepPayment = ({ professional, appointmentType, selectedDate, selectedSlot
                 )}
             </div>
 
-            {/* Total */}
-            <div className="bg-primary-50 rounded-xl p-4 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-primary-700">
-                    <CreditCard className="w-5 h-5" />
-                    <span className="font-semibold">Total a pagar</span>
+            {/* Desglose de precio */}
+            {price > 0 && (
+                <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+                    <div className="flex justify-between items-center px-4 py-3">
+                        <span className="text-sm text-gray-500">Precio sesión</span>
+                        <span className="text-sm text-gray-800">{price.toFixed(2)} €</span>
+                    </div>
+                    <div className="flex justify-between items-center px-4 py-3">
+                        <span className="text-sm text-gray-500">IVA ({(ivaRate * 100).toFixed(0)}%)</span>
+                        <span className="text-sm text-gray-800">+{vatAmount.toFixed(2)} €</span>
+                    </div>
+                    <div className="flex justify-between items-center px-4 py-3 bg-primary-50 rounded-b-xl">
+                        <div className="flex items-center gap-2 text-primary-700">
+                            <CreditCard className="w-4 h-4" />
+                            <span className="font-semibold text-sm">Total a pagar</span>
+                        </div>
+                        <span className="text-xl font-bold text-primary-700">{priceFinal.toFixed(2)} €</span>
+                    </div>
                 </div>
-                <span className="text-2xl font-bold text-primary-700">{price?.toFixed(2)} €</span>
-            </div>
+            )}
+
+            {price === 0 && (
+                <div className="bg-green-50 rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-green-700">
+                        <CreditCard className="w-5 h-5" />
+                        <span className="font-semibold">Total a pagar</span>
+                    </div>
+                    <span className="text-2xl font-bold text-green-700">Gratis</span>
+                </div>
+            )}
 
             {price > 0 ? (
                 <p className="text-xs text-gray-400 text-center">
@@ -444,6 +469,7 @@ const STEPS = ['Tipo', 'Fecha y hora', 'Motivo', 'Pago', 'Confirmación'];
 const BookingModal = ({ professional, onClose }) => {
     const { isAuthenticated, isPatient } = useAuth();
     const navigate = useNavigate();
+    const ivaRate  = useTaxRate();
 
     const [step, setStep] = useState(0);
     const [appointmentType, setAppointmentType] = useState('');
@@ -580,7 +606,8 @@ const BookingModal = ({ professional, onClose }) => {
                         selectedDate={selectedDate}
                         selectedSlot={selectedSlot}
                         reason={reason}
-                        price={professional.pricePerSession}
+                        price={professional.pricePerSession ?? 0}
+                        ivaRate={ivaRate}
                     />
                 )}
                 {step === 4 && (
@@ -624,7 +651,7 @@ const BookingModal = ({ professional, onClose }) => {
                                 <>
                                     <CreditCard className="w-4 h-4" />
                                     {(professional?.pricePerSession ?? 0) > 0
-                                        ? 'Pagar con Stripe'
+                                        ? `Pagar ${((professional.pricePerSession ?? 0) * (1 + ivaRate)).toFixed(2)} € con Stripe`
                                         : 'Confirmar cita'}
                                 </>
                             ) : (

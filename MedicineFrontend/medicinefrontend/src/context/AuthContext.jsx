@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import authService from '../services/authService';
 import api from '../services/api';
 
@@ -7,6 +8,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
 
     // Función para cargar datos completos del usuario
     const loadUserProfile = async (basicUser) => {
@@ -105,6 +107,9 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         authService.logout();
         setUser(null);
+        // Limpiar toda la caché de TanStack Query para que el próximo
+        // usuario que inicie sesión no vea datos del anterior
+        queryClient.clear();
     };
 
     // Función para actualizar el usuario (útil después de editar perfil)

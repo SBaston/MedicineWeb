@@ -100,6 +100,12 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 // ✅ SERVICIO DE CHAT PREMIUM: suscripciones y mensajería
 builder.Services.AddScoped<IChatService, ChatService>();
 
+// ✅ RESEÑAS: valoraciones verificadas (requiere cita completada)
+builder.Services.AddScoped<IReviewService, ReviewService>();
+
+// ✅ AUTO-COMPLETADO DE CITAS: marca citas como Completada cada 5 minutos
+builder.Services.AddHostedService<AppointmentCompletionService>();
+
 // ✅ SIGNALR: mensajería en tiempo real
 builder.Services.AddSignalR();
 

@@ -243,7 +243,11 @@ public class EmailService : IEmailService
     // MÉTODO PRIVADO: Enviar email
     // ─────────────────────────────────────────────────────────────
 
-    private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+    private async Task SendEmailAsync(
+        string toEmail,
+        string subject,
+        string htmlBody,
+        (byte[] bytes, string fileName, string mediaType)? attachment = null)
     {
         try
         {
@@ -278,7 +282,16 @@ public class EmailService : IEmailService
             };
             message.To.Add(toEmail);
 
+            // Adjuntar PDF si se proporcionó
+            MemoryStream? pdfStream = null;
+            if (attachment.HasValue)
+            {
+                pdfStream = new MemoryStream(attachment.Value.bytes);
+                message.Attachments.Add(new Attachment(pdfStream, attachment.Value.fileName, attachment.Value.mediaType));
+            }
+
             await client.SendMailAsync(message);
+            pdfStream?.Dispose();
             _logger.LogInformation("📧 Email enviado a {To}: {Subject}", toEmail, subject);
         }
         catch (Exception ex)
@@ -294,7 +307,10 @@ public class EmailService : IEmailService
     // ─────────────────────────────────────────────────────────────
     // Factura electrónica (RD 1619/2012)
     // ─────────────────────────────────────────────────────────────
-    public async Task SendInvoiceEmailAsync(MedicineBackend.Models.Invoice invoice, string toEmail)
+    public async Task SendInvoiceEmailAsync(
+        MedicineBackend.Models.Invoice invoice,
+        string toEmail,
+        byte[]? pdfBytes = null)
     {
         var ivaDisplay = invoice.IvaRate > 0
             ? $"IVA {invoice.IvaRate * 100:F0}%"
@@ -343,6 +359,10 @@ public class EmailService : IEmailService
       <strong>Emisor:</strong> {invoice.IssuerName} · NIF: {invoice.IssuerNif}<br/>
       {invoice.IssuerAddress}
     </div>
+    {(pdfBytes != null ? @"
+    <div style='background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px 16px;margin-top:16px;font-size:13px;color:#1e40af;display:flex;align-items:center;gap:8px;'>
+      📎 <strong>Adjunto:</strong> Se adjunta esta factura en formato PDF para que puedas guardarla o imprimirla.
+    </div>" : "")}
     <p style='margin-top:24px;font-size:13px;color:#6b7280;'>
       Esta factura ha sido emitida conforme al Real Decreto 1619/2012, de 30 de noviembre.<br/>
       Consérvala para tus declaraciones fiscales.
@@ -350,6 +370,11 @@ public class EmailService : IEmailService
   </div>
 </body></html>";
 
-        await SendEmailAsync(toEmail, subject, htmlBody);
+        // Adjuntar PDF si se proporcionó
+        (byte[], string, string)? attachment = pdfBytes != null
+            ? (pdfBytes, $"Factura_{invoice.InvoiceNumber}.pdf", "application/pdf")
+            : null;
+
+        await SendEmailAsync(toEmail, subject, htmlBody, attachment);
     }
 }

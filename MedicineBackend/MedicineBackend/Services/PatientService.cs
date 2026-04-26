@@ -249,6 +249,17 @@ public class PatientService : IPatientService
         return await _context.Patients.AnyAsync(p => p.UserId == userId);
     }
 
+    /// <summary>
+    /// Devuelve el Id de la tabla Patients para un userId dado, o null.
+    /// </summary>
+    public async Task<int?> GetPatientIdByUserIdAsync(int userId)
+    {
+        return await _context.Patients
+            .Where(p => p.UserId == userId)
+            .Select(p => (int?)p.Id)
+            .FirstOrDefaultAsync();
+    }
+
     #region Métodos privados
 
     /// <summary>

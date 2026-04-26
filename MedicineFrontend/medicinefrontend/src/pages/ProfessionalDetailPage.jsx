@@ -5,17 +5,19 @@
 
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import professionalsService from '../services/professionalsService';
 import chatService from '../services/chatService';
+import reviewService from '../services/reviewService';
+import { useTaxRate } from '../hooks/useTaxRate';
 import ContratarModal from '../components/ContratarModal';
 import BookingModal from '../components/BookingModal';
 import {
     ArrowLeft, Star, Clock, Stethoscope, Briefcase,
     Calendar, MessageCircle, MapPin, Phone, Mail,
     Play, ExternalLink, Video as VideoIcon, User,
-    ChevronRight, AlertCircle
+    ChevronRight, AlertCircle, PenLine, CheckCircle, X
 } from 'lucide-react';
 
 // ── Helpers de video (igual que en ProfessionalPage) ────────────
@@ -120,15 +122,133 @@ const VideoCard = ({ video }) => {
     );
 };
 
+// ── Componente de formulario de reseña ──────────────────────────
+const WriteReviewForm = ({ doctorId, eligibleAppointments, onSuccess, onCancel }) => {
+    const [selectedAppointment, setSelectedAppointment] = useState(
+        eligibleAppointments[0]?.id ?? null
+    );
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [comment, setComment] = useState('');
+
+    const mutation = useMutation({
+        mutationFn: () => reviewService.createReview({
+            doctorId: Number(doctorId),
+            appointmentId: selectedAppointment,
+            rating,
+            comment: comment.trim() || undefined,
+        }),
+        onSuccess,
+    });
+
+    return (
+        <div className="border border-primary-100 bg-primary-50/40 rounded-xl p-5 mt-4">
+            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <PenLine className="w-4 h-4 text-primary-500" />
+                Escribe tu opinión
+            </h3>
+
+            {/* Seleccionar cita */}
+            {eligibleAppointments.length > 1 && (
+                <div className="mb-4">
+                    <label className="text-xs font-medium text-gray-500 block mb-1">Cita a valorar</label>
+                    <select
+                        value={selectedAppointment ?? ''}
+                        onChange={e => setSelectedAppointment(Number(e.target.value))}
+                        className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary-300"
+                    >
+                        {eligibleAppointments.map(a => (
+                            <option key={a.id} value={a.id}>
+                                {new Date(a.appointmentDate).toLocaleDateString('es-ES', {
+                                    day: 'numeric', month: 'long', year: 'numeric'
+                                })}
+                                {a.reason ? ` — ${a.reason}` : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
+            {/* Estrellas */}
+            <div className="mb-4">
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">Valoración *</label>
+                <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(n => (
+                        <button
+                            key={n}
+                            type="button"
+                            onClick={() => setRating(n)}
+                            onMouseEnter={() => setHoverRating(n)}
+                            onMouseLeave={() => setHoverRating(0)}
+                            className="transition-transform hover:scale-110"
+                        >
+                            <Star className={`w-8 h-8 transition-colors ${
+                                n <= (hoverRating || rating)
+                                    ? 'text-yellow-400 fill-yellow-400'
+                                    : 'text-gray-200 fill-gray-200'
+                            }`} />
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Comentario */}
+            <div className="mb-4">
+                <label className="text-xs font-medium text-gray-500 block mb-1">
+                    Comentario <span className="text-gray-400">(opcional)</span>
+                </label>
+                <textarea
+                    value={comment}
+                    onChange={e => setComment(e.target.value)}
+                    maxLength={1000}
+                    rows={3}
+                    placeholder="Cuéntanos cómo fue tu experiencia…"
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-primary-300"
+                />
+                <p className="text-xs text-gray-400 text-right mt-0.5">{comment.length}/1000</p>
+            </div>
+
+            {mutation.isError && (
+                <p className="text-sm text-red-500 mb-3">
+                    {mutation.error?.response?.data?.message ?? 'Error al enviar la reseña.'}
+                </p>
+            )}
+
+            <div className="flex gap-2 justify-end">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg transition-colors"
+                >
+                    <X className="w-3.5 h-3.5" /> Cancelar
+                </button>
+                <button
+                    type="button"
+                    onClick={() => mutation.mutate()}
+                    disabled={!rating || mutation.isPending}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+                >
+                    {mutation.isPending ? 'Enviando…' : 'Publicar opinión'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
 // ── Componente principal ─────────────────────────────────────────
 const ProfessionalDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { isAuthenticated, user } = useAuth();
     const isDoctor = user?.role === 'Doctor';
+    const isPatient = user?.role === 'Patient';
 
     const [showContratar, setShowContratar] = useState(false);
     const [showBooking, setShowBooking] = useState(false);
+    const [showReviewForm, setShowReviewForm] = useState(false);
+    const [reviewSubmitted, setReviewSubmitted] = useState(false);
+    const queryClient = useQueryClient();
+    const ivaRate = useTaxRate();
 
     // Datos del profesional
     const { data: professional, isLoading, isError } = useQuery({
@@ -149,6 +269,14 @@ const ProfessionalDetailPage = () => {
         queryKey: ['professional-reviews', id],
         queryFn: () => professionalsService.getReviews(id),
         enabled: !!id,
+    });
+
+    // Citas completadas elegibles para reseña (solo pacientes autenticados)
+    const { data: eligibleAppointments = [] } = useQuery({
+        queryKey: ['reviews-eligible', id],
+        queryFn: () => reviewService.getEligibleAppointments(Number(id)),
+        enabled: isAuthenticated && isPatient && !!id,
+        retry: false,
     });
 
     // Suscripción premium activa con este profesional
@@ -243,8 +371,10 @@ const ProfessionalDetailPage = () => {
                     {/* Precio + Botones */}
                     <div className="flex flex-col items-center sm:items-end gap-3 flex-shrink-0">
                         <div className="text-center sm:text-right">
-                            <p className="text-3xl font-bold text-primary-600">{professional.pricePerSession}€</p>
-                            <p className="text-xs text-gray-400">por sesión</p>
+                            <p className="text-3xl font-bold text-primary-600">
+                                {((professional.pricePerSession ?? 0) * (1 + ivaRate)).toFixed(2)} €
+                            </p>
+                            <p className="text-xs text-gray-400">IVA incluido · por sesión</p>
                         </div>
 
                         {!isDoctor && (
@@ -299,35 +429,91 @@ const ProfessionalDetailPage = () => {
 
                     {/* Opiniones */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-                            <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                            Opiniones
-                            <span className="ml-1 text-sm font-normal text-gray-400">({reviews.length})</span>
-                        </h2>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                                Opiniones
+                                <span className="ml-1 text-sm font-normal text-gray-400">({reviews.length})</span>
+                            </h2>
 
-                        {reviews.length === 0 ? (
+                            {/* Botón "Escribir opinión" — solo pacientes con citas elegibles */}
+                            {isPatient && !showReviewForm && !reviewSubmitted && eligibleAppointments.length > 0 && (
+                                <button
+                                    onClick={() => setShowReviewForm(true)}
+                                    className="flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:text-primary-700 border border-primary-200 hover:border-primary-300 px-3 py-1.5 rounded-lg transition-colors"
+                                >
+                                    <PenLine className="w-3.5 h-3.5" /> Escribir opinión
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Confirmación tras enviar */}
+                        {reviewSubmitted && (
+                            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4">
+                                <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                                ¡Gracias por tu opinión! Ya está publicada.
+                            </div>
+                        )}
+
+                        {/* Formulario inline */}
+                        {showReviewForm && eligibleAppointments.length > 0 && (
+                            <WriteReviewForm
+                                doctorId={id}
+                                eligibleAppointments={eligibleAppointments}
+                                onCancel={() => setShowReviewForm(false)}
+                                onSuccess={() => {
+                                    setShowReviewForm(false);
+                                    setReviewSubmitted(true);
+                                    queryClient.invalidateQueries({ queryKey: ['professional-reviews', id] });
+                                    queryClient.invalidateQueries({ queryKey: ['reviews-eligible', id] });
+                                    queryClient.invalidateQueries({ queryKey: ['professional-detail', id] });
+                                }}
+                            />
+                        )}
+
+                        {reviews.length === 0 && !showReviewForm ? (
                             <p className="text-gray-400 text-sm italic text-center py-6">
                                 Este profesional aún no tiene opiniones.
                             </p>
                         ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-4 mt-2">
                                 {reviews.map((r, i) => (
-                                    <div key={i} className="border-b border-gray-50 last:border-0 pb-4 last:pb-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <div className="flex">
-                                                {[1,2,3,4,5].map(n => (
-                                                    <Star key={n}
-                                                        className={`w-3.5 h-3.5 ${n <= (r.rating ?? r.score ?? 0)
-                                                            ? 'text-yellow-400 fill-yellow-400'
-                                                            : 'text-gray-200 fill-gray-200'}`} />
-                                                ))}
+                                    <div key={r.id ?? i} className="border-b border-gray-50 last:border-0 pb-4 last:pb-0">
+                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex">
+                                                    {[1, 2, 3, 4, 5].map(n => (
+                                                        <Star key={n}
+                                                            className={`w-3.5 h-3.5 ${n <= (r.rating ?? r.score ?? 0)
+                                                                ? 'text-yellow-400 fill-yellow-400'
+                                                                : 'text-gray-200 fill-gray-200'}`} />
+                                                    ))}
+                                                </div>
+                                                <span className="text-xs font-medium text-gray-700">
+                                                    {r.patientName ?? r.reviewerName ?? 'Paciente'}
+                                                </span>
+                                                {r.isVerified && (
+                                                    <span className="text-xs text-green-600 font-medium flex items-center gap-0.5">
+                                                        <CheckCircle className="w-3 h-3" /> Verificada
+                                                    </span>
+                                                )}
                                             </div>
-                                            <span className="text-xs text-gray-400">
-                                                {r.patientName ?? r.reviewerName ?? 'Paciente verificado'}
-                                            </span>
+                                            {r.createdAt && (
+                                                <span className="text-xs text-gray-400 flex-shrink-0">
+                                                    {new Date(r.createdAt).toLocaleDateString('es-ES', {
+                                                        day: 'numeric', month: 'short', year: 'numeric'
+                                                    })}
+                                                </span>
+                                            )}
                                         </div>
                                         {r.comment && (
-                                            <p className="text-sm text-gray-600">{r.comment}</p>
+                                            <p className="text-sm text-gray-600 mt-1">{r.comment}</p>
+                                        )}
+                                        {r.doctorResponse && (
+                                            <div className="mt-2 ml-4 pl-3 border-l-2 border-primary-200">
+                                                <p className="text-xs font-semibold text-primary-700 mb-0.5">Respuesta del profesional</p>
+                                                <p className="text-xs text-gray-600">{r.doctorResponse}</p>
+                                            </div>
                                         )}
                                     </div>
                                 ))}

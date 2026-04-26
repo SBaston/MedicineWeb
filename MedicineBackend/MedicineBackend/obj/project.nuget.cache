@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "tA4yg2Viva4=",
+  "dgSpecHash": "6EjHCGK62Js=",
   "success": true,
   "projectFilePath": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\MedicineBackend.csproj",
   "expectedPackageFiles": [
@@ -86,6 +86,7 @@
     "C:\\Users\\swser\\.nuget\\packages\\npgsql\\10.0.0\\npgsql.10.0.0.nupkg.sha512",
     "C:\\Users\\swser\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\10.0.0\\npgsql.entityframeworkcore.postgresql.10.0.0.nupkg.sha512",
     "C:\\Users\\swser\\.nuget\\packages\\pipelines.sockets.unofficial\\2.2.8\\pipelines.sockets.unofficial.2.2.8.nupkg.sha512",
+    "C:\\Users\\swser\\.nuget\\packages\\questpdf\\2024.10.4\\questpdf.2024.10.4.nupkg.sha512",
     "C:\\Users\\swser\\.nuget\\packages\\sixlabors.imagesharp\\3.1.12\\sixlabors.imagesharp.3.1.12.nupkg.sha512",
     "C:\\Users\\swser\\.nuget\\packages\\stackexchange.redis\\2.7.27\\stackexchange.redis.2.7.27.nupkg.sha512",
     "C:\\Users\\swser\\.nuget\\packages\\stripe.net\\51.0.0\\stripe.net.51.0.0.nupkg.sha512",
