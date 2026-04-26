@@ -41,6 +41,12 @@ const adminService = {
     // ══════════════════════════════════════════════════════════════
     //getVideos: (filter = 'pending') => api.get(`/admin/videos?filter=${filter}`).then(r => r.data),
     //verifyVideo: (id, isVerified) => api.patch(`/admin/videos/${id}/verify`, { isVerified }).then(r => r.data),
+
+    // ══════════════════════════════════════════════════════════════
+    // CONFIGURACIÓN DE PLATAFORMA (solo SuperAdmin)
+    // ══════════════════════════════════════════════════════════════
+    getSettings: () => api.get('/settings').then(r => r.data),
+    updateSetting: (key, value) => api.put(`/settings/${key}`, { value }).then(r => r.data),
 };
 
 export default adminService;

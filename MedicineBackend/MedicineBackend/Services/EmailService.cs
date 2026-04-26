@@ -287,7 +287,69 @@ public class EmailService : IEmailService
             Console.WriteLine($"❌ EMAIL ERROR → {ex.GetType().Name}: {ex.Message}");
             if (ex.InnerException != null)
                 Console.WriteLine($"   Inner: {ex.InnerException.Message}");
-            throw; // Relanzar temporalmente para ver el error
+            throw;
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Factura electrónica (RD 1619/2012)
+    // ─────────────────────────────────────────────────────────────
+    public async Task SendInvoiceEmailAsync(MedicineBackend.Models.Invoice invoice, string toEmail)
+    {
+        var ivaDisplay = invoice.IvaRate > 0
+            ? $"IVA {invoice.IvaRate * 100:F0}%"
+            : "Exento de IVA";
+
+        var subject = $"🧾 Factura {invoice.InvoiceNumber} — NexusSalud";
+        var htmlBody = $@"
+<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;'>
+  <div style='background:linear-gradient(135deg,#3b82f6,#1d4ed8);padding:32px;border-radius:12px 12px 0 0;text-align:center;'>
+    <h1 style='color:white;margin:0;font-size:24px;'>🏥 NexusSalud</h1>
+    <p style='color:#bfdbfe;margin:8px 0 0;'>Tu plataforma de salud de confianza</p>
+  </div>
+  <div style='background:#f8fafc;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;'>
+    <h2 style='color:#1e40af;'>Factura {invoice.InvoiceNumber}</h2>
+    <p>Estimado/a <strong>{invoice.RecipientName}</strong>,</p>
+    <p>A continuación encontrarás el detalle de tu factura emitida por NexusSalud.</p>
+    <div style='background:white;border-radius:8px;padding:20px;border:1px solid #e2e8f0;margin:20px 0;'>
+      <table style='width:100%;border-collapse:collapse;font-size:14px;'>
+        <tr style='border-bottom:1px solid #f3f4f6;'>
+          <td style='padding:10px 0;color:#6b7280;'>N.º Factura</td>
+          <td style='padding:10px 0;font-weight:700;text-align:right;'>{invoice.InvoiceNumber}</td>
+        </tr>
+        <tr style='border-bottom:1px solid #f3f4f6;'>
+          <td style='padding:10px 0;color:#6b7280;'>Fecha</td>
+          <td style='padding:10px 0;font-weight:600;text-align:right;'>{invoice.IssuedAt:dd/MM/yyyy}</td>
+        </tr>
+        <tr style='border-bottom:1px solid #f3f4f6;'>
+          <td style='padding:10px 0;color:#6b7280;'>Concepto</td>
+          <td style='padding:10px 0;font-weight:600;text-align:right;'>{invoice.Description}</td>
+        </tr>
+        <tr style='border-bottom:1px solid #f3f4f6;'>
+          <td style='padding:10px 0;color:#6b7280;'>Base imponible</td>
+          <td style='padding:10px 0;text-align:right;'>{invoice.BaseImponible:F2} €</td>
+        </tr>
+        <tr style='border-bottom:1px solid #f3f4f6;'>
+          <td style='padding:10px 0;color:#6b7280;'>{ivaDisplay}</td>
+          <td style='padding:10px 0;text-align:right;'>{invoice.CuotaIva:F2} €</td>
+        </tr>
+        <tr>
+          <td style='padding:10px 0;font-weight:700;font-size:16px;'>TOTAL</td>
+          <td style='padding:10px 0;font-weight:700;font-size:16px;color:#1d4ed8;text-align:right;'>{invoice.Total:F2} {invoice.Currency}</td>
+        </tr>
+      </table>
+    </div>
+    <div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-top:16px;font-size:13px;color:#166534;'>
+      <strong>Emisor:</strong> {invoice.IssuerName} · NIF: {invoice.IssuerNif}<br/>
+      {invoice.IssuerAddress}
+    </div>
+    <p style='margin-top:24px;font-size:13px;color:#6b7280;'>
+      Esta factura ha sido emitida conforme al Real Decreto 1619/2012, de 30 de noviembre.<br/>
+      Consérvala para tus declaraciones fiscales.
+    </p>
+  </div>
+</body></html>";
+
+        await SendEmailAsync(toEmail, subject, htmlBody);
     }
 }

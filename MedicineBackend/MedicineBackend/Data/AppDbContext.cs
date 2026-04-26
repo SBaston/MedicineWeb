@@ -39,6 +39,10 @@ public class AppDbContext : DbContext
     public DbSet<ChatSubscription> ChatSubscriptions { get; set; }
     public DbSet<ChatMessage> ChatMessages { get; set; }
 
+    // ✅ Configuración de la plataforma y facturación
+    public DbSet<PlatformSetting> PlatformSettings { get; set; }
+    public DbSet<Invoice> Invoices { get; set; }
+
     // ============================================
     // CONFIGURACIÓN DE ENTIDADES
     // ============================================
@@ -628,6 +632,69 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(m => m.SenderUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(m => m.ChatSubscriptionId);
+            entity.HasIndex(m => m.SentAt);
+        });
+
+        // ============================================
+        // CONFIGURACIÓN: PLATFORM SETTINGS
+        // ============================================
+
+        modelBuilder.Entity<PlatformSetting>(entity =>
+        {
+            entity.HasKey(p => p.Key);
+            entity.Property(p => p.Key).HasMaxLength(100);
+            entity.Property(p => p.Value).IsRequired().HasMaxLength(500);
+            entity.Property(p => p.Description).HasMaxLength(300);
+            entity.Property(p => p.UpdatedAt).HasDefaultValueSql("NOW()");
+        });
+
+        // ============================================
+        // CONFIGURACIÓN: INVOICES (RD 1619/2012)
+        // ============================================
+
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasKey(i => i.Id);
+
+            entity.Property(i => i.InvoiceNumber).IsRequired().HasMaxLength(20);
+            entity.HasIndex(i => i.InvoiceNumber).IsUnique();
+
+            entity.HasIndex(i => new { i.SeriesYear, i.SeriesSequence }).IsUnique();
+
+            entity.Property(i => i.BaseImponible).HasColumnType("decimal(10,2)");
+            entity.Property(i => i.IvaRate).HasColumnType("decimal(5,4)");
+            entity.Property(i => i.CuotaIva).HasColumnType("decimal(10,2)");
+            entity.Property(i => i.Total).HasColumnType("decimal(10,2)");
+
+            entity.Property(i => i.IssuedAt).HasDefaultValueSql("NOW()");
+            entity.Property(i => i.Status).HasMaxLength(20).HasDefaultValue("Emitida");
+            entity.Property(i => i.InvoiceType).HasMaxLength(20).HasDefaultValue("Simplificada");
+            entity.Property(i => i.OperationType).HasMaxLength(50);
+            entity.Property(i => i.Currency).HasMaxLength(3).HasDefaultValue("EUR");
+
+            entity.Property(i => i.IssuerName).HasMaxLength(200);
+            entity.Property(i => i.IssuerNif).HasMaxLength(20);
+            entity.Property(i => i.IssuerAddress).HasMaxLength(500);
+            entity.Property(i => i.RecipientName).HasMaxLength(200);
+            entity.Property(i => i.RecipientNif).HasMaxLength(20);
+            entity.Property(i => i.RecipientAddress).HasMaxLength(500);
+            entity.Property(i => i.RecipientEmail).HasMaxLength(255);
+            entity.Property(i => i.Description).HasMaxLength(500);
+
+            entity.HasOne(i => i.Payment)
+                .WithMany()
+                .HasForeignKey(i => i.PaymentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(i => i.ChatSubscription)
+                .WithMany()
+                .HasForeignKey(i => i.ChatSubscriptionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(i => i.IssuedAt);
+            entity.HasIndex(i => i.RecipientEmail);
         });
     }
 }

@@ -7,17 +7,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import chatService from '../services/chatService';
 import BookingModal from './BookingModal';
+import { useTaxRate } from '../hooks/useTaxRate';
 import {
     X, Calendar, MessageCircle, Check, Zap,
     Clock, Loader2, AlertCircle, Crown
 } from 'lucide-react';
 
-// ── Tarjeta de plan premium ────────────────────────────────────
-const IVA = 0.21;
-
-const PlanCard = ({ plan, selected, onSelect }) => {
+const PlanCard = ({ plan, selected, onSelect, ivaRate }) => {
     const priceNet   = plan.price;
-    const priceFinal = priceNet * (1 + IVA);
+    const priceFinal = priceNet * (1 + ivaRate);
 
     return (
         <button
@@ -44,7 +42,7 @@ const PlanCard = ({ plan, selected, onSelect }) => {
                 </div>
                 <div className="text-right flex-shrink-0">
                     <p className="text-2xl font-bold text-violet-700">{priceFinal.toFixed(2)} €</p>
-                    <p className="text-xs text-gray-400">IVA 21% incluido</p>
+                    <p className="text-xs text-gray-400">IVA {(ivaRate * 100).toFixed(0)}% incluido</p>
                 </div>
             </div>
             {selected && (
@@ -60,6 +58,7 @@ const PlanCard = ({ plan, selected, onSelect }) => {
 // ── Modal principal ────────────────────────────────────────────
 const ContratarModal = ({ professional, onClose }) => {
     const { isAuthenticated, user } = useAuth();
+    const ivaRate = useTaxRate();
     const [view, setView] = useState('choice');      // 'choice' | 'booking' | 'premium'
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [loadingCheckout, setLoadingCheckout] = useState(false);
@@ -266,6 +265,7 @@ const ContratarModal = ({ professional, onClose }) => {
                                             plan={plan}
                                             selected={selectedPlan?.id === plan.id}
                                             onSelect={setSelectedPlan}
+                                            ivaRate={ivaRate}
                                         />
                                     ))}
                                 </div>
@@ -296,13 +296,13 @@ const ContratarModal = ({ professional, onClose }) => {
                                             Redirigiendo…
                                         </>
                                     ) : (
-                                        <>Pagar {selectedPlan ? `${(selectedPlan.price * (1 + IVA)).toFixed(2)} €` : ''}</>
+                                        <>Pagar {selectedPlan ? `${(selectedPlan.price * (1 + ivaRate)).toFixed(2)} €` : ''}</>
                                     )}
                                 </button>
                             </div>
 
                             <p className="mt-3 text-xs text-center text-gray-400">
-                                Pago seguro procesado por Stripe · IVA incluido en el precio
+                                Pago seguro procesado por Stripe · IVA {(ivaRate * 100).toFixed(0)}% incluido en el precio
                             </p>
                         </div>
                     )}

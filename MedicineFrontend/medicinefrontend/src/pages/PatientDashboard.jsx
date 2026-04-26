@@ -306,6 +306,7 @@ const PatientDashboard = () => {
     }
 
     return (
+        <>
         <div className="container-custom py-8">
             {/* Header */}
             <div className="mb-8">
@@ -582,15 +583,18 @@ const PatientDashboard = () => {
 
                                     {/* Acciones */}
                                     <div className="flex gap-2 px-4 pb-4 mt-auto">
-                                        <Link
-                                            to={`/professionals/${pro.doctorId}`}
-                                            className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                                        <button
+                                            onClick={() => handleQuickBook(pro.doctorId)}
+                                            disabled={loadingBookingPro}
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
                                         >
-                                            <User className="w-3.5 h-3.5" />
-                                            Ver perfil
-                                        </Link>
-
-                                        {hasActiveChat ? (
+                                            {loadingBookingPro
+                                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                : <CalendarPlus className="w-3.5 h-3.5" />
+                                            }
+                                            Reservar
+                                        </button>
+                                        {hasActiveChat && (
                                             <Link
                                                 to={`/chat/${pro.chatSub.id}`}
                                                 className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg transition-colors"
@@ -598,18 +602,6 @@ const PatientDashboard = () => {
                                                 <MessageCircle className="w-3.5 h-3.5" />
                                                 Chat
                                             </Link>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleQuickBook(pro.doctorId)}
-                                                disabled={loadingBookingPro}
-                                                className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
-                                            >
-                                                {loadingBookingPro
-                                                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                    : <CalendarPlus className="w-3.5 h-3.5" />
-                                                }
-                                                Reservar
-                                            </button>
                                         )}
                                     </div>
                                 </div>
@@ -784,6 +776,14 @@ const PatientDashboard = () => {
                 )}
             </div>
         </div>
+
+        {bookingPro && (
+            <BookingModal
+                professional={bookingPro}
+                onClose={() => setBookingPro(null)}
+            />
+        )}
+        </>
     );
 };
 

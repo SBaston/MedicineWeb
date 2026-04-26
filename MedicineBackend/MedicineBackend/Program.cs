@@ -88,6 +88,12 @@ builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
+// ✅ CONFIGURACIÓN DE PLATAFORMA: IVA, comisión, datos fiscales
+builder.Services.AddScoped<ISettingsService, SettingsService>();
+
+// ✅ FACTURAS: generación conforme a RD 1619/2012 + email + CSV export
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
 // ✅ SERVICIO DE PAGOS: Stripe
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 

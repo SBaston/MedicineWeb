@@ -59,4 +59,9 @@ public interface IEmailService
     /// Envía el enlace de recuperación de contraseña
     /// </summary>
     Task SendPasswordResetEmailAsync(string toEmail, string userName, string resetToken, string appUrl);
+
+    /// <summary>
+    /// Envía la factura al receptor por email (conforme a RD 1619/2012).
+    /// </summary>
+    Task SendInvoiceEmailAsync(MedicineBackend.Models.Invoice invoice, string toEmail);
 }

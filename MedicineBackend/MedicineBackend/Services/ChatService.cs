@@ -21,18 +21,25 @@ public class ChatService : IChatService
     private readonly IConfiguration _config;
     private readonly ILogger<ChatService> _logger;
 
+    private readonly ISettingsService _settings;
+    private readonly IInvoiceService _invoices;
+
     private readonly string _successUrl;
     private readonly string _cancelUrl;
     private readonly string _currency;
 
-    // IVA aplicable a pacientes (21 % tipo general España)
-    private const decimal IvaRate = 0.21m;
-
-    public ChatService(AppDbContext db, IConfiguration config, ILogger<ChatService> logger)
+    public ChatService(
+        AppDbContext db,
+        IConfiguration config,
+        ILogger<ChatService> logger,
+        ISettingsService settings,
+        IInvoiceService invoices)
     {
-        _db = db;
-        _config = config;
-        _logger = logger;
+        _db       = db;
+        _config   = config;
+        _logger   = logger;
+        _settings = settings;
+        _invoices = invoices;
 
         var ps = config.GetSection("PaymentSettings");
         var secretKey = ps["StripeSecretKey"] ?? throw new InvalidOperationException("StripeSecretKey no configurada");
@@ -263,9 +270,10 @@ public class ChatService : IChatService
         if (existingActive)
             throw new InvalidOperationException("Ya tienes una suscripción activa con este médico");
 
-        // Precio base (neto) y precio final con IVA que paga el paciente
+        // Precio base (neto) y precio final con IVA que paga el paciente (tipo desde BD)
+        var ivaRate       = await _settings.GetIvaRateAsync();
         var priceNet      = plan.Price;
-        var vatAmount     = Math.Round(priceNet * IvaRate, 2);
+        var vatAmount     = Math.Round(priceNet * ivaRate, 2);
         var priceFinal    = priceNet + vatAmount;   // lo que cobra Stripe
 
         // Ganancias: se calculan sobre el precio neto (el IVA va al Estado)
@@ -306,7 +314,7 @@ public class ChatService : IChatService
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
                             Name        = $"Chat Premium con Dr. {doctor.FirstName} {doctor.LastName} — {plan.Name}",
-                            Description = $"{plan.Description ?? $"Acceso de mensajería por {plan.DurationDays} días"} (IVA 21 % incluido)"
+                            Description = $"{plan.Description ?? $"Acceso de mensajería por {plan.DurationDays} días"} (IVA {ivaRate*100:F0}% incluido)"
                         }
                     },
                     Quantity = 1

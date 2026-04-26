@@ -20,6 +20,8 @@ public class PaymentService : IPaymentService
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
     private readonly ILogger<PaymentService> _logger;
+    private readonly ISettingsService _settings;
+    private readonly IInvoiceService _invoices;
 
     // ─── Configuración de Stripe ───────────────────────────────
     private readonly string _secretKey;
@@ -29,15 +31,18 @@ public class PaymentService : IPaymentService
     private readonly decimal _commissionPct;
     private readonly string _currency;
 
-    // IVA aplicable a pacientes (21 % tipo general España)
-    // El IVA recaudado debe liquidarse trimestralmente ante la AEAT (Modelo 303)
-    private const decimal IvaRate = 0.21m;
-
-    public PaymentService(AppDbContext context, IConfiguration config, ILogger<PaymentService> logger)
+    public PaymentService(
+        AppDbContext context,
+        IConfiguration config,
+        ILogger<PaymentService> logger,
+        ISettingsService settings,
+        IInvoiceService invoices)
     {
-        _context = context;
-        _config  = config;
-        _logger  = logger;
+        _context  = context;
+        _config   = config;
+        _logger   = logger;
+        _settings = settings;
+        _invoices = invoices;
 
         var ps = config.GetSection("PaymentSettings");
         _secretKey     = ps["StripeSecretKey"]     ?? throw new InvalidOperationException("StripeSecretKey no configurada");
@@ -161,9 +166,10 @@ public class PaymentService : IPaymentService
             enrollDoctorId = enrollingDoctor.Id;
         }
 
-        // Los pacientes pagan IVA (21%); los profesionales están exentos
+        // Los pacientes pagan IVA (tipo configurado en BD); los profesionales están exentos
         bool patientPays  = role == "Patient";
-        var vatAmount     = patientPays ? Math.Round(price * IvaRate, 2) : 0m;
+        var ivaRate       = patientPays ? await _settings.GetIvaRateAsync() : 0m;
+        var vatAmount     = patientPays ? Math.Round(price * ivaRate, 2) : 0m;
         var priceFinal    = price + vatAmount;   // precio que cobra Stripe
 
         // Comisión y ganancias se calculan sobre el precio neto (sin IVA)
@@ -183,7 +189,7 @@ public class PaymentService : IPaymentService
             PaymentMethod  = "Stripe",
             PaymentType    = "Curso",
             PaymentProvider= "Stripe",
-            Description    = $"Matrícula en curso: {course.Title}{(patientPays ? " (IVA 21% incluido)" : " (exento IVA)")}"
+            Description    = $"Matrícula en curso: {course.Title}{(patientPays ? $" (IVA {ivaRate*100:F0}% incluido)" : " (exento IVA)")}"
         };
         _context.Payments.Add(payment);
         await _context.SaveChangesAsync();
@@ -207,7 +213,7 @@ public class PaymentService : IPaymentService
                         {
                             Name        = course.Title,
                             Description = patientPays
-                                ? $"{courseDesc} (IVA 21 % incluido)"
+                                ? $"{courseDesc} (IVA {ivaRate*100:F0}% incluido)"
                                 : $"{courseDesc} (exento de IVA)",
                             Images = course.CoverImageUrl != null
                                 ? [$"http://localhost:5000{course.CoverImageUrl}"]
@@ -361,6 +367,13 @@ public class PaymentService : IPaymentService
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
                 _logger.LogInformation("Pago {PaymentId} completado vía webhook", paymentId);
+
+                // Generar factura (fuera de la transacción para no bloquearla)
+                _ = Task.Run(async () =>
+                {
+                    try { await _invoices.GenerateForPaymentAsync(paymentId); }
+                    catch (Exception ex) { _logger.LogError(ex, "Error generando factura para pago {PaymentId}", paymentId); }
+                });
             }
             catch (DbUpdateException ex)
             {
@@ -411,6 +424,13 @@ public class PaymentService : IPaymentService
             await _context.SaveChangesAsync();
             await tx.CommitAsync();
             _logger.LogInformation("Suscripción de chat {SubId} activada vía webhook", subscriptionId);
+
+            // Generar factura fuera de la transacción
+            _ = Task.Run(async () =>
+            {
+                try { await _invoices.GenerateForChatSubscriptionAsync(subscriptionId); }
+                catch (Exception ex) { _logger.LogError(ex, "Error generando factura para chat sub {SubId}", subscriptionId); }
+            });
         }
         catch
         {

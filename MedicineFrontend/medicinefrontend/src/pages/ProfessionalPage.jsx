@@ -54,7 +54,8 @@ const ProfessionalCard = ({ professional }) => {
     const avatarUrl = professional.profilePictureUrl
         || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=3b82f6&color=fff&size=200&bold=true`;
 
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
+    const isDoctor = user?.role === 'Doctor';
     const [showContratar, setShowContratar] = useState(false);
     const [showBooking, setShowBooking] = useState(false);
 
@@ -182,37 +183,39 @@ const ProfessionalCard = ({ professional }) => {
                     </div>
                 </Link>
 
-                {/* BOTONES — cambian según si ya tiene Premium */}
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                    {hasPremium ? (
-                        /* Ya tiene Premium activo: Reservar + Chat */
-                        <div className="flex gap-2">
+                {/* BOTONES — ocultos para profesionales (solo pacientes pueden contratar) */}
+                {!isDoctor && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                        {hasPremium ? (
+                            /* Ya tiene Premium activo: Reservar + Chat */
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowBooking(true)}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm"
+                                >
+                                    <Calendar className="w-4 h-4" />
+                                    Reservar cita
+                                </button>
+                                <Link
+                                    to={`/chat/${chatSub.id}`}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    Abrir chat
+                                </Link>
+                            </div>
+                        ) : (
+                            /* Sin Premium: botón Contratar que abre el modal */
                             <button
-                                onClick={() => setShowBooking(true)}
-                                className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm"
+                                onClick={() => setShowContratar(true)}
+                                className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors"
                             >
-                                <Calendar className="w-4 h-4" />
-                                Reservar cita
+                                <Briefcase className="w-4 h-4" />
+                                Contratar
                             </button>
-                            <Link
-                                to={`/chat/${chatSub.id}`}
-                                className="flex-1 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm"
-                            >
-                                <MessageCircle className="w-4 h-4" />
-                                Abrir chat
-                            </Link>
-                        </div>
-                    ) : (
-                        /* Sin Premium: botón Contratar que abre el modal */
-                        <button
-                            onClick={() => setShowContratar(true)}
-                            className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors"
-                        >
-                            <Briefcase className="w-4 h-4" />
-                            Contratar
-                        </button>
-                    )}
-                </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Modal Contratar: Gratis / Premium */}

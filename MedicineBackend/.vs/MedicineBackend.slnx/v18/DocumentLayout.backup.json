@@ -338,8 +338,7 @@
               "RelativeToolTip": "MedicineBackend\\appsettings.json",
               "ViewState": "AgIAACMAAAAAAAAAAAAqwDIAAABiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-02-01T12:48:26.873Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-01T12:48:26.873Z"
             },
             {
               "$type": "Document",
@@ -351,8 +350,7 @@
               "RelativeToolTip": "MedicineBackend\\Properties\\launchSettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAzAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-02-01T12:23:47.539Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-01T12:23:47.539Z"
             },
             {
               "$type": "Document",
@@ -374,7 +372,7 @@
               "RelativeDocumentMoniker": "MedicineBackend\\Controllers\\AdminController.cs",
               "ToolTip": "C:\\Users\\swser\\source\\repos\\MedicineBackend\\MedicineBackend\\Controllers\\AdminController.cs",
               "RelativeToolTip": "MedicineBackend\\Controllers\\AdminController.cs",
-              "ViewState": "AgIAAL0AAAAAAAAAAAAcwOgAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAMQAAAAAAAAAAAAQwMcAAABEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-22T16:04:09.865Z",
               "EditorCaption": ""
@@ -389,8 +387,7 @@
               "RelativeToolTip": "MedicineBackend\\Models\\Doctor.cs",
               "ViewState": "AgIAAOUAAAAAAAAAAAAkwO4AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-30T19:37:37.485Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T19:37:37.485Z"
             },
             {
               "$type": "Document",
@@ -402,8 +399,7 @@
               "RelativeToolTip": "MedicineBackend\\Controllers\\ChatController.cs",
               "ViewState": "AgIAAKkAAAAAAAAAAAAAALYAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-25T13:26:34.919Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-25T13:26:34.919Z"
             },
             {
               "$type": "Document",
@@ -427,8 +423,7 @@
               "RelativeToolTip": "MedicineBackend\\Data\\AppDbContext.cs",
               "ViewState": "AgIAACsCAAAAAAAAAAAAABIAAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-30T13:58:23.711Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-30T13:58:23.711Z"
             },
             {
               "$type": "Document",

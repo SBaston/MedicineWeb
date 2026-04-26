@@ -1180,6 +1180,169 @@ const ChatPlansSection = () => {
 };
 
 // ════════════════════════════════════════════════════════════════
+// SECCIÓN DE CONFIGURACIÓN DE PLATAFORMA (solo para SuperAdmin)
+// ════════════════════════════════════════════════════════════════
+
+const PlatformSettingsSection = () => {
+    const { user } = useAuth();
+    const qc = useQueryClient();
+    const isSuperAdmin = user?.role === 'Admin' && user?.isSuperAdmin === true;
+
+    const [ivaInput, setIvaInput] = useState('');
+    const [editingIva, setEditingIva] = useState(false);
+    const [saveOk, setSaveOk] = useState(false);
+    const [saveErr, setSaveErr] = useState('');
+
+    const { data: settings = [], isLoading } = useQuery({
+        queryKey: ['admin-platform-settings'],
+        queryFn: adminService.getSettings,
+        enabled: isSuperAdmin,
+    });
+
+    const currentIva = settings.find(s => s.key === 'IvaRate');
+    const currentIvaPercent = currentIva ? (parseFloat(currentIva.value) * 100).toFixed(0) : '21';
+
+    const updateMut = useMutation({
+        mutationFn: ({ key, value }) => adminService.updateSetting(key, value),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['admin-platform-settings'] });
+            qc.invalidateQueries({ queryKey: ['platform-tax-rate'] });
+            setSaveOk(true);
+            setEditingIva(false);
+            setTimeout(() => setSaveOk(false), 3000);
+        },
+        onError: (e) => setSaveErr(e.response?.data?.message || 'Error al guardar el valor.'),
+    });
+
+    const handleSaveIva = () => {
+        setSaveErr('');
+        const pct = parseFloat(ivaInput);
+        if (isNaN(pct) || pct < 0 || pct > 100) {
+            setSaveErr('Introduce un porcentaje válido entre 0 y 100.');
+            return;
+        }
+        // El backend espera el valor en decimal (ej: 0.21)
+        updateMut.mutate({ key: 'IvaRate', value: (pct / 100).toString() });
+    };
+
+    const openEdit = () => {
+        setIvaInput(currentIvaPercent);
+        setSaveErr('');
+        setSaveOk(false);
+        setEditingIva(true);
+    };
+
+    if (!isSuperAdmin) return null;
+
+    return (
+        <div className="mt-10 pt-8 border-t-2 border-gray-200">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
+                    <Percent className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900">Configuración de Plataforma</h2>
+                    <p className="text-sm text-gray-500">Parámetros fiscales y de facturación — solo SuperAdmin</p>
+                </div>
+            </div>
+
+            {isLoading ? (
+                <div className="text-center py-10 text-gray-400 text-sm">Cargando configuración…</div>
+            ) : (
+                <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+
+                    {/* IVA */}
+                    <div className="flex items-center justify-between px-5 py-4 gap-4">
+                        <div className="flex-1">
+                            <p className="font-semibold text-gray-900 flex items-center gap-2">
+                                Tipo de IVA general
+                                <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">Art. 90 LIVA</span>
+                            </p>
+                            <p className="text-sm text-gray-500 mt-0.5">
+                                Se aplica a citas y suscripciones de chat premium abonadas por pacientes.
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                            {!editingIva ? (
+                                <>
+                                    <span className="text-2xl font-bold text-gray-900">{currentIvaPercent}%</span>
+                                    <button
+                                        onClick={openEdit}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                        Editar
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            min="0" max="100" step="1"
+                                            value={ivaInput}
+                                            onChange={e => setIvaInput(e.target.value)}
+                                            className="w-24 border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-emerald-500 pr-7"
+                                            autoFocus
+                                        />
+                                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                                    </div>
+                                    <button
+                                        onClick={handleSaveIva}
+                                        disabled={updateMut.isPending}
+                                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                                    >
+                                        <Check className="w-4 h-4" />
+                                        {updateMut.isPending ? 'Guardando…' : 'Guardar'}
+                                    </button>
+                                    <button
+                                        onClick={() => { setEditingIva(false); setSaveErr(''); }}
+                                        className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Otros ajustes en modo solo lectura */}
+                    {settings
+                        .filter(s => s.key !== 'IvaRate')
+                        .map(s => (
+                            <div key={s.key} className="flex items-center justify-between px-5 py-4 gap-4">
+                                <div className="flex-1">
+                                    <p className="font-medium text-gray-800">{s.key}</p>
+                                    {s.description && (
+                                        <p className="text-sm text-gray-500 mt-0.5">{s.description}</p>
+                                    )}
+                                </div>
+                                <span className="text-sm text-gray-600 font-medium flex-shrink-0">{s.value}</span>
+                            </div>
+                        ))
+                    }
+                </div>
+            )}
+
+            {/* Feedback */}
+            {saveOk && (
+                <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
+                    <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                    IVA actualizado correctamente. El cambio ya es efectivo en toda la plataforma.
+                </div>
+            )}
+            {saveErr && (
+                <div className="mt-3 flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {saveErr}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ════════════════════════════════════════════════════════════════
 // SECCIÓN DE ADMINS (solo para SuperAdmin)
 // ════════════════════════════════════════════════════════════════
 
@@ -1563,6 +1726,9 @@ const AdminDashboard = () => {
 
             {/* Planes de Chat Premium */}
             <ChatPlansSection />
+
+            {/* Configuración de plataforma - Solo SuperAdmin */}
+            <PlatformSettingsSection />
 
             {/* Sección de Admins - Solo SuperAdmin */}
             <AdminsSection />

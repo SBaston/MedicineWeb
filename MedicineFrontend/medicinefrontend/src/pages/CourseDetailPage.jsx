@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTaxRate } from '../hooks/useTaxRate';
 import api from '../services/api';
 import {
     GraduationCap, Clock, Star, Users, BookOpen, Award,
@@ -33,8 +34,8 @@ const CourseDetailPage = () => {
     const { id } = useParams();
     const location = useLocation();
     const { user, isDoctor, isPatient } = useAuth();
-    const IVA = 0.21;
-    // Los pacientes pagan IVA (21%); los doctores están exentos
+    const ivaRate = useTaxRate();
+    // Los pacientes pagan IVA (tipo de BD); los doctores están exentos
     const applyIva = isPatient || !user;   // visitante sin sesión → mostramos precio con IVA por defecto
 
     const [course, setCourse]           = useState(location.state?.course || null);
@@ -293,11 +294,11 @@ const CourseDetailPage = () => {
                                 <>
                                     <p className="text-3xl font-bold text-emerald-600">
                                         {applyIva
-                                            ? (course.price * (1 + IVA)).toFixed(2)
+                                            ? (course.price * (1 + ivaRate)).toFixed(2)
                                             : course.price.toFixed(2)} €
                                     </p>
                                     <p className="text-xs text-slate-400 mt-0.5">
-                                        {applyIva ? 'IVA 21% incluido' : 'Exento de IVA'}
+                                        {applyIva ? `IVA ${(ivaRate * 100).toFixed(0)}% incluido` : 'Exento de IVA'}
                                     </p>
                                 </>
                             )}
@@ -337,7 +338,7 @@ const CourseDetailPage = () => {
                                         ? 'Redirigiendo a pago...'
                                         : course.price > 0
                                             ? `Pagar con Stripe — ${applyIva
-                                                ? (course.price * (1 + IVA)).toFixed(2)
+                                                ? (course.price * (1 + ivaRate)).toFixed(2)
                                                 : course.price.toFixed(2)} €`
                                             : 'Matricularme gratis'
                                     }

@@ -78,30 +78,29 @@ const Navbar = () => {
                                 </Link>
                             )}
 
+                            {/* Sobre nosotros y Soporte: visibles para todos */}
+                            <Link
+                                to="/about"
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/about')}`}
+                            >
+                                <Info className="w-3.5 h-3.5" />
+                                Sobre nosotros
+                            </Link>
+                            <Link
+                                to="/support"
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/support')}`}
+                            >
+                                <LifeBuoy className="w-3.5 h-3.5" />
+                                Soporte
+                            </Link>
                             {!isAuthenticated && (
-                                <>
-                                    <Link
-                                        to="/about"
-                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/about')}`}
-                                    >
-                                        <Info className="w-3.5 h-3.5" />
-                                        Sobre nosotros
-                                    </Link>
-                                    <Link
-                                        to="/courses"
-                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/courses')}`}
-                                    >
-                                        <BookOpen className="w-3.5 h-3.5" />
-                                        Cursos
-                                    </Link>
-                                    <Link
-                                        to="/support"
-                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/support')}`}
-                                    >
-                                        <LifeBuoy className="w-3.5 h-3.5" />
-                                        Soporte
-                                    </Link>
-                                </>
+                                <Link
+                                    to="/courses"
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/courses')}`}
+                                >
+                                    <BookOpen className="w-3.5 h-3.5" />
+                                    Cursos
+                                </Link>
                             )}
 
                             {/* Links autenticados */}
@@ -252,16 +251,12 @@ const Navbar = () => {
                             <Link to="/courses" className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition-colors">
                                 <BookOpen className="w-4 h-4" /> Cursos
                             </Link>
-                            {!isAuthenticated && (
-                                <>
-                                    <Link to="/about" className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition-colors">
-                                        <Info className="w-4 h-4" /> Sobre nosotros
-                                    </Link>
-                                    <Link to="/support" className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition-colors">
-                                        <LifeBuoy className="w-4 h-4" /> Soporte
-                                    </Link>
-                                </>
-                            )}
+                            <Link to="/about" className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition-colors">
+                                <Info className="w-4 h-4" /> Sobre nosotros
+                            </Link>
+                            <Link to="/support" className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition-colors">
+                                <LifeBuoy className="w-4 h-4" /> Soporte
+                            </Link>
 
                             {isAuthenticated && (
                                 <>
