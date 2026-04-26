@@ -61,7 +61,8 @@ public class ChatController : ControllerBase
     {
         var userId = GetUserId();
         var sub = await _chatService.GetSubscriptionWithDoctorAsync(userId, doctorId);
-        if (sub == null) return NotFound(new { message = "No tienes suscripción con este médico" });
+        // Devolver 200 null en lugar de 404 para evitar errores en consola del frontend
+        // cuando el paciente simplemente no tiene suscripción con este médico
         return Ok(sub);
     }
 

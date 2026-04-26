@@ -121,4 +121,22 @@ public class ProfessionalsController : ControllerBase
             return StatusCode(500, new { message = "Error al obtener disponibilidad", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Obtener redes sociales públicas de un profesional
+    /// GET /api/professionals/{id}/social-media
+    /// </summary>
+    [HttpGet("{id}/social-media")]
+    public async Task<ActionResult<List<SocialMediaDto>>> GetSocialMedia(int id)
+    {
+        try
+        {
+            var social = await _professionalService.GetProfessionalSocialMediaAsync(id);
+            return Ok(social);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error al obtener redes sociales", error = ex.Message });
+        }
+    }
 }

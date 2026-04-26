@@ -188,4 +188,22 @@ public class ProfessionalService : IProfessionalService
         await Task.CompletedTask;
         return new { message = "Disponibilidad no implementada aún" };
     }
+
+    /// <summary>
+    /// Obtener redes sociales públicas activas de un profesional
+    /// </summary>
+    public async Task<List<SocialMediaDto>> GetProfessionalSocialMediaAsync(int doctorId)
+    {
+        return await _context.DoctorSocialMedias
+            .Where(s => s.DoctorId == doctorId && s.IsActive)
+            .OrderBy(s => s.Platform)
+            .Select(s => new SocialMediaDto
+            {
+                Platform      = s.Platform,
+                ProfileUrl    = s.ProfileUrl,
+                FollowerCount = s.FollowerCount,
+                IsActive      = s.IsActive
+            })
+            .ToListAsync();
+    }
 }

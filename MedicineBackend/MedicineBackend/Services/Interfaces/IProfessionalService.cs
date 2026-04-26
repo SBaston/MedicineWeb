@@ -17,6 +17,7 @@ public interface IProfessionalService
     Task<List<ProfessionalVideoDto>> GetProfessionalVideosAsync(int doctorId);
     Task<object> GetProfessionalReviewsAsync(int doctorId);
     Task<object> GetProfessionalAvailabilityAsync(int doctorId);
+    Task<List<SocialMediaDto>> GetProfessionalSocialMediaAsync(int doctorId);
 }
 
 

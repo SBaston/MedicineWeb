@@ -35,6 +35,7 @@ import SupportPage from './pages/SupportPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChatPage from './pages/ChatPage';
+import ProfessionalDetailPage from './pages/ProfessionalDetailPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -158,6 +159,8 @@ function App() {
                         {/* Nueva ruta única que reemplaza /doctors y /specialties */}
                         <Route path="/professionals"
                             element={<Layout><ProfessionalsPage /></Layout>} />
+                        <Route path="/professionals/:id"
+                            element={<Layout><ProfessionalDetailPage /></Layout>} />
                         <Route
                             path="/doctor/dashboard"
                             element={
