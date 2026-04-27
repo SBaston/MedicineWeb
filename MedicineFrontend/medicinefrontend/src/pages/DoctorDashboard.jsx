@@ -581,7 +581,7 @@ const DoctorDashboard = () => {
                     <StatCard
                         icon={Star}
                         label="Valoración"
-                        value={stats.rating ? `${stats.rating.toFixed(1)} ⭐` : 'Sin valoraciones'}
+                        value={stats.averageRating > 0 ? `${Number(stats.averageRating).toFixed(1)} ⭐ (${stats.totalReviews})` : 'Sin valoraciones'}
                         color="amber"
                     />
                 </div>

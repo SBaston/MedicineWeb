@@ -36,6 +36,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChatPage from './pages/ChatPage';
 import ProfessionalDetailPage from './pages/ProfessionalDetailPage';
+import AdminSettingsPage from './pages/AdminSettingsPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -149,6 +150,16 @@ function App() {
                                     <Layout>
                                         <CreateAdminPage />
                                     </Layout>
+                                </SuperAdminRoute>
+                            }
+                        />
+
+                        {/* Configuración de plataforma - SOLO SuperAdmin */}
+                        <Route
+                            path="/admin/settings"
+                            element={
+                                <SuperAdminRoute>
+                                    <AdminSettingsPage />
                                 </SuperAdminRoute>
                             }
                         />

@@ -43,6 +43,18 @@ public class SettingsService : ISettingsService
     }
 
     // ─────────────────────────────────────────────────────────────
+    public async Task<decimal> GetCommissionRateAsync()
+    {
+        var raw = await GetAsync(SettingKeys.PlatformCommission);
+        if (raw != null && decimal.TryParse(raw, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var rate))
+            return rate;
+
+        _logger.LogWarning("PlatformCommission no configurada en BD, usando 15% por defecto");
+        return 15m;
+    }
+
+    // ─────────────────────────────────────────────────────────────
     public async Task<string?> GetAsync(string key)
     {
         var cacheKey = CachePrefix + key;

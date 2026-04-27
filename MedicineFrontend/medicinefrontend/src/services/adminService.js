@@ -47,6 +47,7 @@ const adminService = {
     // ══════════════════════════════════════════════════════════════
     getSettings: () => api.get('/settings').then(r => r.data),
     updateSetting: (key, value) => api.put(`/settings/${key}`, { value }).then(r => r.data),
+    seedSettings: () => api.post('/settings/seed').then(r => r.data),
 };
 
 export default adminService;

@@ -353,11 +353,15 @@ public class ChatService : IChatService
 
         if (subscription.Status != "Pending") return;
 
-        subscription.Status          = "Active";
-        subscription.StartDate       = DateTime.UtcNow;
-        subscription.EndDate         = DateTime.UtcNow.AddDays(subscription.Plan.DurationDays);
-        subscription.DoctorEarnings  = subscription.AmountPaid * (1 - subscription.Plan.PlatformCommissionPercent / 100m);
-        subscription.PlatformEarnings = subscription.AmountPaid * (subscription.Plan.PlatformCommissionPercent / 100m);
+        // AmountPaid incluye IVA; las comisiones se calculan sobre el precio neto
+        var ivaRate  = await _settings.GetIvaRateAsync();
+        var priceNet = Math.Round(subscription.AmountPaid / (1 + ivaRate), 2);
+
+        subscription.Status           = "Active";
+        subscription.StartDate        = DateTime.UtcNow;
+        subscription.EndDate          = DateTime.UtcNow.AddDays(subscription.Plan.DurationDays);
+        subscription.DoctorEarnings   = Math.Round(priceNet * (1 - subscription.Plan.PlatformCommissionPercent / 100m), 2);
+        subscription.PlatformEarnings = Math.Round(priceNet * (subscription.Plan.PlatformCommissionPercent / 100m), 2);
 
         await _db.SaveChangesAsync();
         _logger.LogInformation("Suscripción de chat {SubId} activada", subscription.Id);

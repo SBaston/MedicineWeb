@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import adminService from '../services/adminService';
 import chatService from '../services/chatService';
+import { useTaxRate } from '../hooks/useTaxRate';
 import {
     ShieldCheck, Clock, CheckCircle, XCircle, Trash2, Users,
     Stethoscope, Mail, AlertTriangle, ChevronDown, ChevronUp,
@@ -879,11 +880,12 @@ const SearchDoctorsSection = () => {
 
 const ChatPlansSection = () => {
     const queryClient = useQueryClient();
+    const ivaRate = useTaxRate();
     const [showForm, setShowForm] = useState(false);
     const [editingPlan, setEditingPlan] = useState(null);
     const [form, setForm] = useState({
         name: '', description: '', price: '', durationDays: '',
-        platformCommissionPercent: '20', isVatExempt: true, isActive: true,
+        platformCommissionPercent: '20', isActive: true,
     });
     const [formError, setFormError] = useState('');
 
@@ -918,7 +920,7 @@ const ChatPlansSection = () => {
         setShowForm(false);
         setEditingPlan(null);
         setFormError('');
-        setForm({ name: '', description: '', price: '', durationDays: '', platformCommissionPercent: '20', isVatExempt: true, isActive: true });
+        setForm({ name: '', description: '', price: '', durationDays: '', platformCommissionPercent: '20', isActive: true });
     };
 
     const openEdit = (plan) => {
@@ -929,7 +931,6 @@ const ChatPlansSection = () => {
             price: plan.price.toString(),
             durationDays: plan.durationDays.toString(),
             platformCommissionPercent: plan.platformCommissionPercent.toString(),
-            isVatExempt: plan.isVatExempt,
             isActive: plan.isActive,
         });
         setShowForm(true);
@@ -951,7 +952,7 @@ const ChatPlansSection = () => {
             price,
             durationDays: days,
             platformCommissionPercent: comm,
-            isVatExempt: form.isVatExempt,
+            isVatExempt: false,   // los planes de chat siempre llevan IVA
             isActive: form.isActive,
         };
         if (editingPlan) {
@@ -998,7 +999,7 @@ const ChatPlansSection = () => {
                     <div className="bg-violet-50 rounded-xl border border-violet-200 p-4">
                         <p className="text-xs text-violet-600 font-medium mb-1">Ingresos plataforma</p>
                         <p className="text-xl font-bold text-violet-700">{stats.platformRevenue?.toFixed(2)} €</p>
-                        <p className="text-xs text-violet-400">sin IVA (exento)</p>
+                        <p className="text-xs text-violet-400">comisión s/ precio neto</p>
                     </div>
                 </div>
             )}
@@ -1029,11 +1030,18 @@ const ChatPlansSection = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">Precio (€) *</label>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                Precio neto (€) *
+                                {form.price && !isNaN(parseFloat(form.price)) && (
+                                    <span className="text-violet-600 font-normal ml-2">
+                                        → Con IVA ({(ivaRate * 100).toFixed(0)}%): <strong>{(parseFloat(form.price) * (1 + ivaRate)).toFixed(2)} €</strong>
+                                    </span>
+                                )}
+                            </label>
                             <input
-                                type="number" required min="0.01" step="0.01"
+                                type="number" required min="1" step="1"
                                 value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                                placeholder="29.99"
+                                placeholder="15"
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                             />
                         </div>
@@ -1062,14 +1070,11 @@ const ChatPlansSection = () => {
                             />
                         </div>
                         <div className="flex items-center gap-6 pt-5">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox" checked={form.isVatExempt}
-                                    onChange={e => setForm(f => ({ ...f, isVatExempt: e.target.checked }))}
-                                    className="w-4 h-4 rounded text-violet-600"
-                                />
-                                <span className="text-sm text-gray-700">Exento de IVA <span className="text-gray-400">(servicios médicos)</span></span>
-                            </label>
+                            {/* IVA siempre aplicado a planes de chat — no editable */}
+                            <span className="inline-flex items-center gap-1.5 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+                                <Percent className="w-3.5 h-3.5" />
+                                IVA incluido (tipo general)
+                            </span>
                             {editingPlan && (
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
@@ -1133,9 +1138,7 @@ const ChatPlansSection = () => {
                                             ? <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Activo</span>
                                             : <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">Inactivo</span>
                                         }
-                                        {plan.isVatExempt && (
-                                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Exento IVA</span>
-                                        )}
+                                        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">IVA incluido</span>
                                     </div>
                                     {plan.description && (
                                         <p className="text-xs text-gray-500 mt-0.5">{plan.description}</p>
@@ -1185,13 +1188,7 @@ const ChatPlansSection = () => {
 
 const PlatformSettingsSection = () => {
     const { user } = useAuth();
-    const qc = useQueryClient();
     const isSuperAdmin = user?.role === 'Admin' && user?.isSuperAdmin === true;
-
-    const [ivaInput, setIvaInput] = useState('');
-    const [editingIva, setEditingIva] = useState(false);
-    const [saveOk, setSaveOk] = useState(false);
-    const [saveErr, setSaveErr] = useState('');
 
     const { data: settings = [], isLoading } = useQuery({
         queryKey: ['admin-platform-settings'],
@@ -1202,48 +1199,27 @@ const PlatformSettingsSection = () => {
     const currentIva = settings.find(s => s.key === 'IvaRate');
     const currentIvaPercent = currentIva ? (parseFloat(currentIva.value) * 100).toFixed(0) : '21';
 
-    const updateMut = useMutation({
-        mutationFn: ({ key, value }) => adminService.updateSetting(key, value),
-        onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['admin-platform-settings'] });
-            qc.invalidateQueries({ queryKey: ['platform-tax-rate'] });
-            setSaveOk(true);
-            setEditingIva(false);
-            setTimeout(() => setSaveOk(false), 3000);
-        },
-        onError: (e) => setSaveErr(e.response?.data?.message || 'Error al guardar el valor.'),
-    });
-
-    const handleSaveIva = () => {
-        setSaveErr('');
-        const pct = parseFloat(ivaInput);
-        if (isNaN(pct) || pct < 0 || pct > 100) {
-            setSaveErr('Introduce un porcentaje válido entre 0 y 100.');
-            return;
-        }
-        // El backend espera el valor en decimal (ej: 0.21)
-        updateMut.mutate({ key: 'IvaRate', value: (pct / 100).toString() });
-    };
-
-    const openEdit = () => {
-        setIvaInput(currentIvaPercent);
-        setSaveErr('');
-        setSaveOk(false);
-        setEditingIva(true);
-    };
-
     if (!isSuperAdmin) return null;
 
     return (
         <div className="mt-10 pt-8 border-t-2 border-gray-200">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
-                    <Percent className="w-5 h-5 text-white" />
+            <div className="flex items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
+                        <Percent className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Configuración de Plataforma</h2>
+                        <p className="text-sm text-gray-500">Parámetros fiscales y de facturación — solo SuperAdmin</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900">Configuración de Plataforma</h2>
-                    <p className="text-sm text-gray-500">Parámetros fiscales y de facturación — solo SuperAdmin</p>
-                </div>
+                <Link
+                    to="/admin/settings"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors flex-shrink-0"
+                >
+                    <Edit2 className="w-4 h-4" />
+                    Editar configuración
+                </Link>
             </div>
 
             {isLoading ? (
@@ -1263,48 +1239,7 @@ const PlatformSettingsSection = () => {
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                            {!editingIva ? (
-                                <>
-                                    <span className="text-2xl font-bold text-gray-900">{currentIvaPercent}%</span>
-                                    <button
-                                        onClick={openEdit}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors"
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                        Editar
-                                    </button>
-                                </>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <div className="relative">
-                                        <input
-                                            type="number"
-                                            min="0" max="100" step="1"
-                                            value={ivaInput}
-                                            onChange={e => setIvaInput(e.target.value)}
-                                            className="w-24 border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-emerald-500 pr-7"
-                                            autoFocus
-                                        />
-                                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
-                                    </div>
-                                    <button
-                                        onClick={handleSaveIva}
-                                        disabled={updateMut.isPending}
-                                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
-                                    >
-                                        <Check className="w-4 h-4" />
-                                        {updateMut.isPending ? 'Guardando…' : 'Guardar'}
-                                    </button>
-                                    <button
-                                        onClick={() => { setEditingIva(false); setSaveErr(''); }}
-                                        className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                        <span className="text-2xl font-bold text-gray-900 flex-shrink-0">{currentIvaPercent}%</span>
                     </div>
 
                     {/* Otros ajustes en modo solo lectura */}
@@ -1325,19 +1260,6 @@ const PlatformSettingsSection = () => {
                 </div>
             )}
 
-            {/* Feedback */}
-            {saveOk && (
-                <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
-                    <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                    IVA actualizado correctamente. El cambio ya es efectivo en toda la plataforma.
-                </div>
-            )}
-            {saveErr && (
-                <div className="mt-3 flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    {saveErr}
-                </div>
-            )}
         </div>
     );
 };

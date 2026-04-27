@@ -30,7 +30,6 @@ public class PaymentService : IPaymentService
     private readonly string _webhookSecret;
     private readonly string _successUrl;
     private readonly string _cancelUrl;
-    private readonly decimal _commissionPct;
     private readonly string _currency;
 
     public PaymentService(
@@ -53,7 +52,6 @@ public class PaymentService : IPaymentService
         _webhookSecret = ps["StripeWebhookSecret"] ?? throw new InvalidOperationException("StripeWebhookSecret no configurada");
         _successUrl    = ps["SuccessUrl"]           ?? "http://localhost:5173/payment/success?session_id={CHECKOUT_SESSION_ID}";
         _cancelUrl     = ps["CancelUrl"]            ?? "http://localhost:5173/payment/cancel";
-        _commissionPct = decimal.TryParse(ps["PlatformCommissionPercentage"], out var c) ? c : 15m;
         _currency      = (ps["Currency"] ?? "eur").ToLower();
 
         StripeConfiguration.ApiKey = _secretKey;
@@ -75,13 +73,14 @@ public class PaymentService : IPaymentService
             ?? throw new KeyNotFoundException("Cita no encontrada");
 
         // Calcular IVA y precio final (mismo patrón que cursos)
-        var ivaRate    = await _settings.GetIvaRateAsync();
-        var vatAmount  = Math.Round(price * ivaRate, 2);
-        var priceFinal = price + vatAmount;
+        var ivaRate       = await _settings.GetIvaRateAsync();
+        var commissionPct = await _settings.GetCommissionRateAsync();
+        var vatAmount     = Math.Round(price * ivaRate, 2);
+        var priceFinal    = price + vatAmount;
 
         // Comisión y ganancia del doctor se calculan sobre el precio neto (sin IVA)
-        var fee        = Math.Round(price * (_commissionPct / 100m), 2);
-        var doctorNet  = price - fee;
+        var fee       = Math.Round(price * (commissionPct / 100m), 2);
+        var doctorNet = price - fee;
 
         // Guardar Payment pendiente (Amount = precio final con IVA)
         var payment = new Payment
@@ -180,11 +179,12 @@ public class PaymentService : IPaymentService
         // Los pacientes pagan IVA (tipo configurado en BD); los profesionales están exentos
         bool patientPays  = role == "Patient";
         var ivaRate       = patientPays ? await _settings.GetIvaRateAsync() : 0m;
+        var commissionPct = await _settings.GetCommissionRateAsync();
         var vatAmount     = patientPays ? Math.Round(price * ivaRate, 2) : 0m;
         var priceFinal    = price + vatAmount;   // precio que cobra Stripe
 
         // Comisión y ganancias se calculan sobre el precio neto (sin IVA)
-        var fee       = Math.Round(price * (_commissionPct / 100m), 2);
+        var fee       = Math.Round(price * (commissionPct / 100m), 2);
         var doctorNet = price - fee;
 
         var payment = new Payment
@@ -423,12 +423,16 @@ public class PaymentService : IPaymentService
                 return;
             }
 
+            // AmountPaid incluye IVA; las comisiones se calculan sobre el precio neto
+            var ivaRate     = await _settings.GetIvaRateAsync();
+            var priceNet    = Math.Round(sub.AmountPaid / (1 + ivaRate), 2);
+
             var now = DateTime.UtcNow;
             sub.Status           = "Active";
             sub.StartDate        = now;
             sub.EndDate          = now.AddDays(sub.Plan.DurationDays);
-            sub.DoctorEarnings   = Math.Round(sub.AmountPaid * (1 - sub.Plan.PlatformCommissionPercent / 100m), 2);
-            sub.PlatformEarnings = Math.Round(sub.AmountPaid * (sub.Plan.PlatformCommissionPercent / 100m), 2);
+            sub.DoctorEarnings   = Math.Round(priceNet * (1 - sub.Plan.PlatformCommissionPercent / 100m), 2);
+            sub.PlatformEarnings = Math.Round(priceNet * (sub.Plan.PlatformCommissionPercent / 100m), 2);
 
             // Actualizar ganancias del doctor
             await _context.Doctors

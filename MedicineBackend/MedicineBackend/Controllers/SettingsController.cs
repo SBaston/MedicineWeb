@@ -33,6 +33,17 @@ public class SettingsController : ControllerBase
     }
 
     // ─────────────────────────────────────────────────────────────
+    // GET /api/settings/commission  — público (se usa en UI de precios y páginas de pago)
+    // ─────────────────────────────────────────────────────────────
+    [HttpGet("commission")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetCommission()
+    {
+        var rate = await _settings.GetCommissionRateAsync();
+        return Ok(new { commissionRate = rate });
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // GET /api/settings  — solo Admin
     // ─────────────────────────────────────────────────────────────
     [HttpGet]
