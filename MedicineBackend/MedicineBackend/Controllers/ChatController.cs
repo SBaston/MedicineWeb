@@ -211,21 +211,101 @@ public class ChatController : ControllerBase
 
         var subs = await _db.ChatSubscriptions
             .Include(s => s.Plan)
-            .Include(s => s.Patient)
-            .Where(s => s.DoctorId == doctor.Id && s.Status == "Active")
+            .Include(s => s.Patient)   // User (para email fallback)
+            .Where(s => s.DoctorId == doctor.Id
+                     && (s.Status == "Active" || s.Status == "Expired"))
             .OrderByDescending(s => s.CreatedAt)
-            .Select(s => new
-            {
-                s.Id,
-                PatientName = s.Patient.Email,  // email como nombre fallback
-                s.Plan.Name,
-                s.StartDate,
-                s.EndDate,
-                s.Status
-            })
             .ToListAsync();
 
-        return Ok(subs);
+        // Obtener perfiles de pacientes para nombres reales
+        var patientUserIds = subs.Select(s => s.PatientUserId).Distinct().ToList();
+        var patientProfiles = await _db.Patients
+            .Where(p => patientUserIds.Contains(p.UserId))
+            .ToDictionaryAsync(p => p.UserId);
+
+        // Mensajes no leídos por el doctor (enviados por el paciente)
+        var subIds = subs.Select(s => s.Id).ToList();
+        var unreadCounts = await _db.ChatMessages
+            .Where(m => subIds.Contains(m.ChatSubscriptionId)
+                     && m.SenderUserId != userId
+                     && !m.IsRead)
+            .GroupBy(m => m.ChatSubscriptionId)
+            .Select(g => new { SubId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.SubId, x => x.Count);
+
+        var result = subs.Select(s =>
+        {
+            patientProfiles.TryGetValue(s.PatientUserId, out var profile);
+            var patientName = profile != null
+                ? $"{profile.FirstName} {profile.LastName}"
+                : s.Patient.Email;
+
+            return new
+            {
+                s.Id,
+                s.PatientUserId,
+                PatientName = patientName,
+                PlanName = s.Plan.Name,
+                s.AmountPaid,
+                s.StartDate,
+                s.EndDate,
+                s.Status,
+                IsReadOnly = s.Status == "Expired",
+                UnreadCount = unreadCounts.TryGetValue(s.Id, out var c) ? c : 0
+            };
+        });
+
+        return Ok(result);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GET /api/chat/doctor/subscriptions/{subscriptionId}  — doctor
+    // Permite al doctor acceder a una suscripción específica para abrir el chat
+    // ─────────────────────────────────────────────────────────────
+    [HttpGet("doctor/subscriptions/{subscriptionId:int}")]
+    [Authorize(Roles = "Doctor")]
+    public async Task<IActionResult> GetDoctorSubscriptionById(int subscriptionId)
+    {
+        var userId = GetUserId();
+
+        var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+        if (doctor == null) return NotFound(new { message = "Doctor no encontrado" });
+
+        var sub = await _db.ChatSubscriptions
+            .Include(s => s.Plan)
+            .Include(s => s.Patient)   // User
+            .FirstOrDefaultAsync(s => s.Id == subscriptionId && s.DoctorId == doctor.Id);
+
+        if (sub == null)
+            return NotFound(new { message = "Suscripción no encontrada o no pertenece a este doctor" });
+
+        // Nombre real del paciente
+        var patientProfile = await _db.Patients.FirstOrDefaultAsync(p => p.UserId == sub.PatientUserId);
+        var patientName = patientProfile != null
+            ? $"{patientProfile.FirstName} {patientProfile.LastName}"
+            : sub.Patient.Email;
+
+        // Mensajes no leídos por el doctor
+        var unreadCount = await _db.ChatMessages
+            .CountAsync(m => m.ChatSubscriptionId == subscriptionId
+                          && m.SenderUserId != userId
+                          && !m.IsRead);
+
+        return Ok(new
+        {
+            sub.Id,
+            sub.DoctorId,
+            DoctorName       = $"{doctor.FirstName} {doctor.LastName}",
+            sub.PatientUserId,
+            PatientName      = patientName,
+            PlanName         = sub.Plan.Name,
+            sub.AmountPaid,
+            sub.StartDate,
+            sub.EndDate,
+            sub.Status,
+            IsReadOnly       = sub.Status == "Expired",
+            UnreadCount      = unreadCount
+        });
     }
 
     // ─── Helpers ─────────────────────────────────────────────

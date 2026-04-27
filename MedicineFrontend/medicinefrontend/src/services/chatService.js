@@ -49,6 +49,12 @@ const chatService = {
         return res.data;
     },
 
+    // ── Doctor: una suscripción específica por ID ─────────────
+    getDoctorSubscriptionById: async (subscriptionId) => {
+        const res = await api.get(`/chat/doctor/subscriptions/${subscriptionId}`);
+        return res.data;
+    },
+
     // ── Admin: gestión de planes ───────────────────────────────
     admin: {
         getPlans: async () => {

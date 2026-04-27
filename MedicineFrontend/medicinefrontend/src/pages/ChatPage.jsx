@@ -72,6 +72,8 @@ const ChatPage = () => {
     const queryClient = useQueryClient();
     const subId = parseInt(subscriptionId, 10);
 
+    const isDoctor = user?.role === 'Doctor';
+
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [sending, setSending] = useState(false);
@@ -82,17 +84,41 @@ const ChatPage = () => {
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
-    // ── Datos de la suscripción ────────────────────────────────
-    const { data: subscriptions = [], isLoading: loadingSubs } = useQuery({
+    // ── Datos de la suscripción (según rol) ───────────────────
+    // Paciente: busca entre sus suscripciones
+    const { data: subscriptions = [], isLoading: loadingPatientSubs } = useQuery({
         queryKey: ['my-chat-subscriptions'],
         queryFn: chatService.getMySubscriptions,
-        enabled: !!user,
+        enabled: !!user && !isDoctor,
     });
 
-    const subscription = subscriptions.find(s => s.id === subId);
+    // Doctor: endpoint dedicado para una suscripción concreta
+    const { data: doctorSub, isLoading: loadingDoctorSub } = useQuery({
+        queryKey: ['doctor-chat-sub', subId],
+        queryFn: () => chatService.getDoctorSubscriptionById(subId),
+        enabled: !!user && isDoctor && !!subId,
+        retry: false,
+    });
 
-    // true solo cuando las suscripciones ya cargaron Y esta pertenece al usuario actual
+    const subscription = isDoctor
+        ? doctorSub
+        : subscriptions.find(s => s.id === subId);
+
+    const loadingSubs = isDoctor ? loadingDoctorSub : loadingPatientSubs;
+
+    // true solo cuando la suscripción ya cargó Y pertenece al usuario actual
     const isAuthorized = !loadingSubs && !!subscription;
+
+    // ── Nombre e imagen de la "otra persona" ──────────────────
+    const otherPersonName = isDoctor
+        ? (subscription?.patientName ?? 'Paciente')
+        : `Dr. ${subscription?.doctorName ?? ''}`;
+
+    const otherPersonAvatar = isDoctor
+        ? null  // los pacientes no tienen foto de perfil en este sistema
+        : subscription?.doctorProfilePictureUrl;
+
+    const dashboardPath = isDoctor ? '/doctor/dashboard' : '/dashboard';
 
     // ── Cargar historial de mensajes ───────────────────────────
     useEffect(() => {
@@ -125,16 +151,39 @@ const ChatPage = () => {
         const token = localStorage.getItem('token');
         if (!token || !subId) return;
 
+        let mounted = true; // guard para evitar actualizar estado si ya se desmontó
+
         const backendUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+
+        // Logger personalizado: filtra los errores de abort que React StrictMode
+        // provoca en desarrollo (doble montaje → stop() interrumpe el start()).
+        // En producción estos mensajes nunca aparecen porque StrictMode no ejecuta
+        // el doble ciclo.
+        const hubLogger = {
+            log: (logLevel, message) => {
+                if (typeof message === 'string' && (
+                    message.includes('stop() was called') ||
+                    message.includes('stopped during negotiation') ||
+                    message.includes('Failed to start the HttpConnection before stop')
+                )) return; // silenciar artefactos de StrictMode
+                if (logLevel >= signalR.LogLevel.Warning) {
+                    console.warn('[Chat Hub]', message);
+                }
+            }
+        };
+
         const connection = new signalR.HubConnectionBuilder()
             .withUrl(`${backendUrl}/hubs/chat`, {
-                accessTokenFactory: () => token,
+                accessTokenFactory: () => localStorage.getItem('token') || '',
+                skipNegotiation: true,
+                transport: signalR.HttpTransportType.WebSockets,
             })
-            .withAutomaticReconnect()
-            .configureLogging(signalR.LogLevel.Warning)
+            .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+            .configureLogging(hubLogger)
             .build();
 
         connection.on('ReceiveMessage', (message) => {
+            if (!mounted) return;
             setMessages(prev => {
                 // Evitar duplicados
                 if (prev.some(m => m.id === message.id)) return prev;
@@ -147,27 +196,47 @@ const ChatPage = () => {
         });
 
         connection.on('MessagesRead', () => {
+            if (!mounted) return;
             setMessages(prev => prev.map(m => ({ ...m, isRead: true })));
         });
 
-        connection.onreconnecting(() => setConnectionState('connecting'));
-        connection.onreconnected(() => setConnectionState('connected'));
-        connection.onclose(() => setConnectionState('error'));
+        connection.onreconnecting(() => {
+            if (mounted) setConnectionState('connecting');
+        });
+        connection.onreconnected(() => {
+            if (mounted) {
+                setConnectionState('connected');
+                setHubError(''); // limpiar el aviso de error al reconectar con éxito
+                connection.invoke('JoinChat', subId).catch(console.error);
+            }
+        });
+        connection.onclose(() => {
+            if (mounted) setConnectionState('error');
+        });
 
         connection.start()
             .then(() => {
+                if (!mounted) return;
                 setConnectionState('connected');
+                setHubError('');
                 return connection.invoke('JoinChat', subId);
             })
             .catch(err => {
-                console.error('SignalR error:', err);
+                if (!mounted) return;
+                console.warn('SignalR: primer intento fallido, reintentando…', err.message);
                 setConnectionState('error');
-                setHubError('No se pudo conectar al chat en tiempo real. Los mensajes se enviarán igualmente.');
+                // Solo mostrar aviso si no hay conexión tras varios intentos
+                setTimeout(() => {
+                    if (mounted && connection.state !== signalR.HubConnectionState.Connected) {
+                        setHubError('No se pudo conectar al chat en tiempo real. Los mensajes se enviarán igualmente.');
+                    }
+                }, 6000);
             });
 
         connectionRef.current = connection;
 
         return () => {
+            mounted = false;
             connection.stop();
         };
     }, [subId, user?.id, isAuthorized]);
@@ -231,7 +300,7 @@ const ChatPage = () => {
     }
 
     // ── Suscripción no encontrada ──────────────────────────────
-    if (!subscription) {
+    if (!loadingSubs && !subscription) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center max-w-sm">
@@ -240,7 +309,7 @@ const ChatPage = () => {
                     <p className="text-gray-500 mb-6">
                         No tienes acceso a este chat o la suscripción no existe.
                     </p>
-                    <Link to="/dashboard" className="btn-primary">Volver al panel</Link>
+                    <Link to={dashboardPath} className="btn-primary">Volver al panel</Link>
                 </div>
             </div>
         );
@@ -257,21 +326,21 @@ const ChatPage = () => {
             <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
                 <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
                     <button
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate(dashboardPath)}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5 text-gray-600" />
                     </button>
 
                     <img
-                        src={subscription.doctorProfilePictureUrl ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(subscription.doctorName)}&background=3b82f6&color=fff&size=80&bold=true`}
-                        alt={subscription.doctorName}
+                        src={otherPersonAvatar ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(otherPersonName)}&background=3b82f6&color=fff&size=80&bold=true`}
+                        alt={otherPersonName}
                         className="w-10 h-10 rounded-full object-cover"
                     />
 
                     <div className="flex-1 min-w-0">
-                        <h1 className="font-bold text-gray-900 truncate">Dr. {subscription.doctorName}</h1>
+                        <h1 className="font-bold text-gray-900 truncate">{otherPersonName}</h1>
                         <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${
                                 connectionState === 'connected' ? 'bg-green-500' :
@@ -325,7 +394,9 @@ const ChatPage = () => {
                             <MessageCircle className="w-14 h-14 text-gray-300 mx-auto mb-4" />
                             <h3 className="font-semibold text-gray-600 mb-1">Empieza la conversación</h3>
                             <p className="text-sm text-gray-400">
-                                Escribe tu primera consulta a Dr. {subscription.doctorName}
+                                {isDoctor
+                                    ? `Escribe tu primer mensaje a ${otherPersonName}`
+                                    : `Escribe tu primera consulta a ${otherPersonName}`}
                             </p>
                         </div>
                     ) : (

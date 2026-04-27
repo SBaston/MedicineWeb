@@ -12,7 +12,7 @@ import {
     User, Clock, Video, BookOpen, AlertCircle,
     ArrowRight, CheckCircle, Eye, Link as LinkIcon,
     MapPin, Loader2, ChevronDown, ChevronUp, Send,
-    CreditCard, FileText, BarChart2, MessageCircle, Crown
+    CreditCard, FileText, BarChart2, MessageCircle, Crown, Search
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
 import SocialMediaSection from '../components/SocialMediaSection';
@@ -36,6 +36,10 @@ const DoctorDashboard = () => {
         queryFn: chatService.getDoctorSubscriptions,
         refetchInterval: 60000,
     });
+
+    // ── Buscadores ────────────────────────────────────────────
+    const [chatSearch, setChatSearch]               = useState('');
+    const [appointmentSearch, setAppointmentSearch] = useState('');
 
     // ── Panel de ingresos ──────────────────────────────────────
     const [showEarnings, setShowEarnings]           = useState(false);
@@ -237,6 +241,19 @@ const DoctorDashboard = () => {
 
                     {showAppointments && (
                         <div className="mt-3 space-y-3">
+                            {/* Buscador de citas */}
+                            {appointments.length > 0 && (
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar paciente por nombre…"
+                                        value={appointmentSearch}
+                                        onChange={e => setAppointmentSearch(e.target.value)}
+                                        className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                                    />
+                                </div>
+                            )}
                             {appointments.length === 0 ? (
                                 <div className="text-center py-8 bg-white rounded-2xl border border-slate-200">
                                     <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -244,7 +261,12 @@ const DoctorDashboard = () => {
                                     <p className="text-slate-400 text-sm">Las citas aparecerán aquí cuando los pacientes reserven</p>
                                 </div>
                             ) : (
-                                appointments.map((appt) => {
+                                appointments
+                                .filter(appt =>
+                                    !appointmentSearch ||
+                                    (appt.patientName ?? '').toLowerCase().includes(appointmentSearch.toLowerCase())
+                                )
+                                .map((appt) => {
                                     const isOnline = appt.appointmentType === 'online';
                                     const needsLink = isOnline && !appt.meetingLink;
                                     const date = new Date(appt.appointmentDate);
@@ -354,6 +376,11 @@ const DoctorDashboard = () => {
                                         </div>
                                     );
                                 })
+                            )}
+                            {appointmentSearch && appointments.filter(a => (a.patientName ?? '').toLowerCase().includes(appointmentSearch.toLowerCase())).length === 0 && (
+                                <div className="text-center py-6 bg-white rounded-2xl border border-slate-200">
+                                    <p className="text-slate-500 text-sm">No hay citas que coincidan con "{appointmentSearch}"</p>
+                                </div>
                             )}
                         </div>
                     )}
@@ -637,8 +664,24 @@ const DoctorDashboard = () => {
                                 </span>
                             </h3>
                         </div>
+                        {/* Buscador de paciente */}
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Buscar paciente por nombre…"
+                                value={chatSearch}
+                                onChange={e => setChatSearch(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+                            />
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {chatSubs.map(sub => (
+                            {chatSubs
+                                .filter(sub =>
+                                    !chatSearch ||
+                                    (sub.patientName ?? '').toLowerCase().includes(chatSearch.toLowerCase())
+                                )
+                                .map(sub => (
                                 <Link
                                     key={sub.id}
                                     to={`/chat/${sub.id}`}
@@ -658,6 +701,9 @@ const DoctorDashboard = () => {
                                 </Link>
                             ))}
                         </div>
+                        {chatSearch && chatSubs.filter(s => (s.patientName ?? '').toLowerCase().includes(chatSearch.toLowerCase())).length === 0 && (
+                            <p className="text-sm text-gray-400 text-center py-4">No hay chats que coincidan con "{chatSearch}"</p>
+                        )}
                         <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">
                             <Crown className="w-3 h-3" />
                             Los mensajes se almacenan de forma segura conforme a la LOPD

@@ -174,15 +174,31 @@ public class ChatService : IChatService
         if (!isPatient && !isDoctor)
             throw new UnauthorizedAccessException("No tienes acceso a este chat");
 
+        // Resolver nombres reales de ambos participantes
+        var doctorName  = $"Dr. {sub.Doctor.FirstName} {sub.Doctor.LastName}";
+        var patientProfile = await _db.Patients.FirstOrDefaultAsync(p => p.UserId == sub.PatientUserId);
+        var patientUser    = await _db.Users.FindAsync(sub.PatientUserId);
+        var patientName = patientProfile != null
+            ? $"{patientProfile.FirstName} {patientProfile.LastName}"
+            : (patientUser?.Email ?? "Paciente");
+
         var messages = await _db.ChatMessages
-            .Include(m => m.Sender)
             .Where(m => m.ChatSubscriptionId == subscriptionId)
             .OrderByDescending(m => m.SentAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
-        return messages.Select(MapMessageToDto).ToList();
+        return messages.Select(m => new ChatMessageDto
+        {
+            Id           = m.Id,
+            SenderUserId = m.SenderUserId,
+            SenderRole   = m.SenderRole,
+            SenderName   = m.SenderUserId == sub.Doctor.UserId ? doctorName : patientName,
+            Content      = m.Content,
+            IsRead       = m.IsRead,
+            SentAt       = m.SentAt
+        }).ToList();
     }
 
     public async Task<ChatMessageDto> SendMessageAsync(
@@ -197,9 +213,6 @@ public class ChatService : IChatService
         if (sub.Status != "Active")
             throw new InvalidOperationException("La suscripción no está activa. No se puede enviar mensajes.");
 
-        var sender = await _db.Users.FindAsync(senderUserId)
-            ?? throw new KeyNotFoundException("Usuario no encontrado");
-
         var message = new ChatMessage
         {
             ChatSubscriptionId = subscriptionId,
@@ -213,12 +226,33 @@ public class ChatService : IChatService
         _db.ChatMessages.Add(message);
         await _db.SaveChangesAsync();
 
-        // Reload sender for navigation property
-        message.Sender = sender;
+        // Resolver nombre real del remitente
+        string senderName;
+        if (senderUserId == sub.Doctor.UserId)
+        {
+            senderName = $"Dr. {sub.Doctor.FirstName} {sub.Doctor.LastName}";
+        }
+        else
+        {
+            var patientProfile = await _db.Patients.FirstOrDefaultAsync(p => p.UserId == senderUserId);
+            var patientUser    = await _db.Users.FindAsync(senderUserId);
+            senderName = patientProfile != null
+                ? $"{patientProfile.FirstName} {patientProfile.LastName}"
+                : (patientUser?.Email ?? "Paciente");
+        }
 
         _logger.LogInformation("Mensaje enviado en suscripción {SubId} por usuario {UserId}", subscriptionId, senderUserId);
 
-        return MapMessageToDto(message);
+        return new ChatMessageDto
+        {
+            Id           = message.Id,
+            SenderUserId = message.SenderUserId,
+            SenderRole   = message.SenderRole,
+            SenderName   = senderName,
+            Content      = message.Content,
+            IsRead       = message.IsRead,
+            SentAt       = message.SentAt
+        };
     }
 
     public async Task MarkMessagesReadAsync(int subscriptionId, int readerUserId)

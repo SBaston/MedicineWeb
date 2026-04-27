@@ -82,7 +82,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             .Select(p => new EarningSummaryDto
             {
                 Id = p.Id,
-                Patient = p.Patient.User.Email,
+                Patient = $"{p.Patient.FirstName} {p.Patient.LastName}",
                 Amount = p.Amount,
                 Date = p.CreatedAt.ToString("yyyy-MM-dd"),
                 Status = p.Status
@@ -458,7 +458,7 @@ public class DoctorDashboardService : IDoctorDashboardService
             {
                 Id = p.Id,
                 Type = p.AppointmentId.HasValue ? "appointment" : "course",
-                Patient = p.Patient.User.Email,
+                Patient = $"{p.Patient.FirstName} {p.Patient.LastName}",
                 CourseName = p.Course?.Title,
                 Amount = p.Amount,
                 PlatformFee = p.PlatformFee,

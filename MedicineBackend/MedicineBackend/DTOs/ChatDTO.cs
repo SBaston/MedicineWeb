@@ -65,6 +65,11 @@ public class ChatSubscriptionDto
     public int DoctorId { get; set; }
     public string DoctorName { get; set; } = string.Empty;
     public string? DoctorProfilePictureUrl { get; set; }
+
+    // Información del paciente (usada cuando el doctor consulta la suscripción)
+    public int PatientUserId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+
     public string PlanName { get; set; } = string.Empty;
     public decimal AmountPaid { get; set; }
     public DateTime StartDate { get; set; }

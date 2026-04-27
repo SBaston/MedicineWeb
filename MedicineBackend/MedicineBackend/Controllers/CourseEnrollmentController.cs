@@ -12,8 +12,10 @@ using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using System.Data;
 
-
 namespace MedicineBackend.Controllers;
+
+// DTO para actualizar progreso
+public record UpdateProgressDto(int Progress);
 
 [ApiController]
 [Route("api/courses")]
@@ -293,6 +295,154 @@ public class CourseEnrollmentController : ControllerBase
         {
             _logger.LogError(ex, "Error al obtener inscripción del curso {CourseId}", id);
             return StatusCode(500, new { message = "Error al obtener la inscripción", error = ex.Message });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GET /api/courses/{id}/content
+    // ─────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Obtener el contenido completo del curso (módulos) para usuarios inscritos.
+    /// Los doctores propietarios del curso también pueden acceder.
+    /// </summary>
+    [HttpGet("{id}/content")]
+    [Authorize(Roles = "Patient,Doctor")]
+    public async Task<IActionResult> GetCourseContent(int id)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var role      = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (!int.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Usuario no autenticado" });
+
+            bool hasAccess = false;
+
+            if (role == "Patient")
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+                if (patient != null)
+                    hasAccess = await _context.CourseEnrollments
+                        .AnyAsync(e => e.CourseId == id && e.PatientId == patient.Id);
+            }
+            else if (role == "Doctor")
+            {
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+                if (doctor != null)
+                {
+                    // El doctor que creó el curso o que está inscrito
+                    var ownsCourse = await _context.Courses.AnyAsync(c => c.Id == id && c.DoctorId == doctor.Id);
+                    var isEnrolled = await _context.CourseEnrollments.AnyAsync(e => e.CourseId == id && e.DoctorId == doctor.Id);
+                    hasAccess = ownsCourse || isEnrolled;
+                }
+            }
+
+            if (!hasAccess)
+                return StatusCode(403, new { message = "No estás inscrito en este curso" });
+
+            var course = await _context.Courses
+                .Include(c => c.Modules.Where(m => m.IsPublished))
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (course == null)
+                return NotFound(new { message = "Curso no encontrado" });
+
+            var modules = course.Modules
+                .OrderBy(m => m.OrderIndex)
+                .Select(m => new
+                {
+                    m.Id,
+                    m.Title,
+                    m.Content,
+                    m.VideoUrl,
+                    m.VideoDurationMinutes,
+                    m.OrderIndex,
+                    m.ContentType,
+                    m.ResourceUrl,
+                    m.IsFree
+                })
+                .ToList();
+
+            return Ok(new
+            {
+                id             = course.Id,
+                title          = course.Title,
+                contentType    = course.ContentType,
+                contentUrl     = course.ContentUrl,
+                articleContent = course.ArticleContent,
+                modules
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener contenido del curso {CourseId}", id);
+            return StatusCode(500, new { message = "Error al obtener el contenido del curso" });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PUT /api/courses/{id}/progress
+    // ─────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Actualiza el progreso del usuario en un curso (0–100).
+    /// Marca como completado automáticamente al llegar a 100.
+    /// </summary>
+    [HttpPut("{id}/progress")]
+    [Authorize(Roles = "Patient,Doctor")]
+    public async Task<IActionResult> UpdateProgress(int id, [FromBody] UpdateProgressDto dto)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var role      = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (!int.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Usuario no autenticado" });
+
+            CourseEnrollment? enrollment = null;
+
+            if (role == "Patient")
+            {
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+                if (patient != null)
+                    enrollment = await _context.CourseEnrollments
+                        .FirstOrDefaultAsync(e => e.CourseId == id && e.PatientId == patient.Id);
+            }
+            else if (role == "Doctor")
+            {
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+                if (doctor != null)
+                    enrollment = await _context.CourseEnrollments
+                        .FirstOrDefaultAsync(e => e.CourseId == id && e.DoctorId == doctor.Id);
+            }
+
+            if (enrollment == null)
+                return NotFound(new { message = "No estás inscrito en este curso" });
+
+            var newProgress = Math.Clamp(dto.Progress, 0, 100);
+            enrollment.Progress         = newProgress;
+            enrollment.IsCompleted      = newProgress >= 100;
+            enrollment.LastAccessedAt   = DateTime.UtcNow;
+
+            if (enrollment.IsCompleted && enrollment.CompletedAt == null)
+                enrollment.CompletedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("User {UserId} updated progress on course {CourseId} to {Progress}%", userId, id, newProgress);
+
+            return Ok(new
+            {
+                progress    = enrollment.Progress,
+                isCompleted = enrollment.IsCompleted,
+                completedAt = enrollment.CompletedAt
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar progreso del curso {CourseId}", id);
+            return StatusCode(500, new { message = "Error al actualizar el progreso" });
         }
     }
 
