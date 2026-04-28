@@ -29,13 +29,30 @@ const formatTime = (dateStr) => {
 const formatDate = (dateStr) =>
     new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 
+// ── Indicador de estado del mensaje (ticks) ───────────────────
+// pending → 1 tick gris       = enviándose
+// !isRead  → 2 ticks grises   = entregado (llegó al servidor)
+// isRead   → 2 ticks azul/bco = leído por la otra persona
+const MessageStatus = ({ message }) => {
+    if (message.pending) {
+        // Enviándose: un solo tick gris
+        return <Check className="w-3 h-3 opacity-50" />;
+    }
+    if (message.isRead) {
+        // Leído: dos ticks en color destacado (azul claro sobre fondo primario)
+        return <CheckCheck className="w-3 h-3 text-white" />;
+    }
+    // Entregado: dos ticks grises/blancos semitransparentes
+    return <CheckCheck className="w-3 h-3 opacity-60" />;
+};
+
 // ── Burbuja de mensaje ─────────────────────────────────────────
 const MessageBubble = ({ message, isOwn }) => (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
         <div
             className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                 isOwn
-                    ? 'bg-primary-600 text-white rounded-br-sm'
+                    ? 'bg-indigo-500 text-white rounded-br-sm'
                     : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm shadow-sm'
             }`}
         >
@@ -45,11 +62,7 @@ const MessageBubble = ({ message, isOwn }) => (
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
             <div className={`flex items-center justify-end gap-1 mt-1 ${isOwn ? 'text-white/70' : 'text-gray-400'}`}>
                 <span className="text-[10px]">{formatTime(message.sentAt)}</span>
-                {isOwn && (
-                    message.isRead
-                        ? <CheckCheck className="w-3 h-3" />
-                        : <Check className="w-3 h-3" />
-                )}
+                {isOwn && <MessageStatus message={message} />}
             </div>
         </div>
     </div>
@@ -185,12 +198,21 @@ const ChatPage = () => {
         connection.on('ReceiveMessage', (message) => {
             if (!mounted) return;
             setMessages(prev => {
-                // Evitar duplicados
+                // Si ya existe el mensaje real, ignorar
                 if (prev.some(m => m.id === message.id)) return prev;
+                // Reemplazar el optimista pendiente más antiguo del mismo usuario (FIFO)
+                const pendingIdx = prev.findIndex(
+                    m => m.pending && String(m.senderUserId) === String(message.senderUserId)
+                );
+                if (pendingIdx >= 0) {
+                    const next = [...prev];
+                    next[pendingIdx] = message; // sustituir optimista → 2 ticks grises
+                    return next;
+                }
                 return [...prev, message];
             });
             // Marcar leído si el mensaje es del otro participante
-            if (message.senderUserId !== user?.id) {
+            if (String(message.senderUserId) !== String(user?.userId)) {
                 chatService.markRead(subId).catch(console.error);
             }
         });
@@ -250,30 +272,45 @@ const ChatPage = () => {
         setInputText('');
         setSending(true);
 
+        // Mensaje optimista: aparece al instante con 1 tick (enviándose)
+        const tempId = `pending_${Date.now()}`;
+        const optimisticMsg = {
+            id: tempId,
+            content,
+            sentAt: new Date().toISOString(),
+            senderUserId: user?.userId,
+            senderName: user?.fullName || '',
+            isRead: false,
+            pending: true,
+        };
+        setMessages(prev => [...prev, optimisticMsg]);
+
         try {
             const conn = connectionRef.current;
             if (conn && conn.state === signalR.HubConnectionState.Connected) {
-                // Enviar vía SignalR (el hub persiste el mensaje en BD y hace broadcast)
+                // Enviar vía SignalR — el ReceiveMessage reemplazará el optimista
                 await conn.invoke('SendMessage', subId, content);
             } else {
-                // Fallback REST si SignalR no está disponible
+                // Fallback REST: reemplazar el optimista con la respuesta real
                 const msg = await chatService.sendMessage(subId, content);
-                setMessages(prev => [...prev, msg]);
+                setMessages(prev => prev.map(m => m.id === tempId ? msg : m));
             }
         } catch (err) {
             console.error('Error enviando mensaje:', err);
             // Fallback REST
             try {
                 const msg = await chatService.sendMessage(subId, content);
-                setMessages(prev => [...prev, msg]);
+                setMessages(prev => prev.map(m => m.id === tempId ? msg : m));
             } catch {
-                setInputText(content); // Restaurar texto
+                // Eliminar el optimista y restaurar el texto si falla todo
+                setMessages(prev => prev.filter(m => m.id !== tempId));
+                setInputText(content);
             }
         } finally {
             setSending(false);
             inputRef.current?.focus();
         }
-    }, [inputText, sending, subId, subscription?.isReadOnly]);
+    }, [inputText, sending, subId, subscription?.isReadOnly, user?.userId, user?.fullName]);
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -407,7 +444,7 @@ const ChatPage = () => {
                                     <MessageBubble
                                         key={msg.id}
                                         message={msg}
-                                        isOwn={msg.senderUserId === user?.id}
+                                        isOwn={String(msg.senderUserId) === String(user?.userId)}
                                     />
                                 ))}
                             </div>
