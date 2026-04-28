@@ -51,6 +51,37 @@ public interface IEmailService
         string? meetingLink = null);
 
     /// <summary>
+    /// Notifica al paciente y al doctor que una cita ha sido cancelada
+    /// </summary>
+    Task SendAppointmentCancellationAsync(
+        string patientEmail,
+        string doctorEmail,
+        string patientName,
+        string doctorName,
+        DateTime appointmentDate,
+        string cancelledBy,
+        string? reason = null);
+
+    /// <summary>
+    /// Envía recordatorio de cita (24h antes) al doctor
+    /// </summary>
+    Task SendAppointmentReminderToDoctorAsync(
+        string doctorEmail,
+        string doctorName,
+        string patientName,
+        DateTime appointmentDate,
+        string appointmentType);
+
+    /// <summary>
+    /// Notifica a un usuario de que tiene mensajes sin leer en el chat
+    /// </summary>
+    Task SendChatUnreadNotificationAsync(
+        string recipientEmail,
+        string recipientName,
+        string senderName,
+        string lastMessagePreview);
+
+    /// <summary>
     /// Envía el código de verificación de email al usuario recién registrado
     /// </summary>
     Task SendEmailVerificationCodeAsync(string toEmail, string userName, string code);

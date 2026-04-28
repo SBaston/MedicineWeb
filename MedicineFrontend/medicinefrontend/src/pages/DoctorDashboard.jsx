@@ -10,8 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
     DollarSign, Calendar, Users, Star, TrendingUp, TrendingDown,
     User, Clock, Video, BookOpen, AlertCircle,
-    ArrowRight, CheckCircle, Eye, Link as LinkIcon,
-    MapPin, Loader2, ChevronDown, ChevronUp, Send,
+    ArrowRight, CheckCircle, Eye,
+    MapPin, Loader2, ChevronDown, ChevronUp,
     CreditCard, FileText, BarChart2, MessageCircle, Crown, Search
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
@@ -26,9 +26,13 @@ const DoctorDashboard = () => {
     const [appointments, setAppointments] = useState([]);
     const [loadingAppointments, setLoadingAppointments] = useState(false);
     const [showAppointments, setShowAppointments] = useState(false);
-    const [meetingLinkData, setMeetingLinkData] = useState({});
-    const [savingLink, setSavingLink] = useState({});
-    const [linkSuccess, setLinkSuccess] = useState({});
+    const [now, setNow] = useState(() => new Date());
+
+    // Actualizar "ahora" cada 30 segundos para activar/desactivar el botón de videollamada
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 30_000);
+        return () => clearInterval(timer);
+    }, []);
 
     // ── Suscripciones de chat ──────────────────────────────────
     const { data: chatSubs = [] } = useQuery({
@@ -101,25 +105,6 @@ const DoctorDashboard = () => {
         if (newTimeRange) setEarningsTimeRange(tr);
         if (newFilterType) setEarningsFilterType(ft);
         loadEarnings(tr, ft);
-    };
-
-    const handleSaveMeetingLink = async (appointmentId) => {
-        const data = meetingLinkData[appointmentId];
-        if (!data?.link) return;
-        setSavingLink(prev => ({ ...prev, [appointmentId]: true }));
-        try {
-            const updated = await appointmentService.addMeetingLink(appointmentId, {
-                meetingLink: data.link,
-                platform: data.platform || 'Online',
-            });
-            setAppointments(prev => prev.map(a => a.id === appointmentId ? updated : a));
-            setLinkSuccess(prev => ({ ...prev, [appointmentId]: true }));
-            setTimeout(() => setLinkSuccess(prev => ({ ...prev, [appointmentId]: false })), 3000);
-        } catch (error) {
-            alert('Error al guardar el enlace');
-        } finally {
-            setSavingLink(prev => ({ ...prev, [appointmentId]: false }));
-        }
     };
 
     const getStatusColor = (status) => {
@@ -267,20 +252,28 @@ const DoctorDashboard = () => {
                                     (appt.patientName ?? '').toLowerCase().includes(appointmentSearch.toLowerCase())
                                 )
                                 .map((appt) => {
-                                    const isOnline = appt.appointmentType === 'online';
-                                    const needsLink = isOnline && !appt.meetingLink;
-                                    const date = new Date(appt.appointmentDate);
+                                    const isOnline   = appt.appointmentType === 'online';
+                                    const startTime  = new Date(appt.appointmentDate);
+                                    const duration   = appt.durationMinutes || 30;
+                                    const earlyOpen  = new Date(startTime.getTime() - 5 * 60_000);
+                                    const endTime    = new Date(startTime.getTime() + duration * 60_000);
+                                    const isActive   = now >= earlyOpen && now <= endTime;
+                                    const isUpcoming = now < earlyOpen;
+                                    const showCallSection = isOnline
+                                        && appt.status !== 'Cancelada'
+                                        && appt.status !== 'Completada';
+
                                     const statusColors = {
                                         'Confirmada': 'bg-blue-100 text-blue-700',
                                         'Completada': 'bg-green-100 text-green-700',
-                                        'Cancelada': 'bg-red-100 text-red-700',
-                                        'Pendiente': 'bg-yellow-100 text-yellow-700',
+                                        'Cancelada':  'bg-red-100 text-red-700',
+                                        'Pendiente':  'bg-yellow-100 text-yellow-700',
                                     };
 
                                     return (
                                         <div
                                             key={appt.id}
-                                            className={`bg-white rounded-xl border p-4 shadow-sm ${needsLink ? 'border-amber-200' : 'border-slate-200'}`}
+                                            className={`bg-white rounded-xl border p-4 shadow-sm ${isActive && showCallSection ? 'border-indigo-300 ring-1 ring-indigo-200' : 'border-slate-200'}`}
                                         >
                                             <div className="flex items-start justify-between gap-4 mb-3">
                                                 <div className="flex-1">
@@ -291,7 +284,7 @@ const DoctorDashboard = () => {
                                                         </span>
                                                     </div>
                                                     <p className="text-sm text-slate-500">
-                                                        {date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las {date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                                        {startTime.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las {startTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                                                     </p>
                                                     <div className="flex items-center gap-1 mt-1">
                                                         {isOnline
@@ -308,69 +301,23 @@ const DoctorDashboard = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Enlace de videollamada */}
-                                            {isOnline && appt.status !== 'Cancelada' && (
+                                            {/* Videollamada con Jitsi — disponible solo en la ventana horaria */}
+                                            {showCallSection && (
                                                 <div className="border-t border-slate-100 pt-3">
-                                                    {appt.meetingLink ? (
-                                                        <div className="flex items-center gap-2 text-sm text-green-600">
-                                                            <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                                                            <span className="font-medium">Enlace enviado:</span>
-                                                            <a href={appt.meetingLink} target="_blank" rel="noopener noreferrer"
-                                                                className="text-blue-600 hover:underline truncate">
-                                                                {appt.meetingLink}
-                                                            </a>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            <p className="text-xs font-medium text-amber-700 flex items-center gap-1">
-                                                                <AlertCircle className="w-3.5 h-3.5" />
-                                                                Pendiente: añade el enlace de videollamada
-                                                            </p>
-                                                            <div className="flex gap-2">
-                                                                <input
-                                                                    type="url"
-                                                                    placeholder="https://zoom.us/j/... o meet.google.com/..."
-                                                                    value={meetingLinkData[appt.id]?.link || ''}
-                                                                    onChange={(e) => setMeetingLinkData(prev => ({
-                                                                        ...prev,
-                                                                        [appt.id]: { ...prev[appt.id], link: e.target.value }
-                                                                    }))}
-                                                                    className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                                />
-                                                                <select
-                                                                    value={meetingLinkData[appt.id]?.platform || ''}
-                                                                    onChange={(e) => setMeetingLinkData(prev => ({
-                                                                        ...prev,
-                                                                        [appt.id]: { ...prev[appt.id], platform: e.target.value }
-                                                                    }))}
-                                                                    className="text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                                >
-                                                                    <option value="">Plataforma</option>
-                                                                    <option value="Zoom">Zoom</option>
-                                                                    <option value="Teams">Teams</option>
-                                                                    <option value="Meet">Google Meet</option>
-                                                                    <option value="Otro">Otro</option>
-                                                                </select>
-                                                                <button
-                                                                    onClick={() => handleSaveMeetingLink(appt.id)}
-                                                                    disabled={!meetingLinkData[appt.id]?.link || savingLink[appt.id]}
-                                                                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
-                                                                >
-                                                                    {savingLink[appt.id]
-                                                                        ? <Loader2 className="w-4 h-4 animate-spin" />
-                                                                        : <Send className="w-4 h-4" />
-                                                                    }
-                                                                    Enviar
-                                                                </button>
-                                                            </div>
-                                                            {linkSuccess[appt.id] && (
-                                                                <p className="text-xs text-green-600 flex items-center gap-1">
-                                                                    <CheckCircle className="w-3.5 h-3.5" />
-                                                                    Enlace enviado al paciente por email
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                    {isActive ? (
+                                                        <button
+                                                            onClick={() => navigate(`/videollamada/${appt.id}`)}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+                                                        >
+                                                            <Video className="w-4 h-4" />
+                                                            Iniciar videollamada
+                                                        </button>
+                                                    ) : isUpcoming ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-600 text-xs font-medium rounded-lg border border-indigo-200">
+                                                            <Clock className="w-3.5 h-3.5" />
+                                                            Disponible a las {startTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    ) : null}
                                                 </div>
                                             )}
                                         </div>

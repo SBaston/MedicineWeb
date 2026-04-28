@@ -317,6 +317,27 @@ public class AppointmentService : IAppointmentService
         appointment.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        // ── Notificar cancelación por email (no bloquear si falla) ──
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var patientName = $"{appointment.Patient.FirstName} {appointment.Patient.LastName}";
+                var doctorName  = $"{appointment.Doctor.FirstName} {appointment.Doctor.LastName}";
+
+                await _emailService.SendAppointmentCancellationAsync(
+                    appointment.Patient.User.Email,
+                    appointment.Doctor.User.Email,
+                    patientName, doctorName,
+                    appointment.AppointmentDate,
+                    role, reason);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al enviar email de cancelación para cita {Id}", appointmentId);
+            }
+        });
     }
 
     // ─────────────────────────────────────────────────────────────

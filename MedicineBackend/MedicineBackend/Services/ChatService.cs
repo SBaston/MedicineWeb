@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Stripe;
 using Stripe.Checkout;
+using System.Collections.Concurrent;
 
 namespace MedicineBackend.Services;
 
@@ -20,26 +21,34 @@ public class ChatService : IChatService
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
     private readonly ILogger<ChatService> _logger;
-
     private readonly ISettingsService _settings;
     private readonly IInvoiceService _invoices;
+    private readonly IEmailService _emailService;
 
     private readonly string _successUrl;
     private readonly string _cancelUrl;
     private readonly string _currency;
+
+    // Throttle de notificaciones: clave = "sub-{subId}-recipient-{userId}"
+    // Valor = última vez que se envió un email de notificación para ese chat
+    // 1 email por conversación cada hora como máximo
+    private static readonly ConcurrentDictionary<string, DateTime> _notifThrottle = new();
+    private static readonly TimeSpan NotifCooldown = TimeSpan.FromHours(1);
 
     public ChatService(
         AppDbContext db,
         IConfiguration config,
         ILogger<ChatService> logger,
         ISettingsService settings,
-        IInvoiceService invoices)
+        IInvoiceService invoices,
+        IEmailService emailService)
     {
-        _db       = db;
-        _config   = config;
-        _logger   = logger;
-        _settings = settings;
-        _invoices = invoices;
+        _db           = db;
+        _config       = config;
+        _logger       = logger;
+        _settings     = settings;
+        _invoices     = invoices;
+        _emailService = emailService;
 
         var ps = config.GetSection("PaymentSettings");
         var secretKey = ps["StripeSecretKey"] ?? throw new InvalidOperationException("StripeSecretKey no configurada");
@@ -226,7 +235,7 @@ public class ChatService : IChatService
         _db.ChatMessages.Add(message);
         await _db.SaveChangesAsync();
 
-        // Resolver nombre real del remitente
+        // ── Resolver nombre real del remitente ──────────────────
         string senderName;
         if (senderUserId == sub.Doctor.UserId)
         {
@@ -240,6 +249,63 @@ public class ChatService : IChatService
                 ? $"{patientProfile.FirstName} {patientProfile.LastName}"
                 : (patientUser?.Email ?? "Paciente");
         }
+
+        // ── Notificación por email al destinatario (throttled) ──
+        // Solo si no se ha enviado una notificación para esta conversación en la última hora.
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                bool senderIsDoctor = senderUserId == sub.Doctor.UserId;
+
+                // Datos del destinatario
+                string recipientEmail, recipientName;
+                int    recipientUserId;
+
+                if (senderIsDoctor)
+                {
+                    // Paciente es el destinatario
+                    var patientUser    = await _db.Users.FindAsync(sub.PatientUserId);
+                    var patientProfile = await _db.Patients.FirstOrDefaultAsync(p => p.UserId == sub.PatientUserId);
+                    if (patientUser == null) return;
+                    recipientEmail  = patientUser.Email;
+                    recipientName   = patientProfile != null
+                        ? $"{patientProfile.FirstName} {patientProfile.LastName}"
+                        : patientUser.Email;
+                    recipientUserId = sub.PatientUserId;
+                }
+                else
+                {
+                    // Doctor es el destinatario
+                    var doctorUser = await _db.Users.FindAsync(sub.Doctor.UserId);
+                    if (doctorUser == null) return;
+                    recipientEmail  = doctorUser.Email;
+                    recipientName   = $"Dr. {sub.Doctor.FirstName} {sub.Doctor.LastName}";
+                    recipientUserId = sub.Doctor.UserId;
+                }
+
+                // Control de tasa: máximo 1 email/hora por conversación
+                var throttleKey = $"chat-{subscriptionId}-recipient-{recipientUserId}";
+                var now         = DateTime.UtcNow;
+
+                if (_notifThrottle.TryGetValue(throttleKey, out var lastSent)
+                    && (now - lastSent) < NotifCooldown)
+                    return; // ya se notificó recientemente, omitir
+
+                _notifThrottle[throttleKey] = now;
+
+                await _emailService.SendChatUnreadNotificationAsync(
+                    recipientEmail, recipientName, senderName, content);
+
+                _logger.LogInformation(
+                    "Notificación de chat enviada a {Email} para suscripción {SubId}",
+                    recipientEmail, subscriptionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al enviar notificación de chat para suscripción {SubId}", subscriptionId);
+            }
+        });
 
         _logger.LogInformation("Mensaje enviado en suscripción {SubId} por usuario {UserId}", subscriptionId, senderUserId);
 

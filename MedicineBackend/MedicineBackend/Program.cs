@@ -103,8 +103,13 @@ builder.Services.AddScoped<IChatService, ChatService>();
 // ✅ RESEÑAS: valoraciones verificadas (requiere cita completada)
 builder.Services.AddScoped<IReviewService, ReviewService>();
 
+// ✅ VIDEOLLAMADAS: Jitsi Meet (gratis, sin límites, open source, WebRTC)
+
 // ✅ AUTO-COMPLETADO DE CITAS: marca citas como Completada cada 5 minutos
 builder.Services.AddHostedService<AppointmentCompletionService>();
+
+// ✅ RECORDATORIOS: envía emails 24 h antes al paciente y al doctor
+builder.Services.AddHostedService<AppointmentReminderService>();
 
 // ✅ SIGNALR: mensajería en tiempo real
 builder.Services.AddSignalR();

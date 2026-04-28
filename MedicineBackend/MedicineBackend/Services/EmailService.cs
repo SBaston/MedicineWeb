@@ -142,9 +142,14 @@ public class EmailService : IEmailService
     {
         var isOnline = appointmentType?.ToLower() == "online";
         var typeText = isOnline ? "Online (videollamada)" : "Presencial";
-        var linkSection = (!string.IsNullOrEmpty(meetingLink))
-            ? $"<div style='text-align:center;margin:16px 0;'><a href='{meetingLink}' style='display:inline-block;background:#2563eb;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;'>🔗 Unirse a la videollamada</a></div>"
-            : (isOnline ? "<p style='color:#dc2626;'>⚠️ El enlace de videollamada aún no está disponible. Recibirás un email cuando el profesional lo envíe.</p>" : "");
+        // El enlace de videollamada ya no se incluye en el correo: el paciente
+        // accede desde su panel en NexusSalud cuando llegue la hora de la cita.
+        var linkSection = isOnline
+            ? "<div style='background:#eff6ff;border-radius:8px;padding:16px;text-align:center;margin:16px 0;border:1px solid #bfdbfe;'>" +
+              "<p style='color:#1e40af;font-weight:600;margin:0 0 8px;'>📹 Videollamada incluida</p>" +
+              "<p style='color:#6b7280;font-size:14px;margin:0;'>Cuando llegue la hora, accede a tu panel en <strong>NexusSalud</strong> y pulsa el botón <em>«Unirse a videollamada»</em>.</p>" +
+              "</div>"
+            : "";
 
         var subject = $"⏰ Recordatorio: Cita mañana con {doctorName} a las {appointmentDate:HH:mm}";
         var body = $@"
@@ -168,6 +173,132 @@ public class EmailService : IEmailService
 </body></html>";
 
         await SendEmailAsync(patientEmail, subject, body);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // CANCELACIÓN DE CITA — notifica a paciente y doctor
+    // ─────────────────────────────────────────────────────────────
+
+    public async Task SendAppointmentCancellationAsync(
+        string patientEmail, string doctorEmail,
+        string patientName,  string doctorName,
+        DateTime appointmentDate, string cancelledBy, string? reason = null)
+    {
+        var cancellerText = cancelledBy == "Doctor"
+            ? $"el Dr./Dra. <strong>{doctorName}</strong>"
+            : $"el paciente <strong>{patientName}</strong>";
+
+        var reasonHtml = !string.IsNullOrWhiteSpace(reason)
+            ? $"<p style='color:#6b7280;font-size:14px;'>Motivo indicado: <em>\"{reason}\"</em></p>"
+            : "";
+
+        var dateStr = $"{appointmentDate:dddd, dd MMMM yyyy} a las {appointmentDate:HH:mm}";
+
+        // ── Email al paciente ──────────────────────────────────
+        var patientBody = $@"
+<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;'>
+  <div style='background:linear-gradient(135deg,#ef4444,#b91c1c);padding:32px;border-radius:12px 12px 0 0;text-align:center;'>
+    <h1 style='color:white;margin:0;font-size:24px;'>❌ Cita cancelada</h1>
+  </div>
+  <div style='background:#f8fafc;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;'>
+    <p>Hola <strong>{patientName}</strong>,</p>
+    <p>Tu cita con el Dr./Dra. <strong>{doctorName}</strong> del <strong>{dateStr}</strong> ha sido cancelada por {cancellerText}.</p>
+    {reasonHtml}
+    <p style='color:#6b7280;font-size:14px;'>Si lo deseas, puedes reservar una nueva cita accediendo a tu panel en NexusSalud.</p>
+    <p>Un saludo,<br><strong>El equipo de NexusSalud</strong></p>
+  </div>
+</body></html>";
+
+        // ── Email al doctor ────────────────────────────────────
+        var doctorBody = $@"
+<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;'>
+  <div style='background:linear-gradient(135deg,#ef4444,#b91c1c);padding:32px;border-radius:12px 12px 0 0;text-align:center;'>
+    <h1 style='color:white;margin:0;font-size:24px;'>❌ Cita cancelada</h1>
+  </div>
+  <div style='background:#f8fafc;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;'>
+    <p>Hola Dr./Dra. <strong>{doctorName}</strong>,</p>
+    <p>La cita con el paciente <strong>{patientName}</strong> del <strong>{dateStr}</strong> ha sido cancelada por {cancellerText}.</p>
+    {reasonHtml}
+    <p style='color:#6b7280;font-size:14px;'>Tu agenda ha sido actualizada automáticamente.</p>
+    <p>Un saludo,<br><strong>El equipo de NexusSalud</strong></p>
+  </div>
+</body></html>";
+
+        var subject = $"❌ Cita cancelada — {dateStr}";
+
+        await SendEmailAsync(patientEmail, subject, patientBody);
+        await Task.Delay(500); // pausa para Mailtrap
+        await SendEmailAsync(doctorEmail,  subject, doctorBody);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // RECORDATORIO AL DOCTOR — 24 horas antes
+    // ─────────────────────────────────────────────────────────────
+
+    public async Task SendAppointmentReminderToDoctorAsync(
+        string doctorEmail, string doctorName, string patientName,
+        DateTime appointmentDate, string appointmentType)
+    {
+        var isOnline  = appointmentType?.ToLower() == "online";
+        var typeText  = isOnline ? "Online (videollamada)" : "Presencial";
+        var joinHtml  = isOnline
+            ? "<p style='color:#4f46e5;font-weight:600;'>Recuerda acceder a tu panel de NexusSalud cuando llegue la hora para iniciar la videollamada.</p>"
+            : "";
+
+        var subject = $"⏰ Recordatorio: Cita mañana con {patientName} a las {appointmentDate:HH:mm}";
+        var body = $@"
+<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;'>
+  <div style='background:linear-gradient(135deg,#f59e0b,#d97706);padding:32px;border-radius:12px 12px 0 0;text-align:center;'>
+    <h1 style='color:white;margin:0;font-size:24px;'>⏰ Recordatorio de cita</h1>
+  </div>
+  <div style='background:#f8fafc;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;'>
+    <h2 style='color:#92400e;'>Tienes una cita mañana, Dr./Dra. {doctorName}</h2>
+    <div style='background:white;border-radius:8px;padding:20px;border:1px solid #e2e8f0;margin:16px 0;'>
+      <table style='width:100%;border-collapse:collapse;'>
+        <tr><td style='padding:8px 0;color:#6b7280;'>👤 Paciente</td><td style='padding:8px 0;font-weight:600;'>{patientName}</td></tr>
+        <tr><td style='padding:8px 0;color:#6b7280;'>📅 Fecha</td><td style='padding:8px 0;font-weight:600;'>{appointmentDate:dddd, dd MMMM yyyy}</td></tr>
+        <tr><td style='padding:8px 0;color:#6b7280;'>🕐 Hora</td><td style='padding:8px 0;font-weight:600;'>{appointmentDate:HH:mm}</td></tr>
+        <tr><td style='padding:8px 0;color:#6b7280;'>💻 Modalidad</td><td style='padding:8px 0;font-weight:600;'>{typeText}</td></tr>
+      </table>
+    </div>
+    {joinHtml}
+    <p>Un saludo,<br><strong>El equipo de NexusSalud</strong></p>
+  </div>
+</body></html>";
+
+        await SendEmailAsync(doctorEmail, subject, body);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // NOTIFICACIÓN DE CHAT — mensajes no leídos (throttled)
+    // ─────────────────────────────────────────────────────────────
+
+    public async Task SendChatUnreadNotificationAsync(
+        string recipientEmail, string recipientName,
+        string senderName,     string lastMessagePreview)
+    {
+        // Recortar preview a 120 caracteres para evitar exponer demasiado
+        if (lastMessagePreview.Length > 120)
+            lastMessagePreview = lastMessagePreview[..120] + "…";
+
+        var subject = $"💬 Tienes mensajes nuevos de {senderName} en NexusSalud";
+        var body = $@"
+<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;'>
+  <div style='background:linear-gradient(135deg,#6366f1,#4338ca);padding:32px;border-radius:12px 12px 0 0;text-align:center;'>
+    <h1 style='color:white;margin:0;font-size:24px;'>💬 Nuevo mensaje</h1>
+  </div>
+  <div style='background:#f8fafc;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;'>
+    <p>Hola <strong>{recipientName}</strong>,</p>
+    <p><strong>{senderName}</strong> te ha enviado un mensaje en NexusSalud:</p>
+    <div style='background:#eef2ff;border-left:4px solid #6366f1;border-radius:4px;padding:16px;margin:16px 0;'>
+      <p style='color:#4338ca;font-style:italic;margin:0;'>&ldquo;{lastMessagePreview}&rdquo;</p>
+    </div>
+    <p style='color:#6b7280;font-size:14px;'>Accede a tu panel para responder. No recibirás más notificaciones por esta conversación durante la próxima hora.</p>
+    <p>Un saludo,<br><strong>El equipo de NexusSalud</strong></p>
+  </div>
+</body></html>";
+
+        await SendEmailAsync(recipientEmail, subject, body);
     }
 
     // ─────────────────────────────────────────────────────────────

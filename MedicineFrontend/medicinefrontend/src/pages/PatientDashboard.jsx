@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,9 +8,9 @@ import professionalsService from '../services/professionalsService';
 import api from '../services/api';
 import ProfileCompletionAlert from '../components/ProfileCompletionAlert';
 import BookingModal from '../components/BookingModal';
-import { Calendar, FileText, GraduationCap, User, Clock, Video, MapPin, ChevronDown, ChevronUp, ExternalLink, XCircle, Phone, Pencil, Check, X, MessageCircle, Crown, Zap, Stethoscope, CalendarPlus, Loader2 } from 'lucide-react';
+import { Calendar, FileText, GraduationCap, User, Clock, Video, MapPin, ChevronDown, ChevronUp, XCircle, Phone, Pencil, Check, X, MessageCircle, Crown, Zap, Stethoscope, CalendarPlus, Loader2 } from 'lucide-react';
 import PhoneInput from '../components/PhoneInput';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // ── Helpers ─────────────────────────────────────────────────────
 const STATUS_COLORS = {
@@ -34,9 +34,31 @@ const getInitials = (name = '') =>
 // ── Appointment Card ─────────────────────────────────────────────
 const AppointmentCard = ({ appointment, onCancel }) => {
     const { t } = useLanguage();
-    const isOnline = appointment.appointmentType === 'online';
-    const isFuture = new Date(appointment.appointmentDate) > new Date();
+    const navigate = useNavigate();
+    const [now, setNow] = useState(() => new Date());
+
+    // Actualizar "ahora" cada 30 segundos para habilitar/deshabilitar el botón
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 30_000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const isOnline    = appointment.appointmentType === 'online';
+    const startTime   = new Date(appointment.appointmentDate);
+    const duration    = appointment.durationMinutes || 30;
+    const earlyOpen   = new Date(startTime.getTime() - 5 * 60_000);    // 5 min antes
+    const endTime     = new Date(startTime.getTime() + duration * 60_000);
+    const isFuture    = startTime > now;
+    const isActive    = now >= earlyOpen && now <= endTime;
+    const isUpcoming  = now < earlyOpen;
     const isCancellable = isFuture && appointment.status !== 'Cancelada' && appointment.status !== 'Completada';
+
+    // Botón habilitado solo dentro de la ventana de la cita
+    const showCallButton = isOnline
+        && appointment.status !== 'Cancelada'
+        && appointment.status !== 'Completada';
+    const canJoinCall    = showCallButton && isActive;
+    const callIsUpcoming = showCallButton && isUpcoming;
 
     return (
         <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
@@ -87,16 +109,20 @@ const AppointmentCard = ({ appointment, onCancel }) => {
                     )}
 
                     <div className="flex flex-wrap items-center gap-2 mt-2">
-                        {isOnline && appointment.meetingLink && (
-                            <a
-                                href={appointment.meetingLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors"
+                        {canJoinCall && (
+                            <button
+                                onClick={() => navigate(`/videollamada/${appointment.id}`)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
                             >
-                                <ExternalLink className="w-3 h-3" />
-                                {t('patientDashboard.appointment.joinCall')} {appointment.meetingPlatform ? `· ${appointment.meetingPlatform}` : ''}
-                            </a>
+                                <Video className="w-3 h-3" />
+                                Unirse a videollamada
+                            </button>
+                        )}
+                        {callIsUpcoming && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-700">
+                                <Clock className="w-3 h-3" />
+                                Disponible a las {startTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                         )}
 
                         {isCancellable && (

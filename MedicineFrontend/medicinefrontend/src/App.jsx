@@ -37,6 +37,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChatPage from './pages/ChatPage';
 import ProfessionalDetailPage from './pages/ProfessionalDetailPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
+import VideoCallPage from './pages/VideoCallPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -371,6 +372,16 @@ function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['Patient', 'Doctor']}>
                                     <ChatPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Videollamada — pantalla completa, sin Navbar ni Footer */}
+                        <Route
+                            path="/videollamada/:appointmentId"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor', 'Patient']}>
+                                    <VideoCallPage />
                                 </ProtectedRoute>
                             }
                         />
