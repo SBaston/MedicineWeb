@@ -2,6 +2,7 @@
 using MedicineBackend.Data;
 using MedicineBackend.Helpers;
 using MedicineBackend.Hubs;
+
 using MedicineBackend.Services;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -244,6 +245,9 @@ app.MapControllers();     // ← Controladores REST
 
 // ✅ SignalR Hub para chat en tiempo real
 app.MapHub<ChatHub>("/hubs/chat");
+
+// ✅ SignalR Hub para señalización WebRTC de videollamadas
+app.MapHub<VideoHub>("/hubs/video");
 
 // ✅ Health check endpoint para Docker
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))

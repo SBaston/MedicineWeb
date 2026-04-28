@@ -460,4 +460,73 @@ public class PaymentService : IPaymentService
             throw;
         }
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // REEMBOLSO de cita — emite refund completo en Stripe
+    // ─────────────────────────────────────────────────────────────
+    public async Task<bool> RefundAppointmentPaymentAsync(int appointmentId, string reason)
+    {
+        // Buscar el pago completado para esta cita
+        var payment = await _context.Payments
+            .FirstOrDefaultAsync(p =>
+                p.AppointmentId == appointmentId &&
+                p.Status == "Completado" &&
+                p.PaymentProvider == "Stripe");
+
+        if (payment == null)
+        {
+            _logger.LogInformation(
+                "No se encontró pago completado para cita {AppointmentId} — sin reembolso", appointmentId);
+            return false;
+        }
+
+        try
+        {
+            // El TransactionId es el Stripe Session ID (cs_xxx).
+            // Hay que obtener el PaymentIntent desde la sesión para poder reembolsar.
+            var sessionService = new SessionService();
+            var session = await sessionService.GetAsync(payment.TransactionId!);
+
+            if (string.IsNullOrEmpty(session.PaymentIntentId))
+            {
+                _logger.LogWarning(
+                    "La sesión Stripe {SessionId} no tiene PaymentIntent — no se puede reembolsar", payment.TransactionId);
+                return false;
+            }
+
+            // Emitir reembolso completo
+            var refundService = new RefundService();
+            var refund = await refundService.CreateAsync(new RefundCreateOptions
+            {
+                PaymentIntent = session.PaymentIntentId,
+                Reason        = RefundReasons.RequestedByCustomer,
+            });
+
+            if (refund.Status is "succeeded" or "pending")
+            {
+                payment.Status     = "Reembolsado";
+                payment.RefundedAt = DateTime.UtcNow;
+                payment.RefundReason = string.IsNullOrWhiteSpace(reason)
+                    ? "Cancelación de cita"
+                    : reason;
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Reembolso {RefundId} ({Status}) procesado para cita {AppointmentId}, pago {PaymentId}",
+                    refund.Id, refund.Status, appointmentId, payment.Id);
+                return true;
+            }
+
+            _logger.LogWarning(
+                "Reembolso Stripe devolvió estado inesperado '{Status}' para cita {AppointmentId}",
+                refund.Status, appointmentId);
+            return false;
+        }
+        catch (StripeException ex)
+        {
+            _logger.LogError(ex,
+                "Error de Stripe al reembolsar cita {AppointmentId}: {Message}", appointmentId, ex.Message);
+            throw; // re-lanzar para que el caller pueda informar al usuario
+        }
+    }
 }

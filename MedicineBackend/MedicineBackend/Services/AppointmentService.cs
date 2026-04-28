@@ -3,6 +3,7 @@ using MedicineBackend.Models;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Stripe;
 using System.Data;
 
 namespace MedicineBackend.Services;
@@ -14,15 +15,17 @@ public class AppointmentService : IAppointmentService
 {
     private readonly AppDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly IPaymentService _paymentService;
     private readonly ILogger<AppointmentService> _logger;
 
     // Duración por defecto si el doctor no la ha configurado
     private const int DefaultSlotDurationMinutes = 60;
 
-    public AppointmentService(AppDbContext context, IEmailService emailService, ILogger<AppointmentService> logger)
+    public AppointmentService(AppDbContext context, IEmailService emailService, IPaymentService paymentService, ILogger<AppointmentService> logger)
     {
         _context = context;
         _emailService = emailService;
+        _paymentService = paymentService;
         _logger = logger;
     }
 
@@ -310,6 +313,16 @@ public class AppointmentService : IAppointmentService
         if (appointment.Status == "Cancelada")
             throw new InvalidOperationException("La cita ya está cancelada");
 
+        // ── Capturar strings antes de modificar el estado ────────────
+        // (las navigation properties pueden no estar disponibles tras el SaveChanges
+        //  si el DbContext se reutiliza en otro scope desde Task.Run)
+        var patientEmail = appointment.Patient.User.Email;
+        var doctorEmail  = appointment.Doctor.User.Email;
+        var patientName  = $"{appointment.Patient.FirstName} {appointment.Patient.LastName}";
+        var doctorName   = $"{appointment.Doctor.FirstName} {appointment.Doctor.LastName}";
+        var apptDate     = appointment.AppointmentDate;
+        var hadPayment   = appointment.Status == "Completada" || appointment.Price > 0;
+
         appointment.Status = "Cancelada";
         appointment.CancellationReason = reason;
         appointment.CancelledBy = role;
@@ -318,20 +331,32 @@ public class AppointmentService : IAppointmentService
 
         await _context.SaveChangesAsync();
 
-        // ── Notificar cancelación por email (no bloquear si falla) ──
+        // ── Reembolso Stripe (sincrónico: el usuario debe saber si falla) ──
+        try
+        {
+            var refunded = await _paymentService.RefundAppointmentPaymentAsync(
+                appointmentId, reason ?? "Cancelación de cita");
+
+            if (refunded)
+                _logger.LogInformation("✅ Reembolso Stripe procesado para cita {Id}", appointmentId);
+            else
+                _logger.LogInformation("ℹ️ Cita {Id} cancelada sin pago previo — no se emite reembolso", appointmentId);
+        }
+        catch (StripeException ex)
+        {
+            // Registramos el error pero no bloqueamos la cancelación
+            _logger.LogError(ex, "⚠️ Error al procesar reembolso Stripe para cita {Id}", appointmentId);
+        }
+
+        // ── Notificar cancelación por email (fire-and-forget) ────────
         _ = Task.Run(async () =>
         {
             try
             {
-                var patientName = $"{appointment.Patient.FirstName} {appointment.Patient.LastName}";
-                var doctorName  = $"{appointment.Doctor.FirstName} {appointment.Doctor.LastName}";
-
                 await _emailService.SendAppointmentCancellationAsync(
-                    appointment.Patient.User.Email,
-                    appointment.Doctor.User.Email,
+                    patientEmail, doctorEmail,
                     patientName, doctorName,
-                    appointment.AppointmentDate,
-                    role, reason);
+                    apptDate, role, reason);
             }
             catch (Exception ex)
             {

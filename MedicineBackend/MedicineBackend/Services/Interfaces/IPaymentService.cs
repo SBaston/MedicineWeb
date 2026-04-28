@@ -23,4 +23,10 @@ public interface IPaymentService
     /// Marca el Payment como Completado y activa la cita o matrícula.
     /// </summary>
     Task HandleWebhookAsync(string payload, string stripeSignature);
+
+    /// <summary>
+    /// Emite un reembolso completo en Stripe para el pago de una cita.
+    /// Devuelve true si el reembolso se procesó correctamente, false si no había pago.
+    /// </summary>
+    Task<bool> RefundAppointmentPaymentAsync(int appointmentId, string reason);
 }

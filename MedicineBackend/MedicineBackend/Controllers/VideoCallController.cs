@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
 // Controllers/VideoCallController.cs
-// Videollamadas con Jitsi Meet — gratis, sin límites, WebRTC.
-// Seguridad: nombre de sala = UUID aleatorio almacenado en BD,
-// imposible de adivinar sin tener acceso a la cita.
+// Puerta de acceso a las videollamadas WebRTC nativas.
+// Valida que el usuario pertenece a la cita, que la cita es online
+// y que se encuentra dentro de la ventana horaria permitida.
+// La señalización P2P ocurre en VideoHub (SignalR).
 // ═══════════════════════════════════════════════════════════════
 
 using MedicineBackend.Data;
@@ -22,9 +23,6 @@ public class VideoCallController : ControllerBase
     private readonly AppDbContext _db;
     private readonly ILogger<VideoCallController> _logger;
 
-    // Servidor Jitsi público — gratuito y sin límites
-    private const string JitsiServer = "https://meet.jit.si";
-
     public VideoCallController(AppDbContext db, ILogger<VideoCallController> logger)
     {
         _db     = db;
@@ -33,8 +31,8 @@ public class VideoCallController : ControllerBase
 
     // ─────────────────────────────────────────────────────────────
     // POST /api/appointments/{id}/video-room
-    // Devuelve (o genera) la sala Jitsi para la cita.
-    // El nombre de sala es un UUID que solo conocen doctor y paciente.
+    // Valida acceso y devuelve los datos de la cita para la UI.
+    // La sala SignalR se identifica directamente por appointmentId.
     // ─────────────────────────────────────────────────────────────
     [HttpPost("{id:int}/video-room")]
     public async Task<IActionResult> GetVideoRoom(int id)
@@ -104,26 +102,14 @@ public class VideoCallController : ControllerBase
                 displayName = $"{patient.FirstName} {patient.LastName}";
             }
 
-            // ── Generar nombre de sala si no existe ya ──────────
-            // Formato: nexussalud-{uuid corto} → imposible de adivinar
-            if (string.IsNullOrEmpty(appointment.MeetingLink) ||
-                appointment.MeetingPlatform != "Jitsi")
-            {
-                var roomId  = Guid.NewGuid().ToString("N")[..16]; // 16 hex chars
-                var roomUrl = $"{JitsiServer}/nexussalud-{roomId}";
-
-                appointment.MeetingLink     = roomUrl;
-                appointment.MeetingPlatform = "Jitsi";
-                appointment.UpdatedAt       = DateTime.UtcNow;
-                await _db.SaveChangesAsync();
-
-                _logger.LogInformation(
-                    "Sala Jitsi creada para cita {AppointmentId}: {RoomUrl}", id, roomUrl);
-            }
+            // La sala de señalización WebRTC se identifica por el appointmentId
+            // directamente — no necesitamos generar ningún UUID ni URL externa.
+            _logger.LogInformation(
+                "Acceso a videollamada aprobado para cita {AppointmentId} por {Role} {UserId}",
+                id, role, userId);
 
             return Ok(new
             {
-                roomUrl         = appointment.MeetingLink,
                 displayName,
                 appointmentId   = appointment.Id,
                 appointmentDate = appointment.AppointmentDate,
