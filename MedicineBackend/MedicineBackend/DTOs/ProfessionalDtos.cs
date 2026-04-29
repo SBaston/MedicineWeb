@@ -41,6 +41,14 @@ public class ProfessionalDetailDto
     public decimal? AverageRating { get; set; }
     public int TotalReviews { get; set; }
     public bool IsAcceptingPatients { get; set; }
+    public int SessionDurationMinutes { get; set; } = 60;
+    public bool AcceptsInPersonAppointments { get; set; } = true;
+    public bool AcceptsOnlineAppointments { get; set; } = true;
+    public string? OfficeAddress { get; set; }
+    public string? OfficeCity { get; set; }
+    public string? OfficePostalCode { get; set; }
+    public string? OfficeCountry { get; set; }
+    public string? OfficeInstructions { get; set; }
     public List<SocialMediaDto> SocialMedia { get; set; } = new();
     public DateTime CreatedAt { get; set; }
 }

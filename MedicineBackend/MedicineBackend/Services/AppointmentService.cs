@@ -65,12 +65,22 @@ public class AppointmentService : IAppointmentService
             .ToListAsync();
 
         // 4. Generar todos los slots posibles y filtrar los ocupados
+        // Las horas de disponibilidad están en la zona horaria del doctor → convertir a UTC
+        var tzId = doctor?.Timezone ?? "Europe/Madrid";
+        TimeZoneInfo doctorTz;
+        try   { doctorTz = TimeZoneInfo.FindSystemTimeZoneById(tzId); }
+        catch { doctorTz = TimeZoneInfo.Utc; }
+
         var slots = new List<AvailableSlotDto>();
 
         foreach (var avail in availability)
         {
-            var current = DateTime.SpecifyKind(date.Date.Add(avail.StartTime), DateTimeKind.Utc);
-            var endTime = DateTime.SpecifyKind(date.Date.Add(avail.EndTime),   DateTimeKind.Utc);
+            // Construir la hora local del doctor (sin zona), luego convertir a UTC
+            var localStart = DateTime.SpecifyKind(date.Date.Add(avail.StartTime), DateTimeKind.Unspecified);
+            var localEnd   = DateTime.SpecifyKind(date.Date.Add(avail.EndTime),   DateTimeKind.Unspecified);
+
+            var current = TimeZoneInfo.ConvertTimeToUtc(localStart, doctorTz);
+            var endTime = TimeZoneInfo.ConvertTimeToUtc(localEnd,   doctorTz);
 
             while (current.AddMinutes(slotDuration) <= endTime)
             {

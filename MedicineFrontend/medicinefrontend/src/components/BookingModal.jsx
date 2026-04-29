@@ -43,7 +43,7 @@ const buildMonthGrid = (year, month) => {
 // ─────────────────────────────────────────────────────────────
 // PASO 1: Seleccionar tipo de cita
 // ─────────────────────────────────────────────────────────────
-const StepType = ({ onSelect, selected }) => (
+const StepType = ({ onSelect, selected, professional }) => (
     <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">¿Cómo quieres la consulta?</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -98,13 +98,23 @@ const StepType = ({ onSelect, selected }) => (
 
         {selected === 'online' && (
             <p className="text-sm text-blue-600 bg-blue-50 rounded-lg p-3 mt-2">
-                📹 El profesional te enviará el enlace de videollamada por email antes de la cita.
+                🎥 La consulta se realizará por videollamada integrada en la plataforma. Podrás acceder desde tu panel de citas el día de la consulta.
             </p>
         )}
         {selected === 'presencial' && (
-            <p className="text-sm text-green-700 bg-green-50 rounded-lg p-3 mt-2">
-                📍 El profesional te contactará con los detalles de ubicación de la consulta.
-            </p>
+            <div className="text-sm text-green-700 bg-green-50 rounded-lg p-3 mt-2 space-y-1">
+                {professional?.officeAddress ? (
+                    <>
+                        <p className="font-semibold flex items-center gap-1">📍 Dirección del consultorio:</p>
+                        <p>{professional.officeAddress}{professional.officeCity ? `, ${professional.officeCity}` : ''}{professional.officePostalCode ? ` ${professional.officePostalCode}` : ''}</p>
+                        {professional.officeInstructions && (
+                            <p className="text-xs opacity-80 mt-1">{professional.officeInstructions}</p>
+                        )}
+                    </>
+                ) : (
+                    <p>📍 Acude al consultorio del profesional en la fecha y hora indicadas. La dirección aparece en los detalles de tu cita.</p>
+                )}
+            </div>
         )}
     </div>
 );
@@ -451,8 +461,8 @@ const StepConfirmation = ({ appointmentType, selectedSlot }) => {
 
             <div className={`rounded-xl p-4 text-sm ${isOnline ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>
                 {isOnline
-                    ? '📹 Recibirás el enlace de videollamada por email antes de la cita. Revisa también tu carpeta de spam.'
-                    : '📍 Recibirás los detalles de ubicación de la consulta. El profesional se pondrá en contacto contigo.'}
+                    ? '🎥 La consulta es online. Accede a la videollamada desde el botón de tu cita en el panel, a partir de 5 minutos antes de la hora.'
+                    : '📍 La consulta es presencial. Consulta la dirección del consultorio en los detalles de tu cita.'}
             </div>
 
             <p className="text-sm text-gray-500">Se ha enviado un email de confirmación con todos los detalles.</p>
@@ -491,7 +501,7 @@ const BookingModal = ({ professional, onClose }) => {
     // Cargar disponibilidad del doctor para saber qué días pintar en el calendario
     useEffect(() => {
         professionalsService.getAvailability(professional.id)
-            .then(setAvailability)
+            .then(data => setAvailability(Array.isArray(data) ? data : []))
             .catch(() => {}); // Si falla, el calendario simplemente no bloquea días
     }, [professional.id]);
 
@@ -585,11 +595,12 @@ const BookingModal = ({ professional, onClose }) => {
             {/* Contenido del paso */}
             <div className="min-h-[280px]">
                 {step === 0 && (
-                    <StepType onSelect={setAppointmentType} selected={appointmentType} />
+                    <StepType onSelect={setAppointmentType} selected={appointmentType} professional={professional} />
                 )}
                 {step === 1 && (
                     <StepDateTime
                         doctorId={professional.id}
+                        availability={availability}
                         selectedDate={selectedDate}
                         selectedSlot={selectedSlot}
                         onDateChange={setSelectedDate}

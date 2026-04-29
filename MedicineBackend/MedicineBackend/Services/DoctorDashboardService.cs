@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 using MedicineBackend.Data;
+using MedicineBackend.DTOs;
 using MedicineBackend.DTOs.DoctorDTO;
 using MedicineBackend.Models;
 using Microsoft.AspNetCore.Hosting;
@@ -525,5 +526,48 @@ public class DoctorDashboardService : IDoctorDashboardService
 
         await _context.SaveChangesAsync();
         return await GetPricingAsync(doctorId);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // APPOINTMENT SETTINGS
+    // ═══════════════════════════════════════════════════════════════
+
+    public async Task<AppointmentSettingsDto> GetAppointmentSettingsAsync(int doctorId)
+    {
+        var doctor = await _context.Doctors.FindAsync(doctorId)
+            ?? throw new KeyNotFoundException("Doctor no encontrado");
+
+        return new AppointmentSettingsDto
+        {
+            DefaultAppointmentDuration   = doctor.SessionDurationMinutes > 0 ? doctor.SessionDurationMinutes : 60,
+            AcceptsInPersonAppointments  = doctor.AcceptsInPersonAppointments,
+            AcceptsOnlineAppointments    = doctor.AcceptsOnlineAppointments,
+            OfficeAddress                = doctor.OfficeAddress,
+            OfficeCity                   = doctor.OfficeCity,
+            OfficePostalCode             = doctor.OfficePostalCode,
+            OfficeCountry                = doctor.OfficeCountry ?? "España",
+            OfficeInstructions           = doctor.OfficeInstructions,
+            Timezone                     = doctor.Timezone,
+        };
+    }
+
+    public async Task<AppointmentSettingsDto> UpdateAppointmentSettingsAsync(int doctorId, UpdateAppointmentSettingsDto dto)
+    {
+        var doctor = await _context.Doctors.FindAsync(doctorId)
+            ?? throw new KeyNotFoundException("Doctor no encontrado");
+
+        doctor.SessionDurationMinutes       = dto.DefaultAppointmentDuration > 0 ? dto.DefaultAppointmentDuration : 60;
+        doctor.AcceptsInPersonAppointments  = dto.AcceptsInPersonAppointments;
+        doctor.AcceptsOnlineAppointments    = dto.AcceptsOnlineAppointments;
+        doctor.OfficeAddress                = dto.OfficeAddress;
+        doctor.OfficeCity                   = dto.OfficeCity;
+        doctor.OfficePostalCode             = dto.OfficePostalCode;
+        doctor.OfficeCountry                = dto.OfficeCountry ?? "España";
+        doctor.OfficeInstructions           = dto.OfficeInstructions;
+        doctor.Timezone                     = string.IsNullOrWhiteSpace(dto.Timezone) ? "Europe/Madrid" : dto.Timezone;
+        doctor.UpdatedAt                    = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return await GetAppointmentSettingsAsync(doctorId);
     }
 }

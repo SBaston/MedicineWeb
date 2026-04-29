@@ -21,5 +21,7 @@ namespace MedicineBackend.Services.Interfaces
         Task<DoctorEarningsDto> GetEarningsAsync(int doctorId, string timeRange, string filterType);
         Task<DoctorPricingDto> GetPricingAsync(int doctorId);
         Task<DoctorPricingDto> UpdatePricingAsync(int doctorId, UpdatePricingDto dto);
+        Task<AppointmentSettingsDto> GetAppointmentSettingsAsync(int doctorId);
+        Task<AppointmentSettingsDto> UpdateAppointmentSettingsAsync(int doctorId, UpdateAppointmentSettingsDto dto);
     }
 }

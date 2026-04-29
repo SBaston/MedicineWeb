@@ -445,7 +445,6 @@ const AvailabilitySettingsPage = () => {
                         settings={settings}
                         setSettings={setSettings}
                         durationOptions={DURATION_OPTIONS}
-                        videoPlatforms={VIDEO_PLATFORMS}
                         timezones={COMMON_TIMEZONES}
                     />
                 )}
@@ -588,7 +587,6 @@ const ScheduleTab = ({
                                     key={slot.id}
                                     slot={slot}
                                     selectedDay={selectedDay}
-                                    timeSlots={timeSlots}
                                     updateTimeSlot={updateTimeSlot}
                                     removeTimeSlot={removeTimeSlot}
                                 />
@@ -601,7 +599,10 @@ const ScheduleTab = ({
     );
 };
 
-const TimeSlotCard = ({ slot, selectedDay, timeSlots, updateTimeSlot, removeTimeSlot }) => {
+// Normaliza "HH:mm:ss" → "HH:mm" para que sea compatible con input[type=time]
+const toHHMM = (t = '') => (t.length > 5 ? t.slice(0, 5) : t);
+
+const TimeSlotCard = ({ slot, selectedDay, updateTimeSlot, removeTimeSlot }) => {
     return (
         <div className={`p-4 border-2 rounded-xl transition-all ${
             slot.isAvailable ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-60'
@@ -612,30 +613,24 @@ const TimeSlotCard = ({ slot, selectedDay, timeSlots, updateTimeSlot, removeTime
                         <Clock className="w-3.5 h-3.5" />
                         Hora inicio
                     </label>
-                    <select
-                        value={slot.startTime}
+                    <input
+                        type="time"
+                        value={toHHMM(slot.startTime)}
                         onChange={(e) => updateTimeSlot(selectedDay, slot.id, 'startTime', e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                    >
-                        {timeSlots.map(time => (
-                            <option key={time} value={time}>{time}</option>
-                        ))}
-                    </select>
+                    />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         Hora fin
                     </label>
-                    <select
-                        value={slot.endTime}
+                    <input
+                        type="time"
+                        value={toHHMM(slot.endTime)}
                         onChange={(e) => updateTimeSlot(selectedDay, slot.id, 'endTime', e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                    >
-                        {timeSlots.map(time => (
-                            <option key={time} value={time}>{time}</option>
-                        ))}
-                    </select>
+                    />
                 </div>
             </div>
 
@@ -679,7 +674,7 @@ const TimeSlotCard = ({ slot, selectedDay, timeSlots, updateTimeSlot, removeTime
 // TAB: Configuración
 // ═══════════════════════════════════════════════════════════════
 
-const SettingsTab = ({ settings, setSettings, durationOptions, videoPlatforms, timezones }) => {
+const SettingsTab = ({ settings, setSettings, durationOptions, timezones }) => {
     return (
         <div className="space-y-6">
             {/* Fila 1: Duración y Modalidades */}
@@ -745,44 +740,6 @@ const SettingsTab = ({ settings, setSettings, durationOptions, videoPlatforms, t
                     </div>
                 </div>
             </div>
-
-            {/* Plataforma de videollamada - SOLO si acceptsOnlineAppointments */}
-            {settings.acceptsOnlineAppointments && (
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                    <div className="flex items-center gap-2 mb-6">
-                        <Video className="w-5 h-5 text-purple-600" />
-                        <h2 className="font-bold text-slate-900">Plataforma de videollamada</h2>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {videoPlatforms.map(platform => (
-                            <button
-                                key={platform.value}
-                                onClick={() => setSettings({ ...settings, preferredVideoCallPlatform: platform.value })}
-                                className={`p-4 rounded-xl border-2 transition-all text-center ${
-                                    settings.preferredVideoCallPlatform === platform.value
-                                        ? 'border-purple-600 bg-purple-50'
-                                        : 'border-slate-200 hover:border-slate-300'
-                                }`}
-                            >
-                                <div className="text-2xl mb-1">{platform.icon}</div>
-                                <div className="text-sm font-semibold text-slate-800">{platform.label}</div>
-                            </button>
-                        ))}
-                    </div>
-                    <div className="mt-4">
-                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                            Instrucciones para el paciente (opcional)
-                        </label>
-                        <textarea
-                            value={settings.onlineInstructions || ''}
-                            onChange={(e) => setSettings({ ...settings, onlineInstructions: e.target.value })}
-                            placeholder="Ej: Te enviaré el enlace de Zoom 30 minutos antes de la cita..."
-                            rows={2}
-                            className="w-full px-4 py-2.5 border border-slate-300 rounded-lg resize-none text-sm"
-                        />
-                    </div>
-                </div>
-            )}
 
             {/* Dirección del consultorio - SOLO si acceptsInPersonAppointments */}
             {settings.acceptsInPersonAppointments && (

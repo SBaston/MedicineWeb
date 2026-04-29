@@ -68,6 +68,40 @@ public class Doctor
     /// <summary>Duración de cada sesión en minutos (30, 45, 60, 90...)</summary>
     public int SessionDurationMinutes { get; set; } = 60;
 
+    // ══════════════════════════════════════════════════════════════
+    // CONFIGURACIÓN DE CITAS
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>Acepta citas presenciales</summary>
+    public bool AcceptsInPersonAppointments { get; set; } = true;
+
+    /// <summary>Acepta citas online</summary>
+    public bool AcceptsOnlineAppointments { get; set; } = true;
+
+    /// <summary>Dirección del consultorio (calle, número, piso...)</summary>
+    [MaxLength(500)]
+    public string? OfficeAddress { get; set; }
+
+    /// <summary>Ciudad del consultorio</summary>
+    [MaxLength(100)]
+    public string? OfficeCity { get; set; }
+
+    /// <summary>Código postal del consultorio</summary>
+    [MaxLength(20)]
+    public string? OfficePostalCode { get; set; }
+
+    /// <summary>País del consultorio</summary>
+    [MaxLength(100)]
+    public string? OfficeCountry { get; set; }
+
+    /// <summary>Instrucciones adicionales para citas presenciales</summary>
+    [MaxLength(1000)]
+    public string? OfficeInstructions { get; set; }
+
+    /// <summary>Zona horaria del profesional (IANA, ej: "Europe/Madrid")</summary>
+    [MaxLength(100)]
+    public string Timezone { get; set; } = "Europe/Madrid";
+
     /// <summary>Total de ganancias acumuladas</summary>
     [Column(TypeName = "decimal(12,2)")]
     public decimal TotalEarnings { get; set; } = 0;

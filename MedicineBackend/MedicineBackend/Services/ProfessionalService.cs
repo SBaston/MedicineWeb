@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 using MedicineBackend.Data;
+using MedicineBackend.DTOs.DoctorDTO;
 using MedicineBackend.DTOs.Professional;
 using MedicineBackend.Models;
 using MedicineBackend.Services.Interfaces;
@@ -131,6 +132,14 @@ public class ProfessionalService : IProfessionalService
                 AverageRating = d.AverageRating,
                 TotalReviews = d.TotalReviews,
                 IsAcceptingPatients = d.IsAcceptingPatients,
+                SessionDurationMinutes = d.SessionDurationMinutes > 0 ? d.SessionDurationMinutes : 60,
+                AcceptsInPersonAppointments = d.AcceptsInPersonAppointments,
+                AcceptsOnlineAppointments = d.AcceptsOnlineAppointments,
+                OfficeAddress = d.OfficeAddress,
+                OfficeCity = d.OfficeCity,
+                OfficePostalCode = d.OfficePostalCode,
+                OfficeCountry = d.OfficeCountry,
+                OfficeInstructions = d.OfficeInstructions,
                 SocialMedia = d.SocialMediaAccounts
                     .Where(s => s.IsActive)
                     .Select(s => new SocialMediaDto
@@ -193,13 +202,25 @@ public class ProfessionalService : IProfessionalService
     }
 
     /// <summary>
-    /// Obtener disponibilidad de un profesional (placeholder)
+    /// Obtener disponibilidad pública de un profesional
     /// </summary>
     public async Task<object> GetProfessionalAvailabilityAsync(int doctorId)
     {
-        // TODO: Implementar cuando exista el modelo de disponibilidad
-        await Task.CompletedTask;
-        return new { message = "Disponibilidad no implementada aún" };
+        var availabilities = await _context.DoctorAvailabilities
+            .Where(a => a.DoctorId == doctorId)
+            .OrderBy(a => a.DayOfWeek)
+            .ThenBy(a => a.StartTime)
+            .ToListAsync();
+
+        return availabilities.Select(a => new DoctorAvailabilityDto
+        {
+            Id          = a.Id,
+            DayOfWeek   = a.DayOfWeek,
+            StartTime   = a.StartTime.ToString(@"hh\:mm"),
+            EndTime     = a.EndTime.ToString(@"hh\:mm"),
+            IsAvailable = a.IsAvailable,
+            Notes       = a.Notes,
+        }).ToList();
     }
 
     /// <summary>

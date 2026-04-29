@@ -198,3 +198,33 @@ public class UpdatePricingDto
     public decimal PricePerSession { get; set; }
     public int SessionDurationMinutes { get; set; } = 60;
 }
+
+// ══════════════════════════════════════════════════════════
+// APPOINTMENT SETTINGS
+// ══════════════════════════════════════════════════════════
+
+public class AppointmentSettingsDto
+{
+    public int DefaultAppointmentDuration { get; set; } = 60;
+    public bool AcceptsInPersonAppointments { get; set; } = true;
+    public bool AcceptsOnlineAppointments { get; set; } = true;
+    public string? OfficeAddress { get; set; }
+    public string? OfficeCity { get; set; }
+    public string? OfficePostalCode { get; set; }
+    public string? OfficeCountry { get; set; }
+    public string? OfficeInstructions { get; set; }
+    public string Timezone { get; set; } = "Europe/Madrid";
+}
+
+public class UpdateAppointmentSettingsDto
+{
+    public int DefaultAppointmentDuration { get; set; } = 60;
+    public bool AcceptsInPersonAppointments { get; set; } = true;
+    public bool AcceptsOnlineAppointments { get; set; } = true;
+    public string? OfficeAddress { get; set; }
+    public string? OfficeCity { get; set; }
+    public string? OfficePostalCode { get; set; }
+    public string? OfficeCountry { get; set; }
+    public string? OfficeInstructions { get; set; }
+    public string Timezone { get; set; } = "Europe/Madrid";
+}

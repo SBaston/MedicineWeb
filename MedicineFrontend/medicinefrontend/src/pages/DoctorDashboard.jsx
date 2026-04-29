@@ -664,12 +664,6 @@ const DoctorDashboard = () => {
                     <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="font-bold text-slate-900 text-lg">Próximas citas</h3>
-                            <button
-                                onClick={() => navigate('/doctor/appointments')}
-                                className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-1"
-                            >
-                                Ver todas <ArrowRight className="w-4 h-4" />
-                            </button>
                         </div>
 
                         {(stats.recentAppointments || []).length === 0 ? (

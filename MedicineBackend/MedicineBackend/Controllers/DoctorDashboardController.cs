@@ -256,5 +256,25 @@ namespace MedicineBackend.Controllers
             await _service.UpdatePricingAsync(doctorId, dto);
             return Ok(new { message = "Precios actualizados correctamente" });
         }
+
+        // ═══════════════════════════════════════════════════════════
+        // APPOINTMENT SETTINGS
+        // ═══════════════════════════════════════════════════════════
+
+        [HttpGet("appointment-settings")]
+        public async Task<IActionResult> GetAppointmentSettings()
+        {
+            var doctorId = await GetCurrentDoctorIdAsync();
+            var settings = await _service.GetAppointmentSettingsAsync(doctorId);
+            return Ok(settings);
+        }
+
+        [HttpPut("appointment-settings")]
+        public async Task<IActionResult> UpdateAppointmentSettings([FromBody] UpdateAppointmentSettingsDto dto)
+        {
+            var doctorId = await GetCurrentDoctorIdAsync();
+            var settings = await _service.UpdateAppointmentSettingsAsync(doctorId, dto);
+            return Ok(settings);
+        }
     }
 }
