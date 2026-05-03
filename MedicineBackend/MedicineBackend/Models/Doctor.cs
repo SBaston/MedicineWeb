@@ -242,6 +242,7 @@ public class Doctor
 
     public ICollection<DoctorSocialMedia> SocialMediaAccounts { get; set; } = new List<DoctorSocialMedia>();
     public DoctorContentConsent? ContentConsent { get; set; }
+    public ICollection<ClinicalNote> ClinicalNotes { get; set; } = new List<ClinicalNote>();
 
     // ══════════════════════════════════════════════════════════════
     // PROPIEDADES CALCULADAS

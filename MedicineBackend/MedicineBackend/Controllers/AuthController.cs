@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace MedicineBackend.Controllers;
 
@@ -189,6 +190,111 @@ public class AuthController : ControllerBase
         }
         // Siempre OK para no revelar si el email está registrado
         return Ok(new { message = "Si el email existe en nuestro sistema, recibirás un enlace en breve" });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 2FA — TOTP
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Paso 2 del login: verifica el código TOTP y devuelve el JWT real.
+    /// </summary>
+    [HttpPost("2fa/login-verify")]
+    [AllowAnonymous]
+    public async Task<IActionResult> TwoFactorLoginVerify([FromBody] TwoFactorLoginRequest request)
+    {
+        try
+        {
+            var response = await _authService.VerifyTwoFactorLoginAsync(request.UserId, request.Code);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error en verificación 2FA de login");
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Inicia la configuración de 2FA: devuelve QR URI + clave manual.
+    /// Requiere estar autenticado.
+    /// </summary>
+    [HttpPost("2fa/setup")]
+    [Authorize]
+    public async Task<IActionResult> TwoFactorSetup()
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out var userId))
+                return Unauthorized();
+
+            var setup = await _authService.GenerateTwoFactorSetupAsync(userId);
+            return Ok(setup);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al generar setup de 2FA");
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Confirma la activación del 2FA verificando el primer código TOTP.
+    /// </summary>
+    [HttpPost("2fa/enable")]
+    [Authorize]
+    public async Task<IActionResult> TwoFactorEnable([FromBody] TwoFactorVerifyRequest request)
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out var userId))
+                return Unauthorized();
+
+            await _authService.EnableTwoFactorAsync(userId, request.Code);
+            return Ok(new { message = "Autenticación en dos factores activada correctamente" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al activar 2FA");
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Desactiva el 2FA verificando el código TOTP actual.
+    /// </summary>
+    [HttpPost("2fa/disable")]
+    [Authorize]
+    public async Task<IActionResult> TwoFactorDisable([FromBody] TwoFactorVerifyRequest request)
+    {
+        try
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out var userId))
+                return Unauthorized();
+
+            await _authService.DisableTwoFactorAsync(userId, request.Code);
+            return Ok(new { message = "Autenticación en dos factores desactivada" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al desactivar 2FA");
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
     }
 
     /// <summary>

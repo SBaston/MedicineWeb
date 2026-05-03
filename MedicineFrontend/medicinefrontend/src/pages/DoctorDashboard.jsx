@@ -12,7 +12,7 @@ import {
     User, Clock, Video, BookOpen, AlertCircle,
     ArrowRight, CheckCircle, Eye,
     MapPin, Loader2, ChevronDown, ChevronUp,
-    CreditCard, FileText, BarChart2, MessageCircle, Crown, Search
+    CreditCard, FileText, BarChart2, MessageCircle, Crown, Search, ClipboardList
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
 import SocialMediaSection from '../components/SocialMediaSection';
@@ -299,6 +299,17 @@ const DoctorDashboard = () => {
                                                         <p className="text-xs text-slate-400 mt-1">Motivo: {appt.reason}</p>
                                                     )}
                                                 </div>
+                                            </div>
+
+                                            {/* Historial clínico */}
+                                            <div className="mt-2">
+                                                <button
+                                                    onClick={() => navigate(`/doctor/patients/${appt.patientId}/clinical-history`)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
+                                                >
+                                                    <ClipboardList className="w-3.5 h-3.5" />
+                                                    Historial clínico
+                                                </button>
                                             </div>
 
                                             {/* Videollamada con Jitsi — disponible solo en la ventana horaria */}

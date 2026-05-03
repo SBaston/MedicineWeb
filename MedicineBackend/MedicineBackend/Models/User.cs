@@ -69,6 +69,17 @@ public class User
     /// </summary>
     public DateTime? LastLogin { get; set; }
 
+    // ============================================
+    // 2FA — TOTP (Google Authenticator / Authy)
+    // ============================================
+
+    /// <summary>Indica si el usuario tiene 2FA activado</summary>
+    public bool TwoFactorEnabled { get; set; } = false;
+
+    /// <summary>Clave secreta Base32 para generar códigos TOTP (cifrada en BD)</summary>
+    [MaxLength(256)]
+    public string? TwoFactorSecret { get; set; }
+
     /// <summary>
     /// Fecha de creación del usuario
     /// </summary>

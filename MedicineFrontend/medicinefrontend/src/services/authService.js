@@ -58,6 +58,35 @@ const authService = {
         const response = await api.get(`/auth/check-email?email=${email}`);
         return response.data.exists;
     },
+
+    // ── 2FA ──────────────────────────────────────────────────────
+    /** Paso 2 del login: verifica el código TOTP y devuelve el JWT */
+    verifyTwoFactorLogin: async (userId, code) => {
+        const response = await api.post('/auth/2fa/login-verify', { userId, code });
+        if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data));
+        }
+        return response.data;
+    },
+
+    /** Genera el secreto TOTP y devuelve la URI para el QR */
+    setupTwoFactor: async () => {
+        const response = await api.post('/auth/2fa/setup');
+        return response.data; // { otpAuthUri, manualEntryKey }
+    },
+
+    /** Activa definitivamente el 2FA tras verificar el primer código */
+    enableTwoFactor: async (code) => {
+        const response = await api.post('/auth/2fa/enable', { code });
+        return response.data;
+    },
+
+    /** Desactiva el 2FA verificando el código actual */
+    disableTwoFactor: async (code) => {
+        const response = await api.post('/auth/2fa/disable', { code });
+        return response.data;
+    },
 };
 
 export default authService;

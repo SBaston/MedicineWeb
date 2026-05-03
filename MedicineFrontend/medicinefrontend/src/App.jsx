@@ -38,6 +38,7 @@ import ChatPage from './pages/ChatPage';
 import ProfessionalDetailPage from './pages/ProfessionalDetailPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 import VideoCallPage from './pages/VideoCallPage';
+import ClinicalHistoryPage from './pages/ClinicalHistoryPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -382,6 +383,16 @@ function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['Doctor', 'Patient']}>
                                     <VideoCallPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Historial clínico del paciente — solo doctores */}
+                        <Route
+                            path="/doctor/patients/:patientId/clinical-history"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <ClinicalHistoryPage />
                                 </ProtectedRoute>
                             }
                         />

@@ -120,6 +120,11 @@ public class Patient
     /// </summary>
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
+    /// <summary>
+    /// Notas / historiales clínicos del paciente
+    /// </summary>
+    public ICollection<ClinicalNote> ClinicalNotes { get; set; } = new List<ClinicalNote>();
+
     // ============================================
     // PROPIEDADES CALCULADAS
     // ============================================

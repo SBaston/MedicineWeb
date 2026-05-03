@@ -6,6 +6,7 @@ import { User, Phone, MapPin, Save, ArrowLeft } from 'lucide-react';
 import ErrorAlert from '../components/ErrorAlert';
 import AvatarSelector from '../components/AvatarSelector';
 import { useAuth } from '../context/AuthContext';
+import TwoFactorSettings from '../components/TwoFactorSettings';
 
 const EditProfilePage = () => {
     const navigate = useNavigate();
@@ -332,6 +333,11 @@ const EditProfilePage = () => {
                             </button>
                         </div>
                     </form>
+                </div>
+
+                {/* Seguridad: 2FA */}
+                <div className="mt-6">
+                    <TwoFactorSettings />
                 </div>
 
                 {/* Nota de privacidad */}

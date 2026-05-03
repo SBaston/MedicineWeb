@@ -61,9 +61,12 @@ const Footer = () => {
                     </div>
                 </div>
 
-                {/* Copyright */}
-                <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+                {/* Copyright + versión */}
+                <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400 space-y-1">
                     <p>© 2026 NexusSalud. {t('footer.rights')} | {t('footer.tfg')}</p>
+                    <p className="text-xs text-gray-600">
+                        v{__APP_VERSION__}
+                    </p>
                 </div>
             </div>
         </footer>

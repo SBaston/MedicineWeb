@@ -80,6 +80,10 @@
               "target": "Package",
               "version": "[10.0.0, )"
             },
+            "Otp.NET": {
+              "target": "Package",
+              "version": "[1.4.0, )"
+            },
             "QuestPDF": {
               "target": "Package",
               "version": "[2024.10.4, )"

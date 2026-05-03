@@ -5,6 +5,7 @@ using MedicineBackend.DTOs.Auth;
 using MedicineBackend.Helpers;
 using MedicineBackend.Models;
 using MedicineBackend.Services.Interfaces;
+using OtpNet;
 
 
 namespace MedicineBackend.Services;
@@ -217,6 +218,36 @@ public class AuthService : IAuthService
             _ => "Usuario"
         };
 
+        // ── 2FA: si está activado no devolvemos JWT todavía ──
+        if (user.TwoFactorEnabled)
+        {
+            return new LoginResponse
+            {
+                RequiresTwoFactor = true,
+                UserId  = user.Id,
+                Email   = user.Email,
+                Role    = user.Role,
+                FullName = fullName,
+            };
+        }
+
+        // ── 2FA obligatorio para Admins: si no lo tienen configurado, forzar setup ──
+        if (user.Role == "Admin" && !user.TwoFactorEnabled)
+        {
+            // Generamos un token temporal para que pueda llamar a los endpoints de /2fa/setup y /2fa/enable
+            var tempToken = _jwtHelper.GenerateToken(user.Id, user.Email, user.Role);
+            return new LoginResponse
+            {
+                RequiresTwoFactorSetup = true,
+                Token    = tempToken,   // token temporal para llamar a setup
+                UserId   = user.Id,
+                Email    = user.Email,
+                Role     = user.Role,
+                FullName = fullName,
+                ExpiresAt = _jwtHelper.GetTokenExpiration()
+            };
+        }
+
         // Generar token JWT
         var token = _jwtHelper.GenerateToken(user.Id, user.Email, user.Role);
 
@@ -336,5 +367,140 @@ public class AuthService : IAuthService
         user.PasswordResetToken = null;
         user.PasswordResetTokenExpiry = null;
         await _context.SaveChangesAsync();
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 2FA — TOTP (Google Authenticator / Authy)
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Genera un secreto TOTP nuevo (sin activarlo aún) y devuelve la URI para el QR
+    /// y la clave en Base32 para introducción manual.
+    /// </summary>
+    public async Task<TwoFactorSetupResponse> GenerateTwoFactorSetupAsync(int userId)
+    {
+        var user = await _context.Users.FindAsync(userId)
+            ?? throw new InvalidOperationException("Usuario no encontrado");
+
+        // Genera 20 bytes aleatorios → Base32
+        var secretBytes = KeyGeneration.GenerateRandomKey(20);
+        var secret = Base32Encoding.ToString(secretBytes);
+
+        // Guardamos el secreto (pendiente de verificar → no activamos aún)
+        user.TwoFactorSecret  = secret;
+        user.TwoFactorEnabled = false; // se habilitará cuando el usuario verifique
+        await _context.SaveChangesAsync();
+
+        // URI estándar otpauth://totp/<issuer>:<account>?secret=...&issuer=...
+        var issuer  = "NexusSalud";
+        var account = Uri.EscapeDataString(user.Email);
+        var uri     = $"otpauth://totp/{Uri.EscapeDataString(issuer)}:{account}?secret={secret}&issuer={Uri.EscapeDataString(issuer)}&algorithm=SHA1&digits=6&period=30";
+
+        return new TwoFactorSetupResponse
+        {
+            OtpAuthUri     = uri,
+            ManualEntryKey = secret,
+        };
+    }
+
+    /// <summary>
+    /// Verifica el código TOTP introducido y activa el 2FA definitivamente.
+    /// </summary>
+    public async Task EnableTwoFactorAsync(int userId, string code)
+    {
+        var user = await _context.Users.FindAsync(userId)
+            ?? throw new InvalidOperationException("Usuario no encontrado");
+
+        if (string.IsNullOrEmpty(user.TwoFactorSecret))
+            throw new InvalidOperationException("Primero debes iniciar la configuración del 2FA");
+
+        if (!ValidateTotp(user.TwoFactorSecret, code))
+            throw new InvalidOperationException("Código incorrecto. Asegúrate de que la hora de tu dispositivo es correcta.");
+
+        user.TwoFactorEnabled = true;
+        await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Desactiva el 2FA tras comprobar el código TOTP actual.
+    /// </summary>
+    public async Task DisableTwoFactorAsync(int userId, string code)
+    {
+        var user = await _context.Users.FindAsync(userId)
+            ?? throw new InvalidOperationException("Usuario no encontrado");
+
+        if (!user.TwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecret))
+            throw new InvalidOperationException("El 2FA no está activado");
+
+        if (!ValidateTotp(user.TwoFactorSecret, code))
+            throw new InvalidOperationException("Código incorrecto");
+
+        user.TwoFactorEnabled = false;
+        user.TwoFactorSecret  = null;
+        await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Segundo paso del login con 2FA: valida el código TOTP y devuelve el JWT.
+    /// </summary>
+    public async Task<LoginResponse> VerifyTwoFactorLoginAsync(int userId, string code)
+    {
+        var user = await _context.Users
+            .Include(u => u.Doctor)
+            .Include(u => u.Patient)
+            .Include(u => u.Admin)
+            .FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new UnauthorizedAccessException("Usuario no encontrado");
+
+        if (!user.TwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecret))
+            throw new UnauthorizedAccessException("El 2FA no está configurado en esta cuenta");
+
+        if (!ValidateTotp(user.TwoFactorSecret, code))
+            throw new UnauthorizedAccessException("Código de verificación incorrecto o expirado");
+
+        string fullName = user.Role switch
+        {
+            "Doctor"  => user.Doctor?.FullName  ?? "Doctor",
+            "Patient" => user.Patient?.FullName ?? "Paciente",
+            "Admin"   => user.Admin?.FullName   ?? "Admin",
+            _ => "Usuario"
+        };
+
+        var token = _jwtHelper.GenerateToken(user.Id, user.Email, user.Role);
+
+        return new LoginResponse
+        {
+            Token    = token,
+            Email    = user.Email,
+            Role     = user.Role,
+            UserId   = user.Id,
+            FullName = fullName,
+            ExpiresAt = _jwtHelper.GetTokenExpiration(),
+        };
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // HELPERS PRIVADOS
+    // ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Valida un código TOTP de 6 dígitos contra el secreto Base32.
+    /// Ventana de ±2 pasos (~2 min) para tolerar desfase de reloj.
+    /// </summary>
+    private static bool ValidateTotp(string base32Secret, string code)
+    {
+        try
+        {
+            var secretBytes = Base32Encoding.ToBytes(base32Secret);
+            var totp        = new Totp(secretBytes);
+            return totp.VerifyTotp(
+                totp:            code,
+                timeStepMatched: out _,
+                window:          new VerificationWindow(previous: 2, future: 2));
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

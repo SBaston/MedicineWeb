@@ -101,6 +101,9 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 // ✅ SERVICIO DE CHAT PREMIUM: suscripciones y mensajería
 builder.Services.AddScoped<IChatService, ChatService>();
 
+// ✅ HISTORIALES CLÍNICOS
+builder.Services.AddScoped<IClinicalNoteService, ClinicalNoteService>();
+
 // ✅ RESEÑAS: valoraciones verificadas (requiere cita completada)
 builder.Services.AddScoped<IReviewService, ReviewService>();
 

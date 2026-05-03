@@ -43,6 +43,10 @@ public class AppDbContext : DbContext
     public DbSet<PlatformSetting> PlatformSettings { get; set; }
     public DbSet<Invoice> Invoices { get; set; }
 
+    // ✅ Historiales clínicos
+    public DbSet<ClinicalNote> ClinicalNotes { get; set; }
+    public DbSet<ClinicalNoteAttachment> ClinicalNoteAttachments { get; set; }
+
     // ============================================
     // CONFIGURACIÓN DE ENTIDADES
     // ============================================
