@@ -25,7 +25,7 @@ public interface IPatientService
     /// <summary>
     /// Calcula el porcentaje de completitud del perfil
     /// </summary>
-    int CalculateProfileCompletion(PatientProfileResponse patient);
+    int CalculateProfileCompletion(PatientProfileResponse patient, bool twoFactorEnabled = false);
 
     /// <summary>
     /// Obtiene las citas del paciente

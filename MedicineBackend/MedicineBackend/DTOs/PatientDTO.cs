@@ -31,7 +31,6 @@ public class UpdatePatientProfileRequest
 
     public string? MedicalHistory { get; set; }
 
-    [Url(ErrorMessage = "La URL de la foto de perfil no es válida")]
     [MaxLength(500)]
     public string? ProfilePictureUrl { get; set; }
 }

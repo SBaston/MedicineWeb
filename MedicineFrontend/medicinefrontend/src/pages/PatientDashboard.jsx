@@ -8,9 +8,10 @@ import professionalsService from '../services/professionalsService';
 import api from '../services/api';
 import ProfileCompletionAlert from '../components/ProfileCompletionAlert';
 import BookingModal from '../components/BookingModal';
-import { Calendar, FileText, GraduationCap, User, Clock, Video, MapPin, ChevronDown, ChevronUp, XCircle, Phone, Pencil, Check, X, MessageCircle, Crown, Zap, Stethoscope, CalendarPlus, Loader2 } from 'lucide-react';
+import { Calendar, FileText, GraduationCap, User, Clock, Video, MapPin, ChevronDown, ChevronUp, XCircle, Phone, Pencil, Check, X, MessageCircle, Crown, Zap, Stethoscope, CalendarPlus, Loader2, ShieldAlert, ShieldCheck, KeyRound, Copy, ScanLine } from 'lucide-react';
 import PhoneInput from '../components/PhoneInput';
 import { Link, useNavigate } from 'react-router-dom';
+import authService from '../services/authService';
 
 // ── Helpers ─────────────────────────────────────────────────────
 const STATUS_COLORS = {
@@ -30,6 +31,131 @@ const formatAppointmentDate = (dateStr, locale = 'es-ES') => {
 
 const getInitials = (name = '') =>
     name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+
+// ── Modal de configuración 2FA ────────────────────────────────────
+const TwoFactorModal = ({ onClose, onSuccess }) => {
+    const [setupData, setSetupData] = useState(null);
+    const [code, setCode]           = useState('');
+    const [error, setError]         = useState('');
+    const [loading, setLoading]     = useState(false);
+    const [copied, setCopied]       = useState(false);
+
+    useEffect(() => {
+        authService.setupTwoFactor()
+            .then(data => setSetupData(data))
+            .catch(() => setError('Error al generar el código QR. Inténtalo de nuevo.'));
+    }, []);
+
+    const qrUrl = setupData?.otpAuthUri
+        ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.otpAuthUri)}`
+        : null;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(setupData?.manualEntryKey || '');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            await authService.enableTwoFactor(code);
+            onSuccess();
+        } catch {
+            setError('Código incorrecto. Comprueba que la hora de tu dispositivo es correcta.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+                {/* Cerrar */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
+                {/* Cabecera */}
+                <div className="flex flex-col items-center text-center gap-2 mb-5">
+                    <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                        <ShieldCheck className="w-7 h-7 text-indigo-600 dark:text-indigo-300" />
+                    </div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                        Activar verificación en dos pasos
+                    </h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Escanea el código QR con <strong>Google Authenticator</strong> o <strong>Authy</strong>
+                        y luego introduce el código de 6 dígitos para confirmar.
+                    </p>
+                </div>
+
+                {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 mb-4">
+                        <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        <span className="text-red-700 text-sm">{error}</span>
+                    </div>
+                )}
+
+                {/* QR */}
+                <div className="flex flex-col items-center gap-3 mb-5">
+                    {qrUrl ? (
+                        <img src={qrUrl} alt="QR 2FA" className="w-44 h-44 border-2 border-gray-200 dark:border-gray-600 rounded-xl" />
+                    ) : (
+                        <div className="w-44 h-44 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                            <ScanLine className="w-8 h-8 text-gray-400 animate-pulse" />
+                        </div>
+                    )}
+
+                    {setupData?.manualEntryKey && (
+                        <div className="w-full">
+                            <p className="text-xs text-gray-400 mb-1 text-center">O introduce esta clave manualmente:</p>
+                            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2">
+                                <code className="text-xs font-mono text-gray-700 dark:text-gray-300 flex-1 break-all">
+                                    {setupData.manualEntryKey}
+                                </code>
+                                <button type="button" onClick={handleCopy} className="text-indigo-600 hover:text-indigo-700 flex-shrink-0">
+                                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Código */}
+                <form onSubmit={handleSubmit} className="space-y-3">
+                    <div className="relative">
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={6}
+                            pattern="\d{6}"
+                            required
+                            autoFocus
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            className="input-field pl-10 text-center text-2xl tracking-widest font-mono"
+                            placeholder="000000"
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={loading || code.length !== 6}
+                        className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? 'Activando...' : 'Activar verificación en dos pasos'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 // ── Appointment Card ─────────────────────────────────────────────
 const AppointmentCard = ({ appointment, onCancel }) => {
@@ -154,6 +280,7 @@ const PatientDashboard = () => {
     // Modal de reserva rápida desde "Mis profesionales"
     const [bookingPro, setBookingPro] = useState(null);      // professional completo
     const [loadingBookingPro, setLoadingBookingPro] = useState(false);
+    const [show2FAModal, setShow2FAModal] = useState(false);
 
     // Obtener datos del paciente
     const { data: profileData, isLoading: isLoadingProfile } = useQuery({
@@ -286,7 +413,19 @@ const PatientDashboard = () => {
         if (!phoneInput.trim()) return;
         setSavingPhone(true);
         try {
-            await patientService.updateProfile({ phoneNumber: phoneInput.trim() });
+            // Send all existing fields + updated phone to avoid overwriting other data with null
+            const current = profileData?.patient || profileData;
+            await patientService.updateProfile({
+                phoneNumber:       phoneInput.trim(),
+                address:           current?.address           || null,
+                city:              current?.city              || null,
+                postalCode:        current?.postalCode        || null,
+                country:           current?.country           || 'España',
+                gender:            current?.gender            || null,
+                emergencyContact:  current?.emergencyContact  || null,
+                medicalHistory:    current?.medicalHistory    || null,
+                profilePictureUrl: current?.profilePictureUrl || null,
+            });
             queryClient.invalidateQueries({ queryKey: ['patient-profile'] });
             setEditingPhone(false);
         } catch {
@@ -396,11 +535,53 @@ const PatientDashboard = () => {
 
             {/* Alerta de perfil incompleto */}
             {profileCompletion < 100 && (
-                <div className="mb-8">
+                <div className="mb-4">
                     <ProfileCompletionAlert
                         completion={profileCompletion}
                         missingFields={missingFields}
                     />
+                </div>
+            )}
+
+            {/* Banner de seguridad 2FA */}
+            {profileData?.twoFactorEnabled ? (
+                <div className="mb-8 flex items-center gap-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border border-green-200 dark:border-green-700 rounded-xl px-5 py-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
+                        <ShieldCheck className="w-5 h-5 text-green-600 dark:text-green-300" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                            Verificación en dos pasos activa
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-300 mt-0.5">
+                            Tu cuenta y tu historial médico están protegidos con un segundo factor.
+                        </p>
+                    </div>
+                    <span className="flex-shrink-0 flex items-center gap-1.5 bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Protegida
+                    </span>
+                </div>
+            ) : (
+                <div className="mb-8 flex items-center gap-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950 dark:to-blue-950 border border-indigo-200 dark:border-indigo-700 rounded-xl px-5 py-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center">
+                        <ShieldAlert className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">
+                            Protege tu cuenta con verificación en dos pasos
+                        </p>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-300 mt-0.5">
+                            Añade una capa extra de seguridad a tu historial médico y citas.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setShow2FAModal(true)}
+                        className="flex-shrink-0 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <ShieldCheck className="w-4 h-4" />
+                        Activar 2FA
+                    </button>
                 </div>
             )}
 
@@ -807,6 +988,16 @@ const PatientDashboard = () => {
             <BookingModal
                 professional={bookingPro}
                 onClose={() => setBookingPro(null)}
+            />
+        )}
+
+        {show2FAModal && (
+            <TwoFactorModal
+                onClose={() => setShow2FAModal(false)}
+                onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['patient-profile'] });
+                    setShow2FAModal(false);
+                }}
             />
         )}
         </>

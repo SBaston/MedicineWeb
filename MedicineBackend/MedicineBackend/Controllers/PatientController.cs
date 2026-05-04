@@ -1,8 +1,10 @@
-﻿using MedicineBackend.DTOs.Patient;
+﻿using MedicineBackend.Data;
+using MedicineBackend.DTOs.Patient;
 using MedicineBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -20,15 +22,18 @@ public class PatientsController : ControllerBase
     private readonly IPatientService _patientService;
     private readonly IAppointmentService _appointmentService;
     private readonly ILogger<PatientsController> _logger;
+    private readonly AppDbContext _context;
 
     public PatientsController(
         IPatientService patientService,
         IAppointmentService appointmentService,
-        ILogger<PatientsController> logger)
+        ILogger<PatientsController> logger,
+        AppDbContext context)
     {
         _patientService = patientService;
         _appointmentService = appointmentService;
         _logger = logger;
+        _context = context;
     }
 
     /// <summary>
@@ -50,15 +55,20 @@ public class PatientsController : ControllerBase
                 return NotFound(new { message = "Paciente no encontrado" });
             }
 
-            // Calcular completitud del perfil
-            var profileCompletion = _patientService.CalculateProfileCompletion(patient);
+            // Obtener estado 2FA del usuario
+            var user = await _context.Users.FindAsync(userId);
+            var twoFactorEnabled = user?.TwoFactorEnabled ?? false;
+
+            // Calcular completitud del perfil (incluye 2FA como campo)
+            var profileCompletion = _patientService.CalculateProfileCompletion(patient, twoFactorEnabled);
 
             // Respuesta enriquecida con metadata
             var response = new
             {
                 patient,
                 profileCompletion,
-                isProfileComplete = profileCompletion == 100
+                isProfileComplete = profileCompletion == 100,
+                twoFactorEnabled
             };
 
             return Ok(response);

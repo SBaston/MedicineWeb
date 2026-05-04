@@ -337,7 +337,7 @@ const EditProfilePage = () => {
 
                 {/* Seguridad: 2FA */}
                 <div className="mt-6">
-                    <TwoFactorSettings />
+                    <TwoFactorSettings twoFactorEnabled={profileData?.twoFactorEnabled ?? false} />
                 </div>
 
                 {/* Nota de privacidad */}

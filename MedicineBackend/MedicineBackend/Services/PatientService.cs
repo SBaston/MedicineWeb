@@ -92,16 +92,16 @@ public class PatientService : IPatientService
             // Validaciones de negocio
             ValidatePatientUpdate(request);
 
-            // Actualizar campos
-            patient.PhoneNumber = request.PhoneNumber;
-            patient.Address = request.Address;
-            patient.City = request.City;
-            patient.PostalCode = request.PostalCode;
-            patient.Country = request.Country ?? "España";
-            patient.Gender = request.Gender;
-            patient.EmergencyContact = request.EmergencyContact;
-            patient.MedicalHistory = request.MedicalHistory;
-            patient.ProfilePictureUrl = request.ProfilePictureUrl;
+            // Actualizar campos — empty string se trata como null para no borrar datos existentes
+            patient.PhoneNumber       = string.IsNullOrWhiteSpace(request.PhoneNumber)       ? patient.PhoneNumber       : request.PhoneNumber;
+            patient.Address           = string.IsNullOrWhiteSpace(request.Address)           ? null                      : request.Address;
+            patient.City              = string.IsNullOrWhiteSpace(request.City)              ? null                      : request.City;
+            patient.PostalCode        = string.IsNullOrWhiteSpace(request.PostalCode)        ? null                      : request.PostalCode;
+            patient.Country           = string.IsNullOrWhiteSpace(request.Country)           ? "España"                  : request.Country;
+            patient.Gender            = string.IsNullOrWhiteSpace(request.Gender)            ? null                      : request.Gender;
+            patient.EmergencyContact  = string.IsNullOrWhiteSpace(request.EmergencyContact)  ? null                      : request.EmergencyContact;
+            patient.MedicalHistory    = string.IsNullOrWhiteSpace(request.MedicalHistory)    ? null                      : request.MedicalHistory;
+            patient.ProfilePictureUrl = string.IsNullOrWhiteSpace(request.ProfilePictureUrl) ? null                      : request.ProfilePictureUrl;
             patient.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -125,7 +125,7 @@ public class PatientService : IPatientService
     /// <summary>
     /// Calcula el porcentaje de completitud del perfil
     /// </summary>
-    public int CalculateProfileCompletion(PatientProfileResponse patient)
+    public int CalculateProfileCompletion(PatientProfileResponse patient, bool twoFactorEnabled = false)
     {
         var fields = new[]
         {
@@ -135,6 +135,7 @@ public class PatientService : IPatientService
             !string.IsNullOrWhiteSpace(patient.PostalCode),
             !string.IsNullOrWhiteSpace(patient.Gender),
             !string.IsNullOrWhiteSpace(patient.ProfilePictureUrl),
+            twoFactorEnabled,   // ✅ 2FA como campo de completitud
         };
 
         var completed = fields.Count(f => f);
@@ -302,11 +303,11 @@ public class PatientService : IPatientService
             }
         }
 
-        // Validar teléfono español si se proporciona
+        // Validar que el teléfono tenga un formato internacional válido
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber) &&
-            !System.Text.RegularExpressions.Regex.IsMatch(request.PhoneNumber, @"^(\+34|0034)?[6-9]\d{8}$"))
+            !System.Text.RegularExpressions.Regex.IsMatch(request.PhoneNumber, @"^\+?[\d\s\-\(\)]{7,20}$"))
         {
-            throw new InvalidOperationException("El formato del teléfono no es válido. Debe ser un número español válido");
+            throw new InvalidOperationException("El formato del teléfono no es válido");
         }
 
         // Más validaciones de negocio según sea necesario...

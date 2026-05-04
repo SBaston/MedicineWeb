@@ -39,9 +39,10 @@ const patientService = {
             patient.postalCode,
             patient.gender,
             patient.profilePictureUrl,
+            profileData.twoFactorEnabled ? 'ok' : null,  // 2FA como campo
         ];
 
-        const completed = fields.filter(field => field && field.trim() !== '').length;
+        const completed = fields.filter(field => field && field.toString().trim() !== '').length;
         const total = fields.length;
 
         return Math.round((completed / total) * 100);
@@ -60,6 +61,7 @@ const patientService = {
         if (!patient.postalCode) missing.push('Código postal');
         if (!patient.gender) missing.push('Género');
         if (!patient.profilePictureUrl) missing.push('Foto de perfil');
+        if (!profileData.twoFactorEnabled) missing.push('Verificación en dos pasos');
 
         return missing;
     },
