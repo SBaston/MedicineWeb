@@ -28,6 +28,7 @@ public class DoctorDashboardService : IDoctorDashboardService
     public async Task<DoctorDashboardStatsDto> GetDashboardStatsAsync(int doctorId)
     {
         var doctor = await _context.Doctors
+            .Include(d => d.User)
             .Include(d => d.Appointments)
             .Include(d => d.Reviews)
             .Include(d => d.Courses)
@@ -115,7 +116,7 @@ public class DoctorDashboardService : IDoctorDashboardService
 
         
 
-        //SOLO 4 CAMPOS BÁSICOS EDITABLES
+        // 4 CAMPOS BÁSICOS EDITABLES (2FA no es requisito)
         int profileCompletion = 0;
         int totalFields = 4;
 
@@ -128,6 +129,7 @@ public class DoctorDashboardService : IDoctorDashboardService
         {
             Status = doctor.Status.ToString(),
             ProfileCompletion = (profileCompletion * 100) / totalFields,
+            TwoFactorEnabled = doctor.User?.TwoFactorEnabled ?? false,
             ThisMonthEarnings = thisMonthEarnings,
             UpcomingAppointments = upcomingAppointments.Count,
             ActivePatients = await _context.Appointments

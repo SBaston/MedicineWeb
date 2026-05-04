@@ -12,6 +12,7 @@ public class DoctorDashboardStatsDto
 {
     public string Status { get; set; } = string.Empty;
     public int ProfileCompletion { get; set; }
+    public bool TwoFactorEnabled { get; set; }
     public decimal ThisMonthEarnings { get; set; }
     public int UpcomingAppointments { get; set; }
     public int ActivePatients { get; set; }

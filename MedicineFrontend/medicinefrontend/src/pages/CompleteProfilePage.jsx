@@ -11,6 +11,7 @@ import {
     Award, Calendar, DollarSign, FileText, User, Info
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
+import TwoFactorSettings from '../components/TwoFactorSettings';
 
 const CompleteProfilePage = () => {
     const navigate = useNavigate();
@@ -30,6 +31,7 @@ const CompleteProfilePage = () => {
     });
 
     const [errors, setErrors] = useState({});
+    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
     useEffect(() => {
         loadInitialData();
@@ -40,7 +42,11 @@ const CompleteProfilePage = () => {
             setLoadingData(true);
 
             // Cargar datos actuales del doctor
-            const profileResponse = await doctorDashboardService.getProfile();
+            const [profileResponse, statsResponse] = await Promise.all([
+                doctorDashboardService.getProfile(),
+                doctorDashboardService.getStats(),
+            ]);
+            setTwoFactorEnabled(statsResponse?.twoFactorEnabled ?? false);
 
             setFormData({
                 firstName: profileResponse.firstName || '',
@@ -155,7 +161,7 @@ const CompleteProfilePage = () => {
         }
     };
 
-    // ✅ Cálculo simplificado: 4 campos = 100%
+    // ✅ Cálculo: 4 campos = 100% (2FA no es requisito)
     const completionPercentage = () => {
         let completed = 0;
         const total = 4;
@@ -442,6 +448,11 @@ const CompleteProfilePage = () => {
                         </button>
                     </div>
                 </form>
+
+                {/* Seguridad: 2FA */}
+                <div className="mt-6">
+                    <TwoFactorSettings twoFactorEnabled={twoFactorEnabled} />
+                </div>
             </div>
         </div>
     );

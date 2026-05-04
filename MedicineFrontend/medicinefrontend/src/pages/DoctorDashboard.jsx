@@ -4,7 +4,7 @@
 // ✅ Con botón "Ver mi perfil" cuando está completado al 100%
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -12,12 +12,192 @@ import {
     User, Clock, Video, BookOpen, AlertCircle,
     ArrowRight, CheckCircle, Eye,
     MapPin, Loader2, ChevronDown, ChevronUp,
-    CreditCard, FileText, BarChart2, MessageCircle, Crown, Search, ClipboardList
+    CreditCard, FileText, BarChart2, MessageCircle, Crown, Search, ClipboardList,
+    ShieldCheck, ShieldAlert, KeyRound, Copy, ScanLine, X
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
 import SocialMediaSection from '../components/SocialMediaSection';
 import appointmentService from '../services/appointmentService';
 import chatService from '../services/chatService';
+import authService from '../services/authService';
+
+// ── Modal de configuración 2FA ────────────────────────────────────
+const TwoFactorModal = ({ onClose, onSuccess }) => {
+    const [setupData, setSetupData]         = useState(null);
+    const [code, setCode]                   = useState('');
+    const [error, setError]                 = useState('');
+    const [loading, setLoading]             = useState(false);
+    const [copied, setCopied]               = useState(false);
+    const [recoveryCodes, setRecoveryCodes] = useState(null);
+    const [codesCopied, setCodesCopied]     = useState(false);
+    const setupCalled = useRef(false);
+
+    useEffect(() => {
+        if (setupCalled.current) return;
+        setupCalled.current = true;
+        authService.setupTwoFactor()
+            .then(data => setSetupData(data))
+            .catch(() => setError('Error al generar el código QR. Inténtalo de nuevo.'));
+    }, []);
+
+    const qrUrl = setupData?.otpAuthUri
+        ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.otpAuthUri)}`
+        : null;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(setupData?.manualEntryKey || '');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleCopyAllCodes = () => {
+        navigator.clipboard.writeText((recoveryCodes || []).join('\n'));
+        setCodesCopied(true);
+        setTimeout(() => setCodesCopied(false), 2000);
+    };
+
+    const handleDownloadCodes = () => {
+        const blob = new Blob(
+            [`Códigos de recuperación NexusSalud\nGuárdalos en un lugar seguro — cada uno solo se puede usar una vez.\n\n${(recoveryCodes || []).join('\n')}`],
+            { type: 'text/plain' }
+        );
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'nexussalud-recovery-codes.txt';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            const result = await authService.enableTwoFactor(code);
+            setRecoveryCodes(result.recoveryCodes ?? []);
+        } catch {
+            setError('Código incorrecto. Comprueba que la hora de tu dispositivo es correcta.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
+                {!recoveryCodes && (
+                    <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
+                )}
+
+                {recoveryCodes ? (
+                    <>
+                        <div className="flex flex-col items-center text-center gap-2 mb-5">
+                            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                                <ShieldCheck className="w-7 h-7 text-green-600" />
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-900">¡2FA activado!</h2>
+                            <p className="text-sm text-gray-500">
+                                Guarda estos códigos de recuperación. Si pierdes acceso a tu app de autenticación,
+                                podrás usarlos para iniciar sesión. <strong>Solo se muestran una vez.</strong>
+                            </p>
+                        </div>
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 mb-4">
+                            <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-amber-800 text-xs">Cada código solo funciona una vez. Tendrás 8 en total.</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                            {recoveryCodes.map((rc, i) => (
+                                <div key={i} className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-center font-mono text-sm font-semibold text-gray-800 tracking-widest">
+                                    {rc}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex gap-2 mb-4">
+                            <button onClick={handleCopyAllCodes}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                {codesCopied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                {codesCopied ? 'Copiados' : 'Copiar todos'}
+                            </button>
+                            <button onClick={handleDownloadCodes}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <KeyRound className="w-4 h-4" />
+                                Descargar .txt
+                            </button>
+                        </div>
+                        <button onClick={onSuccess} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                            He guardado mis códigos
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <div className="flex flex-col items-center text-center gap-2 mb-5">
+                            <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <ShieldCheck className="w-7 h-7 text-indigo-600" />
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-900">Activar verificación en dos pasos</h2>
+                            <p className="text-sm text-gray-500">
+                                Escanea el QR con <strong>Google Authenticator</strong> o <strong>Authy</strong> e introduce el código de 6 dígitos.
+                            </p>
+                        </div>
+
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 mb-4">
+                                <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                <span className="text-red-700 text-sm">{error}</span>
+                            </div>
+                        )}
+
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 mb-4">
+                            <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-amber-800 text-xs">
+                                Si ya tenías NexusSalud en tu app de autenticación,{' '}
+                                <strong>elimina la entrada antigua</strong> antes de escanear este nuevo código QR.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-3 mb-5">
+                            {qrUrl ? (
+                                <img src={qrUrl} alt="QR 2FA" className="w-44 h-44 border-2 border-gray-200 rounded-xl" />
+                            ) : (
+                                <div className="w-44 h-44 bg-gray-100 rounded-xl flex items-center justify-center">
+                                    <ScanLine className="w-8 h-8 text-gray-400 animate-pulse" />
+                                </div>
+                            )}
+                            {setupData?.manualEntryKey && (
+                                <div className="w-full">
+                                    <p className="text-xs text-gray-400 mb-1 text-center">O introduce esta clave manualmente:</p>
+                                    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                                        <code className="text-xs font-mono text-gray-700 flex-1 break-all">{setupData.manualEntryKey}</code>
+                                        <button type="button" onClick={handleCopy} className="text-indigo-600 hover:text-indigo-700 flex-shrink-0">
+                                            {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-3">
+                            <div className="relative">
+                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input type="text" inputMode="numeric" maxLength={6} pattern="\d{6}" required autoFocus
+                                    value={code}
+                                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    className="w-full border border-gray-300 rounded-xl pl-10 pr-4 py-3 text-center text-2xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="000000" />
+                            </div>
+                            <button type="submit" disabled={loading || code.length !== 6}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                {loading ? 'Activando...' : 'Activar verificación en dos pasos'}
+                            </button>
+                        </form>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const DoctorDashboard = () => {
     const navigate = useNavigate();
@@ -27,6 +207,7 @@ const DoctorDashboard = () => {
     const [loadingAppointments, setLoadingAppointments] = useState(false);
     const [showAppointments, setShowAppointments] = useState(false);
     const [now, setNow] = useState(() => new Date());
+    const [show2FAModal, setShow2FAModal] = useState(false);
 
     // Actualizar "ahora" cada 30 segundos para activar/desactivar el botón de videollamada
     useEffect(() => {
@@ -137,6 +318,7 @@ const DoctorDashboard = () => {
     }
 
     return (
+        <>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
             {/* Header */}
             <div className="bg-white border-b border-slate-200 shadow-sm">
@@ -193,6 +375,41 @@ const DoctorDashboard = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* Banner 2FA — activo */}
+                {stats.twoFactorEnabled && (
+                    <div className="bg-white border border-green-200 rounded-2xl p-4 mb-6 flex items-center gap-4 shadow-sm">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <ShieldCheck className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-green-800 text-sm">Verificación en dos pasos activa</p>
+                            <p className="text-xs text-green-600">Tu cuenta está protegida con un segundo factor de autenticación.</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Banner 2FA — inactivo */}
+                {!stats.twoFactorEnabled && (
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 mb-6 flex items-center justify-between gap-4 shadow-sm">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                                <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-indigo-900 text-sm">Protege tu cuenta con verificación en dos pasos</p>
+                                <p className="text-xs text-indigo-600">Añade una capa extra de seguridad a tu historial médico y citas.</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setShow2FAModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-colors flex-shrink-0"
+                        >
+                            <ShieldCheck className="w-4 h-4" />
+                            Activar 2FA
+                        </button>
                     </div>
                 )}
 
@@ -767,6 +984,18 @@ const DoctorDashboard = () => {
                 </div>
             </div>
         </div>
+
+        {/* Modal 2FA */}
+        {show2FAModal && (
+            <TwoFactorModal
+                onClose={() => setShow2FAModal(false)}
+                onSuccess={() => {
+                    setShow2FAModal(false);
+                    doctorDashboardService.getStats().then(s => setStats(s)).catch(() => {});
+                }}
+            />
+        )}
+        </>
     );
 };
 
