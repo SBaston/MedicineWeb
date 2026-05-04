@@ -21,3 +21,12 @@ public class ResetPasswordRequest
     public string Token       { get; set; } = string.Empty;
     public string NewPassword { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// Cuerpo del endpoint POST /auth/2fa/use-recovery-code
+/// </summary>
+public class UseRecoveryCodeRequest
+{
+    public int    UserId { get; set; }
+    public string Code   { get; set; } = string.Empty;
+}

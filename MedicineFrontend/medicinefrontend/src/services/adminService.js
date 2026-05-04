@@ -43,6 +43,12 @@ const adminService = {
     //verifyVideo: (id, isVerified) => api.patch(`/admin/videos/${id}/verify`, { isVerified }).then(r => r.data),
 
     // ══════════════════════════════════════════════════════════════
+    // GESTIÓN DE 2FA
+    // ══════════════════════════════════════════════════════════════
+    getUsersWith2FA: () => api.get('/admin/users/2fa-enabled').then(r => r.data),
+    disable2FA: (userId) => api.delete(`/admin/users/${userId}/2fa`).then(r => r.data),
+
+    // ══════════════════════════════════════════════════════════════
     // CONFIGURACIÓN DE PLATAFORMA (solo SuperAdmin)
     // ══════════════════════════════════════════════════════════════
     getSettings: () => api.get('/settings').then(r => r.data),

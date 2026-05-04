@@ -6,7 +6,7 @@ import adminService from '../services/adminService';
 import chatService from '../services/chatService';
 import { useTaxRate } from '../hooks/useTaxRate';
 import {
-    ShieldCheck, Clock, CheckCircle, XCircle, Trash2, Users,
+    ShieldCheck, ShieldOff, Clock, CheckCircle, XCircle, Trash2, Users,
     Stethoscope, Mail, AlertTriangle, ChevronDown, ChevronUp,
     Star, Crown, UserPlus, FileText, Shield, User, Eye, Download, X, Video,
     Search, BookOpen, Play, GraduationCap, Phone, Calendar, DollarSign,
@@ -1265,6 +1265,164 @@ const PlatformSettingsSection = () => {
 };
 
 // ════════════════════════════════════════════════════════════════
+// SECCIÓN GESTIÓN DE 2FA — Pacientes y Profesionales
+// Accesible para cualquier Admin
+// ════════════════════════════════════════════════════════════════
+
+const TwoFactorManagementSection = () => {
+    const qc = useQueryClient();
+    const [search, setSearch] = useState('');
+    const [confirmDisable, setConfirmDisable] = useState(null); // { userId, fullName, role }
+
+    const { data: users = [], isLoading } = useQuery({
+        queryKey: ['2fa-users'],
+        queryFn: adminService.getUsersWith2FA,
+    });
+
+    const disable2FAMut = useMutation({
+        mutationFn: (userId) => adminService.disable2FA(userId),
+        onSuccess: () => {
+            qc.invalidateQueries(['2fa-users']);
+            setConfirmDisable(null);
+        },
+    });
+
+    const filtered = users.filter(u =>
+        u.fullName.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const roleLabel = (role) => role === 'Doctor' ? 'Profesional' : 'Paciente';
+    const roleBadge = (role) => role === 'Doctor'
+        ? 'bg-indigo-100 text-indigo-700'
+        : 'bg-blue-100 text-blue-700';
+
+    return (
+        <div className="mt-10 pt-8 border-t-2 border-gray-200">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
+                        <ShieldOff className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Gestión de 2FA</h2>
+                        <p className="text-sm text-gray-500">
+                            Pacientes y profesionales con verificación en dos pasos activa
+                        </p>
+                    </div>
+                </div>
+
+                {/* Búsqueda */}
+                <div className="relative w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Buscar por nombre o email…"
+                        className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            {['Nombre', 'Email', 'Tipo', '2FA', 'Acción'].map(h => (
+                                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                    {h}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {isLoading ? (
+                            <tr><td colSpan={5} className="text-center py-10 text-gray-400">Cargando…</td></tr>
+                        ) : filtered.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="text-center py-10">
+                                    <ShieldCheck className="w-10 h-10 text-green-300 mx-auto mb-2" />
+                                    <p className="text-gray-400 text-sm">
+                                        {search ? 'No hay resultados para esa búsqueda.' : 'Ningún usuario tiene 2FA activo.'}
+                                    </p>
+                                </td>
+                            </tr>
+                        ) : filtered.map(u => (
+                            <tr key={u.userId} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-4 py-3 font-medium text-gray-900">{u.fullName}</td>
+                                <td className="px-4 py-3 text-gray-500">{u.email}</td>
+                                <td className="px-4 py-3">
+                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${roleBadge(u.role)}`}>
+                                        {u.role === 'Doctor'
+                                            ? <Stethoscope className="w-3 h-3" />
+                                            : <User className="w-3 h-3" />
+                                        }
+                                        {roleLabel(u.role)}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                                        <ShieldCheck className="w-3 h-3" /> Activo
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3">
+                                    <button
+                                        onClick={() => setConfirmDisable(u)}
+                                        className="flex items-center gap-1 px-3 py-1.5 border border-orange-200 text-orange-600 hover:bg-orange-50 rounded-lg text-xs font-medium transition-colors"
+                                    >
+                                        <ShieldOff className="w-3.5 h-3.5" /> Desactivar 2FA
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Modal de confirmación */}
+            {confirmDisable && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                <ShieldOff className="w-5 h-5 text-orange-600" />
+                            </div>
+                            <h3 className="font-bold text-gray-900">Desactivar 2FA</h3>
+                        </div>
+                        <p className="text-sm text-gray-500 mb-2">
+                            ¿Desactivar la verificación en dos pasos de{' '}
+                            <strong>{confirmDisable.fullName}</strong>?{' '}
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${roleBadge(confirmDisable.role)}`}>
+                                {roleLabel(confirmDisable.role)}
+                            </span>
+                        </p>
+                        <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 mb-6">
+                            El usuario podrá iniciar sesión sin 2FA. Se recomienda pedirle que lo reactive desde su perfil en cuanto recupere el acceso.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setConfirmDisable(null)}
+                                className="btn-secondary text-sm px-4 py-2"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => disable2FAMut.mutate(confirmDisable.userId)}
+                                disabled={disable2FAMut.isPending}
+                                className="bg-orange-600 hover:bg-orange-700 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                            >
+                                {disable2FAMut.isPending ? 'Desactivando…' : 'Confirmar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ════════════════════════════════════════════════════════════════
 // SECCIÓN DE ADMINS (solo para SuperAdmin)
 // ════════════════════════════════════════════════════════════════
 
@@ -1274,6 +1432,7 @@ const AdminsSection = () => {
     const qc = useQueryClient();
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [confirmReactivate, setConfirmReactivate] = useState(null);
+    const [confirmDisable2FA, setConfirmDisable2FA] = useState(null);
 
     const isSuperAdmin = user?.role === 'Admin' && user?.isSuperAdmin === true;
 
@@ -1298,6 +1457,14 @@ const AdminsSection = () => {
             qc.invalidateQueries(['admins-list']);
             qc.invalidateQueries(['admin-stats']);
             setConfirmReactivate(null);
+        },
+    });
+
+    const disable2FAMut = useMutation({
+        mutationFn: (userId) => adminService.disable2FA(userId),
+        onSuccess: () => {
+            qc.invalidateQueries(['admins-list']);
+            setConfirmDisable2FA(null);
         },
     });
 
@@ -1332,7 +1499,7 @@ const AdminsSection = () => {
                 <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-100">
                         <tr>
-                            {['Nombre', 'Email', 'Departamento', 'Tipo', 'Estado', 'Fecha de alta', 'Acciones'].map(h => (
+                            {['Nombre', 'Email', 'Departamento', 'Tipo', '2FA', 'Estado', 'Fecha de alta', 'Acciones'].map(h => (
                                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                     {h}
                                 </th>
@@ -1341,9 +1508,9 @@ const AdminsSection = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                         {isLoading ? (
-                            <tr><td colSpan={7} className="text-center py-10 text-gray-400">Cargando…</td></tr>
+                            <tr><td colSpan={8} className="text-center py-10 text-gray-400">Cargando…</td></tr>
                         ) : admins.length === 0 ? (
-                            <tr><td colSpan={7} className="text-center py-10 text-gray-400">No hay administradores registrados</td></tr>
+                            <tr><td colSpan={8} className="text-center py-10 text-gray-400">No hay administradores registrados</td></tr>
                         ) : admins.map(admin => (
                             <tr key={admin.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-4 py-3 font-medium text-gray-900">{admin.fullName}</td>
@@ -1361,6 +1528,17 @@ const AdminsSection = () => {
                                     )}
                                 </td>
                                 <td className="px-4 py-3">
+                                    {admin.twoFactorEnabled ? (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                                            <ShieldCheck className="w-3 h-3" /> Activo
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-semibold">
+                                            <ShieldOff className="w-3 h-3" /> Inactivo
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-4 py-3">
                                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${admin.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
                                         {admin.isActive ? 'Activo' : 'Inactivo'}
                                     </span>
@@ -1369,25 +1547,27 @@ const AdminsSection = () => {
                                     {new Date(admin.createdAt).toLocaleDateString('es-ES')}
                                 </td>
                                 <td className="px-4 py-3">
-                                    {!admin.isSuperAdmin && (
-                                        <>
-                                            {admin.isActive ? (
-                                                <button
-                                                    onClick={() => setConfirmDelete(admin)}
-                                                    className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition-colors"
-                                                >
+                                    <div className="flex flex-col gap-1.5">
+                                        {!admin.isSuperAdmin && (
+                                            admin.isActive ? (
+                                                <button onClick={() => setConfirmDelete(admin)}
+                                                    className="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium transition-colors">
                                                     <Trash2 className="w-3.5 h-3.5" /> Desactivar
                                                 </button>
                                             ) : (
-                                                <button
-                                                    onClick={() => setConfirmReactivate(admin)}
-                                                    className="flex items-center gap-1 px-3 py-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded-lg text-xs font-medium transition-colors"
-                                                >
+                                                <button onClick={() => setConfirmReactivate(admin)}
+                                                    className="flex items-center gap-1 px-3 py-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded-lg text-xs font-medium transition-colors">
                                                     <CheckCircle className="w-3.5 h-3.5" /> Reactivar
                                                 </button>
-                                            )}
-                                        </>
-                                    )}
+                                            )
+                                        )}
+                                        {admin.twoFactorEnabled && (
+                                            <button onClick={() => setConfirmDisable2FA(admin)}
+                                                className="flex items-center gap-1 px-3 py-1.5 border border-orange-200 text-orange-600 hover:bg-orange-50 rounded-lg text-xs font-medium transition-colors">
+                                                <ShieldOff className="w-3.5 h-3.5" /> Desactivar 2FA
+                                            </button>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -1447,6 +1627,37 @@ const AdminsSection = () => {
                                 className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
                             >
                                 {reactivateMut.isPending ? 'Reactivando…' : 'Confirmar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {confirmDisable2FA && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                <ShieldOff className="w-5 h-5 text-orange-600" />
+                            </div>
+                            <h3 className="font-bold text-gray-900">Desactivar 2FA</h3>
+                        </div>
+                        <p className="text-sm text-gray-500 mb-2">
+                            ¿Desactivar la verificación en dos pasos de <strong>{confirmDisable2FA.fullName}</strong>?
+                        </p>
+                        <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 mb-6">
+                            El usuario podrá iniciar sesión sin 2FA. Se recomienda pedirle que lo reactive de inmediato desde su perfil.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button onClick={() => setConfirmDisable2FA(null)} className="btn-secondary text-sm px-4 py-2">
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => disable2FAMut.mutate(confirmDisable2FA.userId)}
+                                disabled={disable2FAMut.isPending}
+                                className="bg-orange-600 hover:bg-orange-700 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                            >
+                                {disable2FAMut.isPending ? 'Desactivando…' : 'Confirmar'}
                             </button>
                         </div>
                     </div>
@@ -1651,6 +1862,9 @@ const AdminDashboard = () => {
 
             {/* Configuración de plataforma - Solo SuperAdmin */}
             <PlatformSettingsSection />
+
+            {/* Gestión de 2FA — Pacientes y Profesionales */}
+            <TwoFactorManagementSection />
 
             {/* Sección de Admins - Solo SuperAdmin */}
             <AdminsSection />

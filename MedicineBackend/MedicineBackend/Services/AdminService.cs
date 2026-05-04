@@ -283,12 +283,14 @@ public class AdminService : IAdminService
 
     private static AdminDto ToDto(Admin a) => new()
     {
-        Id = a.Id,
-        FullName = a.FullName,
-        Email = a.User.Email,
-        IsActive = a.User.IsActive,
-        IsSuperAdmin = a.IsSuperAdmin,
-        Department = a.Department,
-        CreatedAt = a.CreatedAt,
+        Id               = a.Id,
+        UserId           = a.UserId,
+        FullName         = a.FullName,
+        Email            = a.User.Email,
+        IsActive         = a.User.IsActive,
+        IsSuperAdmin     = a.IsSuperAdmin,
+        TwoFactorEnabled = a.User.TwoFactorEnabled,
+        Department       = a.Department,
+        CreatedAt        = a.CreatedAt,
     };
 }

@@ -47,12 +47,18 @@ public interface IAuthService
     /// <summary>Genera el secreto TOTP y devuelve la URI para el QR + la clave manual</summary>
     Task<TwoFactorSetupResponse> GenerateTwoFactorSetupAsync(int userId);
 
-    /// <summary>Verifica el código TOTP e habilita definitivamente el 2FA en la cuenta</summary>
-    Task EnableTwoFactorAsync(int userId, string code);
+    /// <summary>Verifica el código TOTP, activa el 2FA y devuelve los 8 códigos de recuperación en texto plano</summary>
+    Task<string[]> EnableTwoFactorAsync(int userId, string code);
 
     /// <summary>Desactiva el 2FA tras verificar el código TOTP actual</summary>
     Task DisableTwoFactorAsync(int userId, string code);
 
     /// <summary>Verifica el código TOTP en el paso 2 del login y devuelve el JWT completo</summary>
     Task<LoginResponse> VerifyTwoFactorLoginAsync(int userId, string code);
+
+    /// <summary>Valida un código de recuperación (en lugar del TOTP) y devuelve el JWT completo. Invalida el código usado.</summary>
+    Task<LoginResponse> UseRecoveryCodeAsync(int userId, string recoveryCode);
+
+    /// <summary>Desactiva el 2FA de cualquier usuario (acción de Admin, sin verificación TOTP)</summary>
+    Task AdminDisableTwoFactorAsync(int targetUserId);
 }

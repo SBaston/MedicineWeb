@@ -6,6 +6,9 @@ using MedicineBackend.Helpers;
 using MedicineBackend.Models;
 using MedicineBackend.Services.Interfaces;
 using OtpNet;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 
 namespace MedicineBackend.Services;
@@ -404,9 +407,10 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// Verifica el código TOTP introducido y activa el 2FA definitivamente.
+    /// Verifica el código TOTP introducido, activa el 2FA y genera códigos de recuperación.
+    /// Devuelve los 8 códigos en texto plano (solo se muestran una vez).
     /// </summary>
-    public async Task EnableTwoFactorAsync(int userId, string code)
+    public async Task<string[]> EnableTwoFactorAsync(int userId, string code)
     {
         var user = await _context.Users.FindAsync(userId)
             ?? throw new InvalidOperationException("Usuario no encontrado");
@@ -417,7 +421,79 @@ public class AuthService : IAuthService
         if (!ValidateTotp(user.TwoFactorSecret, code))
             throw new InvalidOperationException("Código incorrecto. Asegúrate de que la hora de tu dispositivo es correcta.");
 
+        // Generar 8 códigos de recuperación de un solo uso
+        var plainCodes   = GenerateRecoveryCodes(8);
+        var hashedCodes  = plainCodes.Select(HashRecoveryCode).ToArray();
+
         user.TwoFactorEnabled = true;
+        user.RecoveryCodes    = JsonSerializer.Serialize(hashedCodes);
+        await _context.SaveChangesAsync();
+
+        return plainCodes;
+    }
+
+    /// <summary>
+    /// Valida un código de recuperación durante el login (en sustitución del TOTP),
+    /// lo marca como usado (lo elimina) y devuelve el JWT completo.
+    /// </summary>
+    public async Task<LoginResponse> UseRecoveryCodeAsync(int userId, string recoveryCode)
+    {
+        var user = await _context.Users
+            .Include(u => u.Doctor)
+            .Include(u => u.Patient)
+            .Include(u => u.Admin)
+            .FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new UnauthorizedAccessException("Usuario no encontrado");
+
+        if (!user.TwoFactorEnabled)
+            throw new UnauthorizedAccessException("El 2FA no está activado en esta cuenta");
+
+        if (string.IsNullOrEmpty(user.RecoveryCodes))
+            throw new UnauthorizedAccessException("No quedan códigos de recuperación disponibles. Contacta con soporte.");
+
+        var storedHashes = JsonSerializer.Deserialize<string[]>(user.RecoveryCodes) ?? [];
+        var inputHash    = HashRecoveryCode(recoveryCode.Trim().ToLower());
+
+        if (!storedHashes.Contains(inputHash))
+            throw new UnauthorizedAccessException("Código de recuperación inválido o ya utilizado");
+
+        // Eliminar el código usado (uso único)
+        var remaining = storedHashes.Where(h => h != inputHash).ToArray();
+        user.RecoveryCodes = JsonSerializer.Serialize(remaining);
+        await _context.SaveChangesAsync();
+
+        string fullName = user.Role switch
+        {
+            "Doctor"  => user.Doctor?.FullName  ?? "Doctor",
+            "Patient" => user.Patient?.FullName ?? "Paciente",
+            "Admin"   => user.Admin?.FullName   ?? "Admin",
+            _         => "Usuario"
+        };
+
+        var token = _jwtHelper.GenerateToken(user.Id, user.Email, user.Role);
+
+        return new LoginResponse
+        {
+            Token     = token,
+            Email     = user.Email,
+            Role      = user.Role,
+            UserId    = user.Id,
+            FullName  = fullName,
+            ExpiresAt = _jwtHelper.GetTokenExpiration(),
+        };
+    }
+
+    /// <summary>
+    /// Desactiva el 2FA de un usuario por parte del Admin (sin verificación de código TOTP).
+    /// </summary>
+    public async Task AdminDisableTwoFactorAsync(int targetUserId)
+    {
+        var user = await _context.Users.FindAsync(targetUserId)
+            ?? throw new KeyNotFoundException("Usuario no encontrado");
+
+        user.TwoFactorEnabled = false;
+        user.TwoFactorSecret  = null;
+        user.RecoveryCodes    = null;
         await _context.SaveChangesAsync();
     }
 
@@ -502,5 +578,29 @@ public class AuthService : IAuthService
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Genera N códigos de recuperación aleatorios en formato XXXX-XXXX (hex minúsculas).
+    /// </summary>
+    private static string[] GenerateRecoveryCodes(int count = 8)
+    {
+        var codes = new string[count];
+        for (int i = 0; i < count; i++)
+        {
+            var a = Convert.ToHexString(RandomNumberGenerator.GetBytes(3)).ToLower();
+            var b = Convert.ToHexString(RandomNumberGenerator.GetBytes(3)).ToLower();
+            codes[i] = $"{a}-{b}";
+        }
+        return codes;
+    }
+
+    /// <summary>
+    /// Hashea un código de recuperación con SHA-256 para almacenarlo de forma segura.
+    /// </summary>
+    private static string HashRecoveryCode(string code)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(code.ToLower().Trim()));
+        return Convert.ToHexString(bytes).ToLower();
     }
 }

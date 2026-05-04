@@ -81,6 +81,12 @@ public class User
     public string? TwoFactorSecret { get; set; }
 
     /// <summary>
+    /// Códigos de recuperación de un solo uso para acceder si se pierde el dispositivo 2FA.
+    /// Almacenados como JSON array de hashes SHA-256.
+    /// </summary>
+    public string? RecoveryCodes { get; set; }
+
+    /// <summary>
     /// Fecha de creación del usuario
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

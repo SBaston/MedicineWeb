@@ -88,69 +88,122 @@ const StepCredentials = ({ email, setEmail, password, setPassword, error, loadin
 );
 
 // ─────────────────────────────────────────────────────────────
-// Paso 2: código TOTP
+// Paso 2: código TOTP (con opción de código de recuperación)
 // ─────────────────────────────────────────────────────────────
-const StepTwoFactor = ({ code, setCode, error, loading, onSubmit, onBack }) => (
-    <div className="space-y-6">
-        {/* Icono */}
-        <div className="flex flex-col items-center text-center gap-2 mb-2">
-            <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
-                <ShieldCheck className="w-8 h-8 text-primary-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Verificación en dos pasos</h3>
-            <p className="text-sm text-gray-500">
-                Abre tu app de autenticación (Google Authenticator, Authy…) e introduce el código de 6 dígitos.
-            </p>
-        </div>
+const StepTwoFactor = ({ code, setCode, error, loading, onSubmit, onBack, onUseRecovery }) => {
+    const [useRecovery, setUseRecovery]     = useState(false);
+    const [recoveryCode, setRecoveryCode]   = useState('');
+    const [recoveryError, setRecoveryError] = useState('');
+    const [recoveryLoading, setRecoveryLoading] = useState(false);
 
-        {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <span className="text-red-700 text-sm">{error}</span>
-            </div>
-        )}
+    const handleRecoverySubmit = async (e) => {
+        e.preventDefault();
+        setRecoveryError('');
+        setRecoveryLoading(true);
+        try {
+            await onUseRecovery(recoveryCode.trim().toLowerCase());
+        } catch (err) {
+            setRecoveryError(err.response?.data?.message || 'Código inválido o ya utilizado.');
+        } finally {
+            setRecoveryLoading(false);
+        }
+    };
 
-        <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Código de verificación
-                </label>
-                <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={6}
-                        pattern="\d{6}"
-                        required
-                        autoFocus
-                        value={code}
-                        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        className="input-field pl-10 text-center text-2xl tracking-widest font-mono"
-                        placeholder="000000"
-                    />
+    return (
+        <div className="space-y-6">
+            {/* Icono */}
+            <div className="flex flex-col items-center text-center gap-2 mb-2">
+                <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
+                    <ShieldCheck className="w-8 h-8 text-primary-600" />
                 </div>
-                <p className="text-xs text-gray-400 mt-1 text-center">El código cambia cada 30 segundos</p>
+                <h3 className="text-lg font-semibold text-gray-900">
+                    {useRecovery ? 'Código de recuperación' : 'Verificación en dos pasos'}
+                </h3>
+                <p className="text-sm text-gray-500">
+                    {useRecovery
+                        ? 'Introduce uno de los códigos de recuperación que guardaste al activar el 2FA.'
+                        : 'Abre tu app de autenticación (Google Authenticator, Authy…) e introduce el código de 6 dígitos.'}
+                </p>
             </div>
 
-            <button
-                type="submit"
-                disabled={loading || code.length !== 6}
-                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                {loading ? 'Verificando...' : 'Verificar y entrar'}
-            </button>
-
-            <button
-                type="button"
-                onClick={onBack}
-                className="w-full text-sm text-gray-500 hover:text-gray-700 underline"
-            >
-                ← Volver al inicio de sesión
-            </button>
-        </form>
-    </div>
-);
+            {useRecovery ? (
+                <>
+                    {recoveryError && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+                            <AlertCircle className="w-5 h-5 text-red-600" />
+                            <span className="text-red-700 text-sm">{recoveryError}</span>
+                        </div>
+                    )}
+                    <form onSubmit={handleRecoverySubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Código de recuperación
+                            </label>
+                            <div className="relative">
+                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="text" autoFocus required
+                                    value={recoveryCode}
+                                    onChange={(e) => setRecoveryCode(e.target.value)}
+                                    className="input-field pl-10 text-center text-lg tracking-widest font-mono"
+                                    placeholder="xxxxxx-xxxxxx"
+                                />
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1 text-center">Formato: xxxxxx-xxxxxx</p>
+                        </div>
+                        <button type="submit" disabled={recoveryLoading || !recoveryCode.trim()}
+                            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
+                            {recoveryLoading ? 'Verificando...' : 'Entrar con código de recuperación'}
+                        </button>
+                        <button type="button" onClick={() => { setUseRecovery(false); setRecoveryError(''); }}
+                            className="w-full text-sm text-gray-500 hover:text-gray-700 underline">
+                            ← Volver a código de autenticación
+                        </button>
+                    </form>
+                </>
+            ) : (
+                <>
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+                            <AlertCircle className="w-5 h-5 text-red-600" />
+                            <span className="text-red-700 text-sm">{error}</span>
+                        </div>
+                    )}
+                    <form onSubmit={onSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Código de verificación
+                            </label>
+                            <div className="relative">
+                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="text" inputMode="numeric" maxLength={6} pattern="\d{6}" required autoFocus
+                                    value={code}
+                                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    className="input-field pl-10 text-center text-2xl tracking-widest font-mono"
+                                    placeholder="000000"
+                                />
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1 text-center">El código cambia cada 30 segundos</p>
+                        </div>
+                        <button type="submit" disabled={loading || code.length !== 6}
+                            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
+                            {loading ? 'Verificando...' : 'Verificar y entrar'}
+                        </button>
+                        <button type="button" onClick={() => setUseRecovery(true)}
+                            className="w-full text-sm text-amber-600 hover:text-amber-700 font-medium">
+                            ¿Perdiste tu dispositivo? Usar código de recuperación
+                        </button>
+                        <button type="button" onClick={onBack}
+                            className="w-full text-sm text-gray-500 hover:text-gray-700 underline">
+                            ← Volver al inicio de sesión
+                        </button>
+                    </form>
+                </>
+            )}
+        </div>
+    );
+};
 
 // ─────────────────────────────────────────────────────────────
 // Paso 3 (solo Admins): configuración obligatoria de 2FA
@@ -330,7 +383,7 @@ const LoginPage = () => {
         }
     };
 
-    // ── Paso 2: código TOTP ──
+    // ── Paso 2a: código TOTP ──
     const handleTotpSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -343,6 +396,12 @@ const LoginPage = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // ── Paso 2b: código de recuperación (en lugar del TOTP) ──
+    const handleUseRecovery = async (recoveryCode) => {
+        const data = await authService.useRecoveryCode(twoFactorUserId, recoveryCode);
+        goToApp(data.role);
     };
 
     const handleBack = () => {
@@ -381,6 +440,7 @@ const LoginPage = () => {
                             loading={loading}
                             onSubmit={handleTotpSubmit}
                             onBack={handleBack}
+                            onUseRecovery={handleUseRecovery}
                         />
                     )}
                     {step === 'forced-setup' && (

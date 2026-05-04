@@ -76,15 +76,25 @@ const authService = {
         return response.data; // { otpAuthUri, manualEntryKey }
     },
 
-    /** Activa definitivamente el 2FA tras verificar el primer código */
+    /** Activa definitivamente el 2FA. Devuelve { message, recoveryCodes: string[] } */
     enableTwoFactor: async (code) => {
         const response = await api.post('/auth/2fa/enable', { code });
-        return response.data;
+        return response.data; // { message, recoveryCodes }
     },
 
     /** Desactiva el 2FA verificando el código actual */
     disableTwoFactor: async (code) => {
         const response = await api.post('/auth/2fa/disable', { code });
+        return response.data;
+    },
+
+    /** Paso 2 del login usando un código de recuperación en lugar del TOTP */
+    useRecoveryCode: async (userId, code) => {
+        const response = await api.post('/auth/2fa/use-recovery-code', { userId, code });
+        if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data));
+        }
         return response.data;
     },
 };

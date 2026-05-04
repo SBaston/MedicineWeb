@@ -27,10 +27,12 @@ public class CreateAdminRequest
 public class AdminDto
 {
     public int Id { get; set; }
+    public int UserId { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public bool IsSuperAdmin { get; set; }
+    public bool TwoFactorEnabled { get; set; }
     public string? Department { get; set; }
     public DateTime CreatedAt { get; set; }
 }
@@ -42,6 +44,18 @@ public class AdminMeResponse
     public string Email { get; set; } = string.Empty;
     public bool IsSuperAdmin { get; set; }
     public string? Department { get; set; }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 2FA — Lista de usuarios con 2FA activo
+// ════════════════════════════════════════════════════════════════
+
+public class UserWith2FADto
+{
+    public int UserId { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
 }
 
 // ════════════════════════════════════════════════════════════════

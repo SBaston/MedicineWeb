@@ -22,19 +22,22 @@ public class AdminController : ControllerBase
     private readonly ILogger<AdminController> _logger;
     private readonly AppDbContext _db;
     private readonly IChatService _chatService;
+    private readonly IAuthService _authService;
 
     public AdminController(
         IAdminService adminService,
         IDoctorManagementService doctorMgmt,
         ILogger<AdminController> logger,
         AppDbContext db,
-        IChatService chatService)
+        IChatService chatService,
+        IAuthService authService)
     {
         _adminService = adminService;
         _doctorMgmt = doctorMgmt;
         _logger = logger;
         _db = db;
         _chatService = chatService;
+        _authService = authService;
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -186,6 +189,82 @@ public class AdminController : ControllerBase
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // GESTIÓN DE 2FA — Solo Admin puede desactivar el 2FA de un usuario
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Lista todos los usuarios (pacientes y profesionales) que tienen 2FA activo.
+    /// Accesible para cualquier Admin (los admins se gestionan en AdminsSection).
+    /// </summary>
+    [HttpGet("users/2fa-enabled")]
+    public async Task<IActionResult> GetUsersWith2FAEnabled()
+    {
+        try
+        {
+            // Profesionales con 2FA activo
+            var doctors = await _db.Doctors
+                .Where(d => d.User.TwoFactorEnabled)
+                .Select(d => new UserWith2FADto
+                {
+                    UserId   = d.UserId,
+                    Email    = d.User.Email,
+                    Role     = "Doctor",
+                    FullName = d.FullName ?? d.User.Email,
+                })
+                .ToListAsync();
+
+            // Pacientes con 2FA activo
+            var patients = await _db.Patients
+                .Where(p => p.User.TwoFactorEnabled)
+                .Select(p => new UserWith2FADto
+                {
+                    UserId   = p.UserId,
+                    Email    = p.User.Email,
+                    Role     = "Patient",
+                    FullName = p.FullName ?? p.User.Email,
+                })
+                .ToListAsync();
+
+            var result = doctors
+                .Concat(patients)
+                .OrderBy(u => u.Role)
+                .ThenBy(u => u.FullName)
+                .ToList();
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al listar usuarios con 2FA activo");
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Desactiva el 2FA de cualquier usuario (paciente, doctor o admin).
+    /// Requiere rol Admin. Se usa cuando el usuario ha perdido su dispositivo.
+    /// </summary>
+    [HttpDelete("users/{userId:int}/2fa")]
+    public async Task<IActionResult> DisableUserTwoFactor(int userId)
+    {
+        try
+        {
+            await _authService.AdminDisableTwoFactorAsync(userId);
+            _logger.LogInformation("Admin (userId={AdminId}) desactivó el 2FA del usuario {TargetId}", GetUserId(), userId);
+            return Ok(new { message = "2FA desactivado correctamente. El usuario puede iniciar sesión sin 2FA." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al desactivar 2FA para userId={UserId}", userId);
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
     }
 
     // ════════════════════════════════════════════════════════════════

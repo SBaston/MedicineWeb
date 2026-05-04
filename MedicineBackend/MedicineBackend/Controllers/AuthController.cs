@@ -245,6 +245,7 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Confirma la activación del 2FA verificando el primer código TOTP.
+    /// Devuelve los 8 códigos de recuperación en texto plano (solo se muestran una vez).
     /// </summary>
     [HttpPost("2fa/enable")]
     [Authorize]
@@ -256,8 +257,12 @@ public class AuthController : ControllerBase
             if (!int.TryParse(userIdStr, out var userId))
                 return Unauthorized();
 
-            await _authService.EnableTwoFactorAsync(userId, request.Code);
-            return Ok(new { message = "Autenticación en dos factores activada correctamente" });
+            var recoveryCodes = await _authService.EnableTwoFactorAsync(userId, request.Code);
+            return Ok(new
+            {
+                message       = "Autenticación en dos factores activada correctamente",
+                recoveryCodes = recoveryCodes
+            });
         }
         catch (InvalidOperationException ex)
         {
@@ -266,6 +271,30 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al activar 2FA");
+            return StatusCode(500, new { message = "Error interno del servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Paso 2 del login con recuperación: usa un código de recuperación en lugar del TOTP.
+    /// Devuelve el JWT completo e invalida el código usado.
+    /// </summary>
+    [HttpPost("2fa/use-recovery-code")]
+    [AllowAnonymous]
+    public async Task<IActionResult> UseRecoveryCode([FromBody] UseRecoveryCodeRequest request)
+    {
+        try
+        {
+            var response = await _authService.UseRecoveryCodeAsync(request.UserId, request.Code);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al usar código de recuperación");
             return StatusCode(500, new { message = "Error interno del servidor" });
         }
     }

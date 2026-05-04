@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -34,13 +34,20 @@ const getInitials = (name = '') =>
 
 // ── Modal de configuración 2FA ────────────────────────────────────
 const TwoFactorModal = ({ onClose, onSuccess }) => {
-    const [setupData, setSetupData] = useState(null);
-    const [code, setCode]           = useState('');
-    const [error, setError]         = useState('');
-    const [loading, setLoading]     = useState(false);
-    const [copied, setCopied]       = useState(false);
+    const [setupData, setSetupData]         = useState(null);
+    const [code, setCode]                   = useState('');
+    const [error, setError]                 = useState('');
+    const [loading, setLoading]             = useState(false);
+    const [copied, setCopied]               = useState(false);
+    const [recoveryCodes, setRecoveryCodes] = useState(null); // null = no mostrar todavía
+    const [codesCopied, setCodesCopied]     = useState(false);
+    // Ref para garantizar que solo se llama a setupTwoFactor UNA vez,
+    // incluso en React Strict Mode (que ejecuta los effects dos veces en desarrollo)
+    const setupCalled = useRef(false);
 
     useEffect(() => {
+        if (setupCalled.current) return;
+        setupCalled.current = true;
         authService.setupTwoFactor()
             .then(data => setSetupData(data))
             .catch(() => setError('Error al generar el código QR. Inténtalo de nuevo.'));
@@ -56,13 +63,31 @@ const TwoFactorModal = ({ onClose, onSuccess }) => {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const handleCopyAllCodes = () => {
+        navigator.clipboard.writeText((recoveryCodes || []).join('\n'));
+        setCodesCopied(true);
+        setTimeout(() => setCodesCopied(false), 2000);
+    };
+
+    const handleDownloadCodes = () => {
+        const blob = new Blob(
+            [`Códigos de recuperación NexusSalud\nGuárdalos en un lugar seguro — cada uno solo se puede usar una vez.\n\n${(recoveryCodes || []).join('\n')}`],
+            { type: 'text/plain' }
+        );
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'nexussalud-recovery-codes.txt';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            await authService.enableTwoFactor(code);
-            onSuccess();
+            const result = await authService.enableTwoFactor(code);
+            setRecoveryCodes(result.recoveryCodes ?? []);
         } catch {
             setError('Código incorrecto. Comprueba que la hora de tu dispositivo es correcta.');
         } finally {
@@ -72,86 +97,127 @@ const TwoFactorModal = ({ onClose, onSuccess }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
-                {/* Cerrar */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                >
-                    <X className="w-5 h-5" />
-                </button>
-
-                {/* Cabecera */}
-                <div className="flex flex-col items-center text-center gap-2 mb-5">
-                    <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-                        <ShieldCheck className="w-7 h-7 text-indigo-600 dark:text-indigo-300" />
-                    </div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                        Activar verificación en dos pasos
-                    </h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Escanea el código QR con <strong>Google Authenticator</strong> o <strong>Authy</strong>
-                        y luego introduce el código de 6 dígitos para confirmar.
-                    </p>
-                </div>
-
-                {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 mb-4">
-                        <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span className="text-red-700 text-sm">{error}</span>
-                    </div>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
+                {/* Cerrar — solo si no estamos en la pantalla de recovery codes */}
+                {!recoveryCodes && (
+                    <button onClick={onClose}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
                 )}
 
-                {/* QR */}
-                <div className="flex flex-col items-center gap-3 mb-5">
-                    {qrUrl ? (
-                        <img src={qrUrl} alt="QR 2FA" className="w-44 h-44 border-2 border-gray-200 dark:border-gray-600 rounded-xl" />
-                    ) : (
-                        <div className="w-44 h-44 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
-                            <ScanLine className="w-8 h-8 text-gray-400 animate-pulse" />
-                        </div>
-                    )}
-
-                    {setupData?.manualEntryKey && (
-                        <div className="w-full">
-                            <p className="text-xs text-gray-400 mb-1 text-center">O introduce esta clave manualmente:</p>
-                            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2">
-                                <code className="text-xs font-mono text-gray-700 dark:text-gray-300 flex-1 break-all">
-                                    {setupData.manualEntryKey}
-                                </code>
-                                <button type="button" onClick={handleCopy} className="text-indigo-600 hover:text-indigo-700 flex-shrink-0">
-                                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                                </button>
+                {recoveryCodes ? (
+                    /* ── Pantalla de códigos de recuperación ── */
+                    <>
+                        <div className="flex flex-col items-center text-center gap-2 mb-5">
+                            <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                                <ShieldCheck className="w-7 h-7 text-green-600 dark:text-green-300" />
                             </div>
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">¡2FA activado!</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Guarda estos códigos de recuperación. Si pierdes acceso a tu app de autenticación,
+                                podrás usarlos para iniciar sesión. <strong>Solo se muestran una vez.</strong>
+                            </p>
                         </div>
-                    )}
-                </div>
 
-                {/* Código */}
-                <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="relative">
-                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={6}
-                            pattern="\d{6}"
-                            required
-                            autoFocus
-                            value={code}
-                            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                            className="input-field pl-10 text-center text-2xl tracking-widest font-mono"
-                            placeholder="000000"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={loading || code.length !== 6}
-                        className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {loading ? 'Activando...' : 'Activar verificación en dos pasos'}
-                    </button>
-                </form>
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 mb-4">
+                            <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-amber-800 text-xs">Cada código solo funciona una vez. Tendrás 8 en total.</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                            {recoveryCodes.map((rc, i) => (
+                                <div key={i} className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-center font-mono text-sm font-semibold text-gray-800 dark:text-gray-200 tracking-widest">
+                                    {rc}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex gap-2 mb-4">
+                            <button onClick={handleCopyAllCodes}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                {codesCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                {codesCopied ? 'Copiados' : 'Copiar todos'}
+                            </button>
+                            <button onClick={handleDownloadCodes}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <KeyRound className="w-4 h-4" />
+                                Descargar .txt
+                            </button>
+                        </div>
+
+                        <button onClick={onSuccess}
+                            className="btn-primary w-full">
+                            He guardado mis códigos
+                        </button>
+                    </>
+                ) : (
+                    /* ── Pantalla de configuración QR ── */
+                    <>
+                        <div className="flex flex-col items-center text-center gap-2 mb-5">
+                            <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                                <ShieldCheck className="w-7 h-7 text-indigo-600 dark:text-indigo-300" />
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Activar verificación en dos pasos</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Escanea el QR con <strong>Google Authenticator</strong> o <strong>Authy</strong> e introduce el código de 6 dígitos.
+                            </p>
+                        </div>
+
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 mb-4">
+                                <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                <span className="text-red-700 text-sm">{error}</span>
+                            </div>
+                        )}
+
+                        {/* Aviso para re-activación: eliminar entrada antigua del autenticador */}
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 mb-4">
+                            <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-amber-800 text-xs">
+                                Si ya tenías NexusSalud en tu app de autenticación,{' '}
+                                <strong>elimina la entrada antigua</strong> antes de escanear este nuevo código QR.
+                                De lo contrario el código que genere será incorrecto.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-3 mb-5">
+                            {qrUrl ? (
+                                <img src={qrUrl} alt="QR 2FA" className="w-44 h-44 border-2 border-gray-200 dark:border-gray-600 rounded-xl" />
+                            ) : (
+                                <div className="w-44 h-44 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                                    <ScanLine className="w-8 h-8 text-gray-400 animate-pulse" />
+                                </div>
+                            )}
+                            {setupData?.manualEntryKey && (
+                                <div className="w-full">
+                                    <p className="text-xs text-gray-400 mb-1 text-center">O introduce esta clave manualmente:</p>
+                                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2">
+                                        <code className="text-xs font-mono text-gray-700 dark:text-gray-300 flex-1 break-all">{setupData.manualEntryKey}</code>
+                                        <button type="button" onClick={handleCopy} className="text-indigo-600 hover:text-indigo-700 flex-shrink-0">
+                                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-3">
+                            <div className="relative">
+                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input type="text" inputMode="numeric" maxLength={6} pattern="\d{6}" required autoFocus
+                                    value={code}
+                                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    className="input-field pl-10 text-center text-2xl tracking-widest font-mono"
+                                    placeholder="000000" />
+                            </div>
+                            <button type="submit" disabled={loading || code.length !== 6}
+                                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
+                                {loading ? 'Activando...' : 'Activar verificación en dos pasos'}
+                            </button>
+                        </form>
+                    </>
+                )}
             </div>
         </div>
     );
