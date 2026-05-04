@@ -39,6 +39,10 @@ import ProfessionalDetailPage from './pages/ProfessionalDetailPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 import VideoCallPage from './pages/VideoCallPage';
 import ClinicalHistoryPage from './pages/ClinicalHistoryPage';
+import DoctorPatientsPage from './pages/DoctorPatientsPage';
+import DoctorAppointmentsPage from './pages/DoctorAppointmentsPage';
+import DoctorChatsPage from './pages/DoctorChatsPage';
+import DoctorSocialMediaPage from './pages/DoctorSocialMediaPage';
 
 
 const SuperAdminRoute = ({ children }) => {
@@ -387,12 +391,52 @@ function App() {
                             }
                         />
 
+                        {/* Lista de pacientes del doctor */}
+                        <Route
+                            path="/doctor/patients"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <DoctorPatientsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
                         {/* Historial clínico del paciente — solo doctores */}
                         <Route
                             path="/doctor/patients/:patientId/clinical-history"
                             element={
                                 <ProtectedRoute allowedRoles={['Doctor']}>
                                     <ClinicalHistoryPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Doctor: listado de citas */}
+                        <Route
+                            path="/doctor/my-appointments"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <DoctorAppointmentsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Doctor: chats premium */}
+                        <Route
+                            path="/doctor/chats"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <DoctorChatsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Doctor: redes sociales */}
+                        <Route
+                            path="/doctor/social-media"
+                            element={
+                                <ProtectedRoute allowedRoles={['Doctor']}>
+                                    <DoctorSocialMediaPage />
                                 </ProtectedRoute>
                             }
                         />

@@ -1,6 +1,13 @@
 import api from './api';
 
 const clinicalNoteService = {
+    // ── Pacientes del doctor ───────────────────────────────────────
+    getMyPatients: (search = '') =>
+        api.get(`/doctor/patients${search ? `?search=${encodeURIComponent(search)}` : ''}`).then(r => r.data),
+
+    getPatientBasicInfo: (patientId) =>
+        api.get(`/doctor/patients/${patientId}`).then(r => r.data),
+
     // ── Notas ──────────────────────────────────────────────────────
     getNotes: (patientId) =>
         api.get(`/doctor/patients/${patientId}/clinical-notes`).then(r => r.data),

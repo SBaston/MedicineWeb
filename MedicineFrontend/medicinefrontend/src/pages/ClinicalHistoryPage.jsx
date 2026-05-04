@@ -231,10 +231,10 @@ const ClinicalHistoryPage = () => {
             setLoading(true);
             try {
                 const [patientRes, notesData] = await Promise.all([
-                    api.get(`/patient/profile/${patientId}`).catch(() => ({ data: null })),
+                    clinicalNoteService.getPatientBasicInfo(patientId).catch(() => null),
                     clinicalNoteService.getNotes(patientId),
                 ]);
-                setPatient(patientRes.data);
+                setPatient(patientRes);
                 setNotes(notesData);
             } catch {
                 setError('Error al cargar los datos del paciente.');
@@ -438,9 +438,9 @@ const ClinicalHistoryPage = () => {
         </div>
     );
 
-    const patientName = patient
-        ? `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim()
-        : `Paciente #${patientId}`;
+    const patientName = patient?.fullName?.trim()
+        || (patient ? `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim() : '')
+        || `Paciente #${patientId}`;
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -450,10 +450,10 @@ const ClinicalHistoryPage = () => {
                 {/* Cabecera */}
                 <div className="p-4 border-b border-gray-100">
                     <button
-                        onClick={() => navigate('/doctor/dashboard')}
+                        onClick={() => navigate('/doctor/patients')}
                         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-3 transition-colors"
                     >
-                        <ChevronLeft className="w-4 h-4" /> Volver al panel
+                        <ChevronLeft className="w-4 h-4" /> Mis pacientes
                     </button>
                     <h1 className="font-bold text-gray-900 text-lg leading-tight">{patientName}</h1>
                     <p className="text-xs text-gray-500 mt-0.5">Historia clínica</p>

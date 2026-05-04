@@ -11,7 +11,6 @@ import {
     Settings, CheckCircle, AlertCircle, Globe, Ban
 } from 'lucide-react';
 import doctorDashboardService from '../services/doctordashboardService';
-import TwoFactorSettings from '../components/TwoFactorSettings';
 
 const DAYS = [
     { value: 1, label: 'Lunes' },
@@ -842,8 +841,6 @@ const SettingsTab = ({ settings, setSettings, durationOptions, timezones }) => {
                 </p>
             </div>
 
-            {/* Seguridad: 2FA */}
-            <TwoFactorSettings />
         </div>
     );
 };
